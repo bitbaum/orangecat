@@ -124,7 +124,7 @@ export function VoiceCreate({ onNavigate, className }: VoiceCreateProps) {
           ) : isRecording ? (
             <Square className="h-3.5 w-3.5 fill-current text-status-negative" />
           ) : (
-            <Mic className="h-4 w-4 text-accent-primary" />
+            <Mic className="h-4 w-4 text-fg-primary" />
           )}
         </span>
         <span className="min-w-0 flex-1">

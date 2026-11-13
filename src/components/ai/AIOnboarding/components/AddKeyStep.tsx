@@ -120,7 +120,7 @@ export function AddKeyStep({
                 <CheckCircle className="w-5 h-5" />
                 <span className="font-medium">Key added successfully!</span>
               </div>
-              <p className="text-sm text-status-positive/80 mt-1">
+              <p className="text-sm text-status-positive mt-1">
                 Your key has been encrypted and saved securely.
               </p>
             </div>

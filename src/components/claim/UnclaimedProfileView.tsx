@@ -59,13 +59,13 @@ export function UnclaimedProfileView({
             <h1 className="font-heading text-3xl font-semibold tracking-display text-fg-primary">
               {name}
             </h1>
-            <p className="mt-1 text-sm text-fg-muted">Not on {APP_NAME} yet</p>
+            <p className="mt-1 text-sm text-fg-tertiary">Not on {APP_NAME} yet</p>
           </div>
         </div>
 
         {listings.length > 0 && (
           <section className="mt-10">
-            <h2 className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+            <h2 className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
               Set up for {name.split(' ')[0]}
             </h2>
             <ul className="mt-3 space-y-3">
@@ -75,7 +75,7 @@ export function UnclaimedProfileView({
                     href={listing.href}
                     className="block rounded-lg border border-default bg-surface-base p-4 transition-colors hover:bg-surface-raised"
                   >
-                    <p className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+                    <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
                       {ENTITY_REGISTRY[listing.type].name}
                     </p>
                     <p className="mt-1 font-medium text-fg-primary">{listing.title}</p>
@@ -91,7 +91,7 @@ export function UnclaimedProfileView({
           </section>
         )}
 
-        <p className="mt-10 text-sm text-fg-muted">
+        <p className="mt-10 text-sm text-fg-tertiary">
           {name} hasn’t taken this over yet, so nothing here can receive funds. If you know{' '}
           {name.split(' ')[0]}, send them the link they were given — it’s theirs to accept.
         </p>

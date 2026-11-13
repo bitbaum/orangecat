@@ -24,7 +24,7 @@ export default async function ArticlesIndexPage() {
       <div className="mx-auto w-full max-w-2xl px-5">
         <header className="mb-8 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-semibold tracking-display text-fg-primary">
+            <h1 className="font-heading text-3xl font-semibold tracking-display text-fg-primary">
               {ARTICLE_COPY.index.heading}
             </h1>
             <p className="mt-2 text-fg-secondary">{ARTICLE_COPY.index.subheading}</p>

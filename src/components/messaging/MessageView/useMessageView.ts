@@ -11,6 +11,7 @@ import supabase from '@/lib/supabase/browser';
 import type { Message } from '@/features/messaging/types';
 import { editMessageAction, deleteMessageAction } from './messageViewActions';
 import { useMessagingStore } from '@/stores/messaging';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 export function useMessageView(conversationId: string, currentUserId: string | undefined) {
   const { updateConversation } = useMessagingStore();
@@ -106,7 +107,7 @@ export function useMessageView(conversationId: string, currentUserId: string | u
 
   useEffect(() => {
     if (shouldAutoScroll && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: scrollBehavior() });
       setShouldAutoScroll(false);
     }
   }, [messages, shouldAutoScroll]);

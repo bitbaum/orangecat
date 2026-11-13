@@ -93,7 +93,7 @@ export function SettingsPreferencesSection() {
       </p>
       <div className="flex max-w-md items-center gap-3">
         <Select value={currency} onValueChange={setCurrency}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48" aria-label="Display currency">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -119,7 +119,7 @@ export function SettingsPreferencesSection() {
           value={dateFormat}
           onValueChange={value => setDateFormat(value as DateFormatPreference)}
         >
-          <SelectTrigger className="w-64">
+          <SelectTrigger className="w-64" aria-label="Date format">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

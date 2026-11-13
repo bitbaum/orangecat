@@ -26,14 +26,11 @@ function CapabilityCard({ capability, compact }: { capability: Capability; compa
       </div>
       {!compact && (
         <>
-          <p className="mt-3 text-sm text-fg-tertiary">
-            <span className="text-fg-muted">For example: </span>
-            {capability.example}
-          </p>
+          <p className="mt-3 text-sm text-fg-tertiary">For example: {capability.example}</p>
           <ol className="mt-3 space-y-1 text-sm text-fg-secondary">
             {capability.steps.map((step, i) => (
               <li key={step} className="flex gap-2">
-                <span className="w-4 shrink-0 font-heading tabular-nums text-fg-muted">
+                <span className="w-4 shrink-0 font-heading tabular-nums text-fg-tertiary">
                   {i + 1}
                 </span>
                 <span>{step}</span>
@@ -45,7 +42,7 @@ function CapabilityCard({ capability, compact }: { capability: Capability; compa
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
         <Link
           href={capability.startHref}
-          className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
+          className="inline-flex min-h-9 pointer-coarse:min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
         >
           Start
           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -53,7 +50,7 @@ function CapabilityCard({ capability, compact }: { capability: Capability; compa
         {capability.mineHref && (
           <Link
             href={capability.mineHref}
-            className="inline-flex min-h-11 items-center text-sm text-fg-secondary hover:text-fg-primary hover:underline"
+            className="inline-flex min-h-9 pointer-coarse:min-h-11 items-center text-sm text-fg-secondary hover:text-fg-primary hover:underline"
           >
             See yours
           </Link>

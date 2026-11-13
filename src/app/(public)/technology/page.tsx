@@ -4,6 +4,8 @@ import { Bitcoin, Shield, Zap, Lock, Globe, Code, Server, CheckCircle } from 'lu
 import { ROUTES } from '@/config/routes';
 import { FEE_CLAIMS } from '@/config/landing-page';
 import { STACK } from '@/config/stack-versions';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Technology',
@@ -25,27 +27,12 @@ export const metadata: Metadata = {
 export default function TechnologyPage() {
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-surface-page border-b border-default">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-default bg-surface-base px-4 py-2 text-sm font-medium text-fg-primary mb-6">
-              <Bitcoin className="h-4 w-4 text-bitcoinOrange" />
-              Bitcoin-native
-            </div>
-            <h1 className="font-heading tracking-display text-4xl font-bold sm:text-5xl lg:text-6xl text-fg-primary">
-              Built on Bitcoin
-            </h1>
-            <p className="mt-6 max-w-3xl mx-auto text-xl text-fg-secondary">
-              Direct, transparent, censorship-resistant economic participation powered by the
-              world&apos;s most secure network
-            </p>
-          </div>
-        </div>
-      </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
+        <PublicPageHeader
+          title="Built on Bitcoin"
+          lede="Direct, transparent, censorship-resistant economic participation powered by the world's most secure network"
+        />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Core Principles */}
         <div className="mb-20">
           <h2 className="text-2xl font-semibold text-fg-primary mb-8 text-center">

@@ -35,8 +35,8 @@ const STATUS_LABEL: Record<ProfileClaimListItem['status'], string> = {
 const STATUS_CLASS: Record<ProfileClaimListItem['status'], string> = {
   pending: 'bg-status-warning-subtle text-fg-primary',
   claimed: 'bg-status-positive-subtle text-fg-primary',
-  revoked: 'bg-surface-raised text-fg-muted',
-  declined: 'bg-surface-raised text-fg-muted',
+  revoked: 'bg-surface-raised text-fg-tertiary',
+  declined: 'bg-surface-raised text-fg-tertiary',
 };
 
 function ClaimRow({
@@ -80,17 +80,13 @@ function ClaimRow({
             </span>
           </div>
           {claim.suggestedUsername && (
-            <p className="mt-0.5 text-xs text-fg-muted">@{claim.suggestedUsername}</p>
+            <p className="mt-0.5 text-xs text-fg-tertiary">@{claim.suggestedUsername}</p>
           )}
         </div>
 
         {claim.status === 'pending' && (
           <div className="flex items-center gap-2">
-            <Button
-              href={ROUTES.DASHBOARD.PROFILE_CLAIMS_SHARE(claim.id)}
-              variant="accent"
-              size="sm"
-            >
+            <Button href={ROUTES.DASHBOARD.PROFILE_CLAIMS_SHARE(claim.id)} size="sm">
               <Send className="mr-1.5 h-3.5 w-3.5" />
               Send
             </Button>
@@ -148,7 +144,7 @@ export default function ProfileClaimsPage() {
       title="Profiles you've drafted"
       description="Claim links you've created for people who aren't on OrangeCat yet."
       headerActions={
-        <Button variant="accent" href={ROUTES.DASHBOARD.PROFILE_CLAIMS_NEW}>
+        <Button href={ROUTES.DASHBOARD.PROFILE_CLAIMS_NEW}>
           <UserPlus className="mr-1.5 h-4 w-4" />
           Draft a profile
         </Button>
@@ -164,7 +160,7 @@ export default function ProfileClaimsPage() {
           title="No drafted profiles yet"
           description="Draft a profile for a friend who isn't on OrangeCat — they'll get a link to preview it and claim it as their own."
           action={
-            <Button variant="accent" href={ROUTES.DASHBOARD.PROFILE_CLAIMS_NEW}>
+            <Button href={ROUTES.DASHBOARD.PROFILE_CLAIMS_NEW}>
               <UserPlus className="mr-1.5 h-4 w-4" />
               Draft a profile
             </Button>

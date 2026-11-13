@@ -18,7 +18,7 @@ export function ResourceCard({ resource, featured = false }: ResourceCardProps) 
   if (featured) {
     return (
       <Card
-        className={`group oc-card-link duration-200 border-2 border-bitcoinOrange/30 ${GRADIENTS.sectionOrangeAmber}`}
+        className={`group oc-card-link duration-200 border border-default ${GRADIENTS.sectionOrangeAmber}`}
       >
         <CardContent className="p-8">
           <div className="flex items-start gap-4">
@@ -32,7 +32,7 @@ export function ResourceCard({ resource, featured = false }: ResourceCardProps) 
               <p className="text-fg-secondary mb-4 leading-relaxed">{resource.description}</p>
               <Link
                 href={resource.href}
-                className="inline-flex items-center text-fg-primary font-semibold hover:underline underline-offset-4"
+                className="inline-flex items-center text-fg-primary font-medium underline underline-offset-4 hover:text-fg-secondary"
                 {...externalProps}
               >
                 Get Started
@@ -63,7 +63,7 @@ export function ResourceCard({ resource, featured = false }: ResourceCardProps) 
             <p className="text-sm text-fg-secondary mb-3 leading-relaxed">{resource.description}</p>
             <Link
               href={resource.href}
-              className="inline-flex items-center text-sm text-fg-primary font-semibold hover:underline underline-offset-4"
+              className="inline-flex items-center text-sm text-fg-primary font-medium underline underline-offset-4 hover:text-fg-secondary"
               {...externalProps}
             >
               {resource.type === 'external' ? 'Visit' : 'Read'}

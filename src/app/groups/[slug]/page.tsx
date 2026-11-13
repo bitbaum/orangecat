@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
+import { resolveSellerReceiveInfo } from '@/domain/payments';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
@@ -102,13 +103,18 @@ export default async function GroupDetailPage({ params }: PageProps) {
     url: `${SITE_URL}/groups/${slug}`,
   };
 
+  // Whether a payment to this group can be made at all, by the same resolution
+  // the payment itself runs. Only the yes/no reaches the browser: a group's
+  // wallets are readable by its members alone.
+  const canReceive = (await resolveSellerReceiveInfo('group', g.id)) !== null;
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString(structuredData) }}
       />
-      <GroupDetailClient groupSlug={slug} />
+      <GroupDetailClient groupSlug={slug} canReceive={canReceive} />
     </>
   );
 }

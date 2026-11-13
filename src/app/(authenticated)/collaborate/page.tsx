@@ -153,7 +153,7 @@ export default function CollaboratePage() {
         <header className="flex items-start justify-between gap-4">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg-primary">
-              <Handshake className="h-6 w-6 text-accent-warm" />
+              <Handshake className="h-6 w-6 text-fg-secondary" />
               Collaborate
             </h1>
             <p className="mt-1 text-sm text-fg-secondary">
@@ -161,7 +161,7 @@ export default function CollaboratePage() {
             </p>
           </div>
           {myProjects.length > 0 && (
-            <Button variant="accent" onClick={() => setShowForm(v => !v)}>
+            <Button onClick={() => setShowForm(v => !v)}>
               <Plus className="mr-1.5 h-4 w-4" />
               Post a role
             </Button>
@@ -214,7 +214,7 @@ export default function CollaboratePage() {
                 rows={3}
                 maxLength={1000}
               />
-              <Button type="submit" variant="accent" disabled={submitting || !roleTitle.trim()}>
+              <Button type="submit" disabled={submitting || !roleTitle.trim()}>
                 {submitting ? 'Posting…' : 'Post role'}
               </Button>
             </form>
