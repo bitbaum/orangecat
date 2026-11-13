@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Talk to a bot out loud, give it several routines, and tap a suggestion instead of typing.** A bot's chat has a "Talk" button: say something, it answers aloud, and the conversation is in the chat afterwards. A bot can now write first up to five times, each at its own time or every few hours with its own question, so a morning brief and a site check no longer share one line. Above the message box of your own bot, chips start the sentence for what it can do ("Check a site", "Ask Loki"). A group chat can have a picture of its own: "Change the picture" in its details.
 - **You can speak instead of type without an account.** The microphone on "What do you want to do?", raising money, feedback and the studio now works for visitors too, in every browser.
   - A visitor gets twelve takes in ten minutes and about four minutes per take; signing in lifts both.
 - **Organizations are called Organizations everywhere.** The switcher, the list and the join button no longer say "Groups" for the same thing.
