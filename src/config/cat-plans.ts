@@ -63,6 +63,10 @@ export interface CatPlan {
   cta: {
     label: string;
     href: string;
+    /**
+     * `accent` is the one warm action on the page: the plan that brings a
+     * newcomer in (Free). Every paid or set-up action is `outline`.
+     */
     variant: 'accent' | 'outline';
   };
   status: 'available' | 'coming-soon';
@@ -176,7 +180,7 @@ export const CAT_PLANS: CatPlan[] = [
       'Cat reads your entities — knows your projects, products, wallet',
       'Visible tool calls, cited results, chats clearable any time',
     ],
-    cta: { label: 'Start chatting', href: ROUTES.DASHBOARD.CAT, variant: 'outline' },
+    cta: { label: 'Start chatting', href: ROUTES.DASHBOARD.CAT, variant: 'accent' },
     status: 'available',
   },
   {
@@ -197,7 +201,7 @@ export const CAT_PLANS: CatPlan[] = [
     ],
     cta:
       SUPPORTER_LIVE && PAID_PLANS_OPEN
-        ? { label: 'Become a Supporter', href: SUPPORTER_CHECKOUT_URL, variant: 'accent' }
+        ? { label: 'Become a Supporter', href: SUPPORTER_CHECKOUT_URL, variant: 'outline' }
         : { label: 'How Cat runs', href: ROUTES.HOW_CAT_RUNS, variant: 'outline' },
     status: SUPPORTER_LIVE && PAID_PLANS_OPEN ? 'available' : 'coming-soon',
     // "Activating" reads as "any moment now" for a plan with no price and no
@@ -219,7 +223,7 @@ export const CAT_PLANS: CatPlan[] = [
       'Cat routes through your key — OrangeCat never sees your bill, never marks it up',
       'Keys encrypted at rest, scrubbed from logs, never echoed back to the client',
     ],
-    cta: { label: 'Add your key', href: SETTINGS_AI_ANCHORS.byok, variant: 'accent' },
+    cta: { label: 'Add your key', href: SETTINGS_AI_ANCHORS.byok, variant: 'outline' },
     status: 'available',
     badge: 'Available now',
   },
@@ -239,7 +243,7 @@ export const CAT_PLANS: CatPlan[] = [
     // CTA changes, and it changes to the truth.
     cta:
       CAT_CREDITS_LIVE && PAID_PLANS_OPEN
-        ? { label: 'Top up credits', href: SETTINGS_AI_ANCHORS.credits, variant: 'accent' }
+        ? { label: 'Top up credits', href: SETTINGS_AI_ANCHORS.credits, variant: 'outline' }
         : { label: 'How Cat runs', href: ROUTES.HOW_CAT_RUNS, variant: 'outline' },
     status: CAT_CREDITS_LIVE && PAID_PLANS_OPEN ? 'available' : 'coming-soon',
     badge: CAT_CREDITS_LIVE && PAID_PLANS_OPEN ? 'Live' : COMMERCE_CLOSED.badge,

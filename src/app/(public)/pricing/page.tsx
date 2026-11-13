@@ -25,8 +25,10 @@ export const metadata = {
  * (config/cat-plans.ts): every number, status, and CTA comes from there;
  * this file owns layout only. "Pro" in the prose below refers to the FUTURE
  * managed-frontier tier — distinct from the Supporter pass, which is a plan
- * card. One warm-accent CTA on the recommended (BYOK) tier; everything else
- * is monochrome surfaces per the Loki-aligned design tier.
+ * card. One warm-accent CTA, on the plan that brings a newcomer in (Free);
+ * everything else is monochrome surfaces per the Loki-aligned design tier.
+ * Orange used to be a card border, a "not open yet" badge, the founding band
+ * and three buttons, with the warm action on Bring your own key.
  */
 export default function PricingPage() {
   return (
@@ -44,7 +46,9 @@ export default function PricingPage() {
         />
 
         {/* Plan cards */}
-        <div className="mb-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* From lg the cards are one row, and each card is a subgrid of four
+            rows, so name, price, bullets and button line up across plans. */}
+        <div className="mb-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-y-0">
           {CAT_PLANS.map(plan => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
@@ -64,8 +68,8 @@ export default function PricingPage() {
             <p>
               We&apos;re not there yet, and we won&apos;t pretend otherwise. OrangeCat doesn&apos;t
               have fiat payment rails — we can&apos;t bill your francs, and we can&apos;t pay the
-              inference providers in fiat. So until those rails exist, there are two honest ways to
-              get more:
+              inference providers in fiat. So until those rails exist, there are three honest ways
+              to get more:
             </p>
             <ul className="space-y-3 pl-4">
               <li>
@@ -87,13 +91,10 @@ export default function PricingPage() {
         </section>
 
         {/* Founding supporter CTA band */}
-        <section
-          id="founding"
-          className="mb-12 rounded-lg border border-accent-warm/30 bg-accent-warm/5 p-8 text-fg-primary"
-        >
+        <section id="founding" className="oc-surface mb-12 p-8">
           <div className="text-center">
-            <Sparkles className="mx-auto mb-4 h-10 w-10 text-accent-warm" aria-hidden="true" />
-            <h2 className="mb-3 font-heading text-2xl font-bold tracking-display">
+            <Sparkles className="mx-auto mb-4 h-10 w-10 text-fg-secondary" aria-hidden="true" />
+            <h2 className="mb-3 text-balance font-heading text-2xl font-bold tracking-display">
               Help found the permissionless economy
             </h2>
             <p className="mx-auto mb-6 max-w-2xl text-fg-secondary">
@@ -102,7 +103,7 @@ export default function PricingPage() {
               first access to Pro the day it&apos;s live.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Button href={ROUTES.SUPPORT} variant="accent" size="lg">
+              <Button href={ROUTES.SUPPORT} variant="primary" size="lg">
                 Become a founding supporter
               </Button>
               <Button href={ROUTES.DASHBOARD.CAT} variant="outline" size="lg">
@@ -129,9 +130,12 @@ function PlanCard({ plan }: { plan: CatPlan }) {
   const hasBadge = !!plan.badge;
 
   return (
-    <div className="relative flex flex-col rounded-lg border border-default bg-surface-base p-6 shadow-sm">
+    <div className="relative flex flex-col rounded-lg border border-default bg-surface-base p-6 shadow-sm lg:row-span-4 lg:grid lg:grid-rows-subgrid lg:gap-0">
       {hasBadge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-default bg-surface-raised px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-secondary">
+        <span className="absolute -top-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-default bg-surface-raised px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-secondary">
+          {plan.status === 'available' && (
+            <span className="h-1.5 w-1.5 rounded-full bg-status-positive" aria-hidden="true" />
+          )}
           {plan.badge}
         </span>
       )}
