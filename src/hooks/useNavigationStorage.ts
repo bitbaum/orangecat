@@ -5,6 +5,8 @@ import { logger } from '@/utils/logger';
 import type { NavSection } from './useNavigation';
 
 const STORAGE_KEYS = {
+  /** Retired: the phone drawer is transient and always starts closed. Kept
+   *  only so a value written by an older build is cleared on load. */
   SIDEBAR_OPEN: 'orangecat_sidebar_open',
   SIDEBAR_COLLAPSED: 'orangecat_sidebar_collapsed',
   COLLAPSED_SECTIONS: 'orangecat_collapsed_sections',
@@ -32,11 +34,7 @@ export function buildInitialCollapsedSections(sections: NavSection[]): Set<strin
 }
 
 interface StorageCallbacks {
-  onStateLoaded: (state: {
-    isSidebarOpen: boolean;
-    isSidebarCollapsed: boolean;
-    collapsedSections: Set<string>;
-  }) => void;
+  onStateLoaded: (state: { isSidebarCollapsed: boolean; collapsedSections: Set<string> }) => void;
   onLoadFailed: (defaultCollapsed: Set<string>) => void;
 }
 
@@ -51,8 +49,9 @@ export function useNavigationStorage(
     }
 
     try {
-      const savedSidebarState = localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN);
-      const isSidebarOpen = savedSidebarState ? JSON.parse(savedSidebarState) : false;
+      // The phone drawer is not a preference: restoring it reopened the menu
+      // over the page after every reload. Only the desktop collapse is saved.
+      localStorage.removeItem(STORAGE_KEYS.SIDEBAR_OPEN);
 
       const savedCollapsedState = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED);
       const isSidebarCollapsed = savedCollapsedState ? JSON.parse(savedCollapsedState) : false;
@@ -66,20 +65,12 @@ export function useNavigationStorage(
           ? buildInitialCollapsedSections(sections)
           : new Set<string>(JSON.parse(savedCollapsedSections));
 
-      onStateLoaded({ isSidebarOpen, isSidebarCollapsed, collapsedSections });
+      onStateLoaded({ isSidebarCollapsed, collapsedSections });
     } catch (error) {
       logger.warn('Failed to load navigation state from localStorage', { error }, 'useNavigation');
       onLoadFailed(buildInitialCollapsedSections(sections));
     }
   }, [hydrated, sections, onStateLoaded, onLoadFailed]);
-
-  const persistSidebarState = useCallback((isOpen: boolean) => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, JSON.stringify(isOpen));
-    } catch (error) {
-      logger.warn('Failed to persist sidebar state', { error, isOpen }, 'useNavigation');
-    }
-  }, []);
 
   const persistSidebarCollapsedState = useCallback((isCollapsed: boolean) => {
     try {
@@ -101,7 +92,7 @@ export function useNavigationStorage(
     }
   }, []);
 
-  return { persistSidebarState, persistSidebarCollapsedState, persistCollapsedSections };
+  return { persistSidebarCollapsedState, persistCollapsedSections };
 }
 
 export function clearNavigationStorage() {

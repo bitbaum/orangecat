@@ -25,6 +25,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
+import { SettingToggleRow } from '@/components/ui/SettingToggleRow';
 import { logger } from '@/utils/logger';
 import type { DigestFrequency, NotificationPreferences } from '@/types/notification-preferences';
 import { CATEGORIES, DIGEST_OPTIONS } from '@/config/notification-settings';
@@ -206,35 +207,16 @@ export default function NotificationSettingsPage() {
                 Toggle whole families of emails on or off.
               </p>
             </div>
-            <ul className="divide-y divide-border-subtle">
+            <ul className="divide-y divide-subtle">
               {CATEGORIES.map(cat => (
-                <li key={cat.key} className="flex items-start justify-between gap-3 p-4">
-                  <div className="min-w-0 flex-1">
-                    <div
-                      id={`notification-${cat.key}-label`}
-                      className="text-sm font-medium text-fg-primary"
-                    >
-                      {cat.label}
-                    </div>
-                    <p
-                      id={`notification-${cat.key}-description`}
-                      className="mt-0.5 text-xs text-fg-secondary"
-                    >
-                      {cat.description}
-                    </p>
-                  </div>
-                  <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-end gap-2 text-sm text-fg-secondary">
-                    <input
-                      type="checkbox"
-                      aria-labelledby={`notification-${cat.key}-label`}
-                      aria-describedby={`notification-${cat.key}-description`}
-                      disabled={saving}
-                      checked={prefs[cat.key]}
-                      onChange={e => setToggle(cat.key, e.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    {prefs[cat.key] ? 'On' : 'Off'}
-                  </label>
+                <li key={cat.key} className="px-4">
+                  <SettingToggleRow
+                    label={cat.label}
+                    detail={cat.description}
+                    checked={prefs[cat.key]}
+                    onCheckedChange={checked => setToggle(cat.key, checked)}
+                    disabled={saving}
+                  />
                 </li>
               ))}
             </ul>

@@ -7,6 +7,8 @@ import TimelineComposer from '@/components/timeline/TimelineComposer';
 import TimelineView from '@/components/timeline/TimelineView';
 import { Card, CardContent } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import Link from 'next/link';
+import { ROUTES } from '@/config/routes';
 
 interface ProjectTimelineProps {
   projectId: string;
@@ -70,8 +72,16 @@ export default function ProjectTimeline({
       {!user && (
         <Card className="bg-surface-raised/40 border-subtle">
           <CardContent className="p-4">
-            <p className="text-sm text-fg-primary">
-              <strong>Want to post updates?</strong> Sign in to share progress about this project.
+            {/* "Sign in" with nothing to tap was a dead end; it now leads there and back. */}
+            <p className="mb-0 text-sm text-fg-primary">
+              <strong>Want to post updates?</strong>{' '}
+              <Link
+                href={`${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.PROJECTS.VIEW(projectId))}`}
+                className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+              >
+                Sign in
+              </Link>{' '}
+              to share progress about this project.
             </p>
           </CardContent>
         </Card>

@@ -59,10 +59,14 @@ export function BlogFilters({
               <Tag className="w-4 h-4 mr-2 text-fg-secondary" />
               <h3 className="text-lg font-semibold">Filter by Topic</h3>
             </div>
-            <div className="flex flex-wrap gap-2">
+            {/* One line that scrolls sideways: a wrapping box of pills breaks into
+                rows wherever the words run out. */}
+            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
               <button
+                type="button"
+                aria-pressed={!selectedTag}
                 onClick={() => setSelectedTag(null)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`min-h-11 shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   !selectedTag
                     ? 'bg-fg-primary text-fg-inverted'
                     : 'bg-surface-raised text-fg-secondary hover:bg-surface-overlay'
@@ -73,8 +77,10 @@ export function BlogFilters({
               {tags.map(tag => (
                 <button
                   key={tag}
+                  type="button"
+                  aria-pressed={selectedTag === tag}
                   onClick={() => setSelectedTag(tag)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`min-h-11 shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     selectedTag === tag
                       ? 'bg-fg-primary text-fg-inverted'
                       : 'bg-surface-raised text-fg-secondary hover:bg-surface-overlay'
@@ -92,12 +98,16 @@ export function BlogFilters({
             <Calendar className="w-4 h-4 mr-2 text-fg-secondary" />
             <h3 className="text-lg font-semibold">Filter by Time</h3>
           </div>
-          <div className="flex flex-wrap gap-2">
+          {/* One line that scrolls sideways: a wrapping box of pills breaks into
+                rows wherever the words run out. */}
+          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
             {timeFilterOptions.map(option => (
               <button
                 key={option.key}
+                type="button"
+                aria-pressed={selectedTimeFilter === option.key}
                 onClick={() => setSelectedTimeFilter(option.key)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                className={`min-h-11 shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedTimeFilter === option.key
                     ? 'bg-fg-primary text-fg-inverted'
                     : 'bg-surface-raised text-fg-secondary hover:bg-surface-overlay'

@@ -60,7 +60,7 @@ function ProfileEditorForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={variant === 'inline' ? 'p-6 space-y-6' : 'space-y-6'}
+        className={variant === 'inline' ? 'space-y-6 p-3 sm:p-6' : 'space-y-6'}
       >
         {/* Form Errors */}
         <FormErrorDisplay errors={form.formState.errors} />
@@ -107,7 +107,7 @@ function ProfileEditorForm({
           />
 
           {/* Preferences Section */}
-          <PreferencesSection control={form.control} onFieldFocus={onFieldFocus} />
+          <PreferencesSection />
 
           {/* Privacy Section — per-field visibility to visitors */}
           <PrivacySection form={form} />
@@ -162,7 +162,7 @@ export default function ModernProfileEditor({
   if (inline) {
     // Inline mode: clean form layout without modal wrapper (page provides header/layout)
     return (
-      <div className="bg-surface-base rounded-lg border border-default shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-default bg-surface-base shadow-sm">
         <ProfileEditorForm
           editor={editor}
           profile={profile}

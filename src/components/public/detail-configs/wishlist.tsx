@@ -149,7 +149,6 @@ export function buildWishlistDetailConfig(items: WishlistDetailItem[]): EntityDe
   return {
     entityType: 'wishlist',
     ownerLabel: 'Created by',
-    descriptionTitle: 'About this Wishlist',
     visibilityFilter: { column: 'is_active', value: true },
     metadataSelect: 'title, description, cover_image_url',
     getJsonLdExtra: entity => ({

@@ -4,6 +4,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#1 · high · Product and service pages: price and action are below the first phone viewport, the same goal has four buttons in two colours, and the sticky bar lands on a different action than its label
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** product-detail, service-detail (both, both themes)
 - **What a person meets:** The one thing the page exists for is offered as Buy now (orange), Buy now (white), Open in wallet and Create Bitcoin request, or as Book, Sign in to book, Sign in to purchase and Support. On a service the bar that says 'Book this service' skips the booking button and lands on a purchase sign-in. A buyer cannot tell booking from paying from tipping, and does not see the price until they scroll.
 - **Cause:** src/components/public/PublicEntityStickyCTA.tsx:33-34 points every entity's bar at '#pay' with the entity verb, which for a service is not where BookEntityButton lives (src/components/public/detail-configs/service.tsx:140); src/components/public/detail-configs/product.tsx:77-87 adds a second, orange 'Buy now' anchor to the same panel; src/components/payment/PublicEntityPaymentSection.tsx:130-136 and :185-189 append PublicSupportPanel to fixed-price listings; the price lives only in renderDetails below the …
@@ -12,6 +14,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#2 · high · A group page offers no Join where people land; signed out, the hidden Join answers with an error toast; the overview is the owner's settings
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** group-detail (both, both themes)
 - **What a person meets:** The registry's own verb for a group is 'Join' (src/config/entity-cta.ts), and the page never offers it on arrival. A signed-out visitor who does find it gets an error toast and no way forward. What they read instead is configuration that only the owner can act on, with the group's description in the faintest text colour in the default dark theme.
 - **Cause:** src/components/groups/GroupDetail.tsx:62-67 gives headerActions to owners only; Join lives inside the Members tab (GroupMembers.tsx:179-188); src/components/groups/GroupDetailTabs.tsx:71-89 shows 'Suggested Features' to everyone, :65 sets About to dark:text-fg-tertiary, :51-54 puts an icon on one tab; src/components/ui/tabs.tsx:32 uses py-1 (28px).
@@ -19,12 +23,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#4 · high · 42 of 43 Discover cards are a single letter on a grey plate that takes half the card
 
+**Status:** Partly (fourth pull request): asking for a picture in the create flow is open.
+
 - **Where:** discover, projects, products, services, groups, companions, … (both, both themes)
 - **What a person meets:** The marketplace's first impression is a wall of grey boxes that read as pictures that failed to load; three cards in the first row show the same 'Q'. The plate pushes title and price, the two things that tell listings apart, below the fold on a phone.
 - **Cause:** src/app/globals.css:841-849 (.oc-discover-grid single column under 420px with a 16:9 plate) plus data: no listing has an image, and supabase/migrations/20261012160000_people_who_have_shown_up.sql maps no image column at all for cause, loan, asset and research.
 - **Fix:** In src/app/globals.css after .oc-discover-media (line 849): .oc-discover-grid .oc-discover-card { @apply flex-row min-[420px]:flex-col; } and .oc-discover-grid .oc-discover-media { @apply aspect-auto w-24 shrink-0 border-b-0 border-r min-[420px]:aspect-video min-[420px]:w-full min-[420px]:border-b min-[420px]:border-r-0; }. Line 851: .oc-discover-body { @apply flex min-w-0 flex-1 flex-col p-4; }. Add mb-0 to .oc-discover-kind, .oc-discover-title, .oc-discover-snippet and .oc-discover-fact (lines 853-872). Leave DiscoverCardMedia.tsx as it is (a 48px letter fits the 96px plate; the round portrait is 72px). Rails keep their shape. Asking for a picture at creation and mapping an image for the four kinds without one are separate work.
 
 ### discover#5 · high · QA fixtures lead the production shelf
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** discover (both, both themes)
 - **What a person meets:** The first row a first-time visitor reads in the marketplace is test data. Next to cards that already have no pictures, it makes the real listings look fake too.
@@ -34,6 +42,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#12 · high · Prices are set three ways, and two of them are wrong on screen: 'CHF 20.00 ≈ CHF 20.00' in the pay panel and an orphaned '/ hr'
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** discover, products, services, product-detail, service-detail (both, both themes)
 - **What a person meets:** On the one panel where money is about to move, the amount line contradicts itself. An hourly rate is easy to misread. On a product card the price is the least visible element, and it changes spelling between the card and the page it opens.
 - **Cause:** src/components/payment/PublicPayPanel.tsx:113-117 prints formatAmountBtc(amountBtc), which formats a BTC amount in the visitor's display currency (CHF by default), so a CHF price is 'approximated' by itself, and :109 has no gap; src/components/public/PriceDisplay.tsx:55-61 appends the suffix after the equivalent inside one wrapping paragraph; src/components/discover/DiscoverCard.tsx:31 uses CurrencyDisplay (formatAmountSuffixed, src/components/ui/CurrencyDisplay.tsx:45) where detail pages use formatCurrency.
@@ -41,6 +51,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** MoneyFigure as proposed fails AA (unit ink text-fg-tertiary), against the contrast fix in finding 6.
 
 ### discover#0 · medium · A priced listing whose seller has no wallet shows a price and stock, then no way to act
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** product-detail, service-detail, project-detail (both, both themes)
 - **What a person meets:** A buyer sees a price and '20 available', looks for Buy, finds nothing, and the only explanation is the quietest card at the very bottom of the page with no next step. The project page invites people to 'be the first' to fund something that cannot receive money. The visitor leaves and the seller never learns that someone wanted to buy.
@@ -50,12 +62,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#3 · medium · /events is an organiser sales page, not the list of events its siblings are
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** events (both, both themes)
 - **What a person meets:** Someone who taps 'Events' to see what is on gets a pitch written for organisers and an empty list. The first control is orange but is not the funnel action. The organiser's real action is the weakest button on the page, six thousand pixels down, and for a signed-out visitor the way back to the create form is dropped after sign-in.
 - **Cause:** src/app/events/page.tsx:129-300 is a marketing page mounted at the event entity's publicBasePath (src/config/entity-registry.ts:686); src/components/events/EventsNearYou.tsx:103 uses variant="accent" and :115-118 an icon-only submit; page.tsx:124 sends `&redirect=`, which /auth does not read (src/app/auth/useAuthForm.ts:120 and :142 read `from`); page.tsx:290 overrides the final Button to bg-surface-raised.
 - **Fix:** (1) src/app/events/page.tsx becomes the redirect used by src/app/loans/page.tsx: export default function EventsPage() { redirect(ROUTES.DISCOVER_TYPE('events')); } The marketing sections, the &redirect= link and the overridden Button go with it; /events/create and /events/[id] are untouched. (2) DiscoverScreen.tsx browse branch, above the status line: {view.type === 'event' && (&lt;div className='mb-8 max-w-2xl'>&lt;h2 className='oc-discover-rail-title mb-4'>What's on near you&lt;/h2>&lt;EventsNearYou />&lt;/div>)}. (3) EventsNearYou.tsx:103: variant='outline' className='min-h-11'. Lines 115-118: &lt;Button type='submit' variant='outline' className='min-h-11' disabled={loading || place.trim().length &lt; 2}>&lt;Search className='mr-2 h-4 w-4' aria-hidden='true' />Search&lt;/Button>.
 
 ### discover#7 · medium · A kind's page does not say which kind it is, and an empty kind or a failed search says nothing useful
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** products, services, groups, companions, causes, loans, … (both, both themes)
 - **What a person meets:** A visitor arriving from /services or a shared link cannot see what they are looking at. An empty kind is a blank page with no next step. During an outage the marketplace tells every visitor it is empty, and that answer is cached for two minutes.
@@ -65,12 +81,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#8 · medium · The breadcrumb's 'Home' on public listing pages leads a signed-out visitor to the sign-in form
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** product-detail, service-detail (both, both themes)
 - **What a person meets:** The default audience of a public listing is signed out. They tap 'Home' to look around and get a login wall headed 'Welcome back'.
 - **Cause:** src/components/ui/Breadcrumb.tsx:34-40 hard-codes ROUTES.DASHBOARD.HOME as the root, and src/components/public/PublicEntityDetailPage.tsx:199-202 uses it on public pages.
 - **Fix:** Breadcrumb.tsx: add root?: { label: string; href: string; icon?: LucideIcon } to BreadcrumbProps; default { label: 'Home', href: ROUTES.DASHBOARD.HOME, icon: Home }; render the icon only when root.icon is set. PublicEntityDetailPage.tsx:199: &lt;Breadcrumb root={{ label: 'Discover', href: ROUTES.DISCOVER, icon: Compass }} items={[...]} className='mb-4' />. Pass the same root at src/app/groups/[slug]/events/[eventId]/page.tsx:92. PageHeader gets an optional breadcrumbRoot that it forwards, so finding 13 can use it for the project and group pages.
 
 ### discover#9 · medium · Links into Discover use parameters it does not answer: /projects shows everything, category tiles land on 'Nothing public matches'
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** projects, categories, discover (both, both themes)
 - **What a person meets:** 'Projects' is the one listing shortcut that does not filter. The page titled 'Find Your Community' sends people to a no-results screen from at least its first tile.
@@ -79,12 +99,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### discover#10 · medium · On desktop, rails hide cards five to eight with no 'See all'
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** discover (desktop, both themes)
 - **What a person meets:** On a desktop, three of seven products and half of 'Just listed' are hidden, and nothing on the rail says so or leads to them.
 - **Cause:** src/components/discover/DiscoverScreen.tsx:43-47 against src/app/globals.css:838-840. DiscoverScreen.tsx:37 is fine as it is.
 - **Fix:** src/config/discover-tabs.ts: export const DISCOVER_RAIL_VISIBLE = 4; with a comment that it mirrors .oc-discover-rail-item:nth-child(n + 5) in globals.css:838 (and the reverse comment there). DiscoverScreen.tsx:44: rail.total > DISCOVER_RAIL_VISIBLE. No CSS change and no change to 'Just listed'.
 
 ### discover#11 · medium · The row of kinds wraps to 10 + 3 on desktop, and the shelf repeats six kinds as 17px text links
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** discover, products, services, groups, companions, causes, … (both, both themes)
 - **What a person meets:** The fleet rule is that a row of choices is one row, never pills in a wrapping box; this is the '10 + 3 orphans' it describes. On a phone six kinds are offered a second time as targets a thumb cannot hit reliably.
@@ -93,6 +117,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** Deleting 'Also here' contradicts the decision and test shipped in #1611; the mask needs an arbitrary [mask-image:...] property.
 
 ### discover#13 · medium · Three frames for one kind of page: product, project and group detail pages each open differently
+
+**Status:** Partly (fourth pull request): project pages do not yet use the shared detail header.
 
 - **Where:** product-detail, service-detail, project-detail, group-detail (both, both themes)
 - **What a person meets:** All of these pages are reached from the same card grid, and each teaches a different way back, a different header and a different place for the owner. 'Active' is the owner's word and tells a buyer nothing.

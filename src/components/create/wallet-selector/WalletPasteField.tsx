@@ -11,9 +11,12 @@ interface WalletPasteFieldProps {
   /** Parent already showed the question, so the form's own heading would repeat it. */
   hideIntro?: boolean;
   submitLabel?: string;
+  submitVariant?: 'primary' | 'outline';
   cancelLabel?: string;
   onCancel?: () => void;
   onSaved: (wallet: Wallet) => void;
+  /** The host is already the surface; the form draws no card of its own. */
+  bare?: boolean;
 }
 
 /**
@@ -25,9 +28,11 @@ export function WalletPasteField({
   defaultLabel,
   hideIntro = false,
   submitLabel = 'Save',
+  submitVariant,
   cancelLabel,
   onCancel,
   onSaved,
+  bare = false,
 }: WalletPasteFieldProps) {
   if (!profileId) {
     return (
@@ -42,8 +47,10 @@ export function WalletPasteField({
       <WhyReceive />
       <WalletForm
         hideIntro={hideIntro}
+        bare={bare}
         defaultLabel={defaultLabel}
         submitLabel={submitLabel}
+        submitVariant={submitVariant}
         cancelLabel={cancelLabel}
         onCancel={onCancel}
         onSubmit={async data => {

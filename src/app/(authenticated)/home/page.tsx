@@ -14,7 +14,7 @@ import { Home } from 'lucide-react';
 export default function HomePage() {
   return (
     <SocialTimeline
-      title="Home"
+      title="Following"
       icon={Home}
       mode="following"
       showShareButton={false}

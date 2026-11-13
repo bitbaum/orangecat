@@ -36,6 +36,20 @@ const WalletQrScanner = dynamic(() => import('@/components/wallets/WalletQrScann
 import { ReceiveVerdict } from './ReceiveVerdict';
 
 /** Friendly label + hint for whatever the user pasted. */
+/**
+ * The form's words. "Wallet connection" is the one term for an NWC link, the
+ * same one Send uses when it sends someone here.
+ */
+const WALLET_FORM_COPY = {
+  receiveHeading: 'Get paid in Bitcoin',
+  receiveBody: 'Add where you want the money to land. You can change this anytime.',
+  sendHeading: 'Connect a wallet to send',
+  sendBody:
+    "Paste the wallet connection link from your Lightning wallet's Connect screen. Your keys stay in your wallet.",
+  advancedToggle: 'Add an on-chain address or a wallet connection',
+  detailsToggle: 'Name and details',
+} as const;
+
 const DETECTED: Record<Exclude<WalletInputKind, 'unknown'>, string> = {
   lightning: 'Lightning address',
   onchain: 'Bitcoin address',
@@ -49,11 +63,16 @@ export function WalletForm({
   onCancel,
   cancelLabel = 'Cancel',
   submitLabel = 'Save',
+  submitVariant = 'primary',
+  title = WALLET_FORM_COPY.receiveHeading,
   defaultLabel = 'My wallet',
   hideIntro = false,
   onFieldFocus,
   hasSavedConnection = false,
+  bare = false,
+  purpose = 'receive',
 }: WalletFormProps) {
+  const forSend = purpose === 'send';
   const [formData, setFormData] = useState<WalletFormData>({
     label: initialData?.label || '',
     description: initialData?.description || '',
@@ -73,7 +92,10 @@ export function WalletForm({
   // The advanced (technical) rails — reveal only if the user already has one
   // saved (editing) or explicitly asks for them.
   const [showAdvanced, setShowAdvanced] = useState(
-    !!initialData?.address_or_xpub || !!initialData?.nwc_connection_uri || hasSavedConnection
+    forSend ||
+      !!initialData?.address_or_xpub ||
+      !!initialData?.nwc_connection_uri ||
+      hasSavedConnection
   );
   const [showDetails, setShowDetails] = useState(false);
   const [showGetWallet, setShowGetWallet] = useState(false);
@@ -182,14 +204,14 @@ export function WalletForm({
   const selectedCategory = WALLET_CATEGORIES[formData.category];
 
   return (
-    <div className="rounded-lg border border-default bg-surface-raised p-4">
+    <div className={bare ? undefined : 'rounded-lg border border-default bg-surface-raised p-4'}>
       {!hideIntro && (
         <>
           <h4 className="mb-1 font-semibold text-fg-primary">
-            {submitLabel === 'Save' ? 'Get paid in Bitcoin' : submitLabel}
+            {forSend ? WALLET_FORM_COPY.sendHeading : title}
           </h4>
           <p className="mb-4 text-sm text-fg-secondary">
-            Add where you want the money to land. You can change this anytime.
+            {forSend ? WALLET_FORM_COPY.sendBody : WALLET_FORM_COPY.receiveBody}
           </p>
         </>
       )}
@@ -311,7 +333,7 @@ export function WalletForm({
         ) : (
           <ChevronRight className="h-3.5 w-3.5" />
         )}
-        Other ways to get paid (advanced)
+        {WALLET_FORM_COPY.advancedToggle}
       </button>
       {showAdvanced && (
         <div className="mb-4 space-y-4 border-l-2 border-subtle pl-3">
@@ -338,6 +360,7 @@ export function WalletForm({
               onFocus={() => onFieldFocus?.('addressOrXpub')}
               placeholder="nostr+walletconnect://…"
               autoComplete="off"
+              autoFocus={forSend}
             />
             <p className="mt-1.5 text-xs text-fg-secondary">
               Connect a wallet (Alby, Coinos, …) so payments settle automatically — the best
@@ -360,7 +383,7 @@ export function WalletForm({
         ) : (
           <ChevronRight className="h-3.5 w-3.5" />
         )}
-        Name &amp; details (optional)
+        {WALLET_FORM_COPY.detailsToggle}
       </button>
       {showDetails && (
         <div className="mb-4 space-y-4 border-l-2 border-subtle pl-3">
@@ -490,17 +513,19 @@ export function WalletForm({
       )}
 
       {/* Actions */}
-      <div className="flex flex-col gap-2 sm:flex-row">
+      {/* Two actions together are two equal cells; one action is full width. */}
+      <div className={cn('grid gap-2', onCancel ? 'grid-cols-2' : 'grid-cols-1')}>
         <Button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="w-full sm:flex-1"
+          variant={submitVariant}
+          className="min-h-11 w-full"
         >
           {isSubmitting ? 'Saving…' : submitLabel}
         </Button>
         {onCancel && (
-          <Button type="button" onClick={onCancel} variant="outline" className="w-full sm:w-auto">
+          <Button type="button" onClick={onCancel} variant="outline" className="min-h-11 w-full">
             {cancelLabel}
           </Button>
         )}

@@ -213,6 +213,15 @@ describe('suggestions are exact', () => {
     expect(screen.queryByRole('button', { name: /CHF/ })).not.toBeInTheDocument();
   });
 
+  it('shows a BTC rung as the number alone, the unit kept in what is spoken', () => {
+    // "0.00005 BTC" does not fit a quarter of a 390px row at 14px, and the
+    // field above already says BTC.
+    mockCurrency = 'BTC';
+    setup({ presetsBtc: undefined });
+
+    expect(screen.getByRole('button', { name: '0.0001 BTC' })).toHaveTextContent(/^0\.0001$/);
+  });
+
   it('hides suggestions that fall outside the allowed range', () => {
     setup({ maxBtc: 0.0005 });
 
@@ -244,6 +253,14 @@ describe('out of range says so instead of quietly changing the number', () => {
     setup({ value: 0.0002 });
 
     expect(screen.queryByText(/maximum|minimum/)).not.toBeInTheDocument();
+  });
+});
+
+describe('the focus indicator is the plate, not the digits', () => {
+  it('cancels the global ring on the input and rings the plate instead', () => {
+    const { input } = setup();
+    expect(input.className).toContain('focus-visible:ring-0');
+    expect(input.closest('.cursor-text')?.className).toContain('focus-within:ring-2');
   });
 });
 

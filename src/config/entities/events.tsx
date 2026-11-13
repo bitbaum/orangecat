@@ -7,14 +7,11 @@
  */
 
 import { EntityConfig } from '@/types/entity';
-import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
 import type { Currency } from '@/types/settings';
-import { GRADIENTS } from '@/config/gradients';
 import { formatDate } from '@/utils/dates';
 
 // Event type from database - matches events table schema
@@ -144,11 +141,6 @@ export const eventEntityConfig: EntityConfig<Event> = {
     title: 'No events yet',
     description:
       'Organize your first in-person gathering or meetup with Bitcoin-powered ticketing.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.EVENTS_CREATE} className={GRADIENTS.brandBlue}>
-        Create Event
-      </Button>
-    ),
   },
 
   gridCols: {

@@ -86,6 +86,7 @@ describe('a handle the profile no longer uses', () => {
       userId: 'user-1',
       username: 'user_a1b2c3d4e5f6',
       displayName: 'Mao',
+      avatarUrl: null,
     });
   });
 
@@ -161,6 +162,7 @@ describe('resolveLnurlRecipient', () => {
       userId: 'u1',
       username: 'satoshi',
       displayName: 'Satoshi',
+      avatarUrl: null,
     });
   });
 });

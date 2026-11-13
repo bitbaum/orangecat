@@ -4,6 +4,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### app-shell#0 · high · Phone drawer stays open after you pick a destination, reopens after reload, and its Close button is under the tab bar
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-dashboard, app-things, app-home, app-timeline, app-messages, app-community, … (phone, both themes)
 - **What a person meets:** The main phone navigation feels broken: every pick from the menu needs a second tap on the dimmed strip to see the page, the menu ambushes the person again on the next visit with focus locked inside it, and the one control labelled 'Close menu' cannot be tapped.
 - **Cause:** src/components/layout/AppShell.tsx:155-165 renders &lt;Sidebar> without onNavigate, so handleNavigate in src/components/sidebar/Sidebar.tsx:64-69 does nothing; setSidebarOpen (src/hooks/useNavigation.ts:102) is never called anywhere. toggleSidebar persists the transient drawer state (src/hooks/useNavigation.ts:97 -> src/hooks/useNavigationStorage.ts:78) and it is restored on load (src/hooks/useNavigationStorage.ts:54-55). The drawer is 'fixed bottom-0 ... z-40' (src/components/sidebar/Sidebar.tsx:125) while the …
@@ -11,6 +13,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** The proposed new MOBILE_DRAWER step would be a second definition of a layer src/constants/z-index.ts already names (MOBILE_MENU_BACKDROP / MOBILE_MENU), against the repo's SSOT rule.
 
 ### app-shell#1 · high · Visiting the Cat permanently collapses the desktop sidebar and hides the PEOPLE, WORK and MORE groups
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** app-dashboard, app-home, app-things, app-timeline, app-messages, app-community, … (desktop, both themes)
 - **What a person meets:** Sign-in and the logo both land on the Cat, so effectively every account loses the labelled sidebar in its first session without choosing to. A new person is left with six icon-only buttons (a QR glyph for Money, a map for 'What you can do') and no visible route to Settings, Profile, People or the feed; expanding it by hand is undone the next time they open the Cat.
@@ -20,6 +24,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### app-shell#2 · medium · First-run dashboard leads with a profile checklist and jargon instead of the door and its examples
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-dashboard (both, both themes)
 - **What a person meets:** A person who has just arrived reads a status line about a concept they have not met, sees a blank box with no hint of what to type, and is then asked to do profile chores four times the size of the product's one real action. The offer that would actually get them started (the Cat setting them up) is hidden one tap down.
 - **Cause:** src/app/(authenticated)/dashboard/page.tsx:94 renders &lt;DashboardIntent /> without the examples prop (src/components/things/MyThingsList.tsx:22 passes DOOR_EXAMPLES); src/components/dashboard/sections/DashboardHeader.tsx:45 falls back to 'No pending Cat approvals.'; src/components/dashboard/sections/DashboardJourney.tsx:22 shows the first two tasks in registry order, so 'chat-with-cat' (src/services/recommendations/tasks.ts:155-165) is cut; task titles are Title Case (tasks.ts:99).
@@ -27,6 +33,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** Removing the projects empty state goes against .claude/rules/frontend-best-practices.md 'Empty States: always provide' and fleet 'No dead ends'. Adding DOOR_EXAMPLES in today's 'flex flex-wrap' pill box adds another wrapping row of choices (fleet 'A row of choices is one row').
 
 ### app-shell#3 · medium · Create is a list of 17 entity nouns in the header menu and the phone sheet, while the palette says the same things in plain verbs
+
+**Status:** Partly (fourth pull request): the "six most common first" order is left out, with no usage data to rank by.
 
 - **Where:** app-dashboard, app-things, app-discover, app-community, app-people (both, both themes)
 - **What a person meets:** Create sits in the header and in the thumb zone, and it asks a newcomer to already know the difference between Cause, Project, Research, Wishlist and Investment, or Organization and Circle. On a phone there is not even a line of help. People who cannot name the type they need stop here.
@@ -36,6 +44,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### app-shell#4 · medium · The tab bar's plus changes its name and what it does from page to page; on Messages it opens the public post composer
 
+**Status:** Partly (fourth pull request): the group kind keeps two names ("Organization", "Groups"); renaming the registry entity is a product call.
+
 - **Where:** app-messages, app-groups, app-dashboard, app-timeline (phone, both themes)
 - **What a person meets:** A fixed slot in primary navigation is a promise. Here the same thumb position opens a menu on one page, a form on another, and from a private conversation list a public post composer. Someone looking for 'new message' is one tap from publishing to everyone, and on Groups the label uses a third word for the thing the page calls a group.
 - **Cause:** src/lib/navigation/contextual-create.ts:81-88 (Messages mapped to the public post composer) and src/components/groups/GroupsDashboard.tsx:99-176 (page copy never followed the registry rename at src/config/entity-registry.ts:474-499)
@@ -43,6 +53,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** Making the slot always open the sheet removes a documented, tested feature (contextual-create.ts header, mobile-create.test.ts) without an owner decision.
 
 ### app-shell#5 · medium · Navigation vocabulary: the same place has different names and icons in the sidebar, the user menu and the tab bar, and MORE is a ten-item drawer
+
+**Status:** Partly (fourth pull request): Appearance still shows at every width in the account menu (accountkit has no per-width option).
 
 - **Where:** app-dashboard, app-discover, app-timeline, app-community, app-people, app-collaborate (both, both themes)
 - **What a person meets:** People learn a product's map by its words and pictures. When 'Home' is also 'Dashboard', a gear is both Settings and Edit Profile, and a handshake is three different places, nothing can be found by recognition; Settings, which most people look for under their avatar, is three taps deep in a group called MORE.
@@ -52,6 +64,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### app-shell#6 · medium · Three places are called Home and four screens show the same feed under different names
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-home, app-timeline, app-community, app-dashboard (both, both themes)
 - **What a person meets:** 'Home' means three different screens, and a page called 'My Timeline' is full of someone else's posts. The one feed that would be personal (people you follow) cannot be reached from any menu, and when it is empty it tells the person to be the first to post in a community that already has dozens of posts.
 - **Cause:** src/app/(authenticated)/timeline/page.tsx:84 (title), src/app/(authenticated)/home/page.tsx:14-27 with src/config/routes.ts:624 unused (orphan), src/components/timeline/SocialTimeline.tsx:229-238 and :274
@@ -59,6 +73,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** Redirecting the public /community behind sign-in creates a dead end for signed-out visitors (fleet 'No dead ends'); changing the logo target contradicts the documented Cat-first decision in src/app/page.tsx:49-53.
 
 ### app-shell#8 · medium · Orange primary buttons inside the app, and two or three primary buttons for one action on Messages, People, Groups and Timeline
+
+**Status:** Fixed (fourth pull request).
 
 Status: Partly (#1634): profile claims; Messages, People, Groups and Timeline are open.
 
@@ -69,6 +85,8 @@ Status: Partly (#1634): profile claims; Messages, People, Groups and Timeline ar
 
 ### app-shell#9 · medium · Signed-in pages do not share one header frame or content width: six h1 sizes, two typefaces, widths from 416 to 1312px
 
+**Status:** Partly (fourth pull request): Timeline and the Messages list keep their compact headers; header width unchanged.
+
 - **Where:** app-dashboard, app-home, app-things, app-timeline, app-messages, app-community, … (both, both themes)
 - **What a person meets:** Moving between sibling pages the title jumps in size, weight, typeface and position, and the content column snaps between narrow and edge-to-edge. Each page looks as if it came from a different product, and at 1440 single-sentence prompts and empty cards stretch to line lengths nobody can scan.
 - **Cause:** src/app/(authenticated)/collaborate/page.tsx:153-169; src/app/(authenticated)/dashboard/things/page.tsx:32-43, dashboard/finances/page.tsx:63, dashboard/deals/page.tsx:31 (PageHeading where siblings use PageHeader); src/components/layout/Header.tsx:92-94 with src/constants/header.ts:37 (max-w-7xl on the app surface)
@@ -77,12 +95,16 @@ Status: Partly (#1634): profile claims; Messages, People, Groups and Timeline ar
 
 ### app-shell#10 · medium · People at 390: the invite card's buttons run off the screen ('Copy Link' is unreachable) and the three tabs wrap to two lines
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-people (phone, both themes)
 - **What a person meets:** The page's stated purpose is to invite people, and on a phone the copy-link action cannot be reached at all while the share button is cut in half. It reads as a broken page.
 - **Cause:** src/app/(authenticated)/dashboard/people/components/InviteBanner.tsx:39 and :43: two nested 'flex items-center gap-2' rows holding three whitespace-nowrap buttons with no wrap or shrink; src/app/(authenticated)/dashboard/people/components/PeopleTabBar.tsx:34-47: hand-rolled tabs ('px-4 py-2', count inside the label) instead of the shared control.
 - **Fix:** InviteBanner.tsx:39-74 -> &lt;div className="relative grid w-full grid-cols-2 gap-2 sm:w-auto"> with &lt;Button variant="outline" onClick={copy}>&lt;Copy className="mr-2 h-4 w-4" />Copy link&lt;/Button> and &lt;Button variant="outline" onClick={onToggleShare}>&lt;Share2 className="mr-2 h-4 w-4" />Share&lt;/Button>; popover wrapper 'absolute right-0 top-full z-50 mt-2'; delete the 'Discover People' button and the Search / ROUTES imports. PeopleTabBar.tsx:33-48 -> &lt;SegmentedControl label="People list" className="mb-6" value={activeTab} onChange={onTabChange} items={[{ value: 'followers', label: 'Followers' }, { value: 'following', label: 'Following' }, { value: 'all', label: 'Everyone' }]} /> with no counts in the labels (a count in a 3-cell row wraps again at 320px). people/page.tsx:75: href={discoverHref({ type: 'profile' })}.
 
 ### app-shell#12 · medium · Shell text below AA contrast and shell controls under 44px on a phone
+
+**Status:** Fixed (fourth pull request).
 
 Status: Partly (#1634): contrast and the icon button; other shell controls are open.
 
@@ -94,6 +116,8 @@ Status: Partly (#1634): contrast and the icon button; other shell controls are o
 
 ### app-shell#7 · low · Active states go dark on Send, Request and every entity list; the tab bar calls Money 'Receive'
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-dashboard, app-things, app-groups, app-home (both, both themes)
 - **What a person meets:** The highlight is how people know where they are. It disappears the moment someone switches from Receive to Send, or opens their projects or groups from My things, so the shell reads as if they had left the app's map; and the sidebar and the tab bar disagree on the name of the money screen.
 - **Cause:** src/hooks/useActiveNavItem.ts:25-39 and :53-65 (the sidebar-specific matcher has no notion of sibling routes a row stands for)
@@ -101,6 +125,8 @@ Status: Partly (#1634): contrast and the icon button; other shell controls are o
 - **Mind:** Renaming the tab to 'Money' while it opens the QR, or lighting 'Receive' on /send, breaks fleet 'Every label says what happens when it is tapped' and the documented reason for the label.
 
 ### app-shell#11 · low · Load failures are shown as confident empty states, and the following feed's empty state gives the wrong advice
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** app-people, app-discover, app-home, app-dashboard (both, both themes)
 - **What a person meets:** When something fails, the product tells the person that nobody is here and nothing is listed, which is worse than an error: it is a wrong fact about the platform, with no way to try again. The empty following feed points at posting when the useful next step is to follow someone.

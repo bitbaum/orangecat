@@ -35,7 +35,7 @@ import { getHomePulse, resetHomePulseCache } from '@/services/home/pulse';
 function project(overrides: Partial<StudioMapProject> & { slug: string }): StudioMapProject {
   return {
     name: overrides.slug,
-    what: null,
+    what: 'Does a thing',
     layer: 'product',
     status: 'live',
     owner: 'bitbaum',

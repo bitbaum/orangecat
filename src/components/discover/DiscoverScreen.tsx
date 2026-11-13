@@ -3,9 +3,12 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { DiscoverChips, pluralLabel } from './DiscoverChips';
 import { DiscoverGrid, DiscoverRail } from './DiscoverRail';
+import { kindLabel } from './DiscoverCard';
+import EventsNearYou from '@/components/events/EventsNearYou';
+import type { PublicHitType } from '@/services/search/public-search';
 import { DiscoverSearchBox } from './DiscoverSearchBox';
 import { CAT_QUERY_PARAM } from '@/config/cat-door';
-import { DISCOVER_HERO } from '@/config/discover-tabs';
+import { DISCOVER_HERO, DISCOVER_RAIL_VISIBLE } from '@/config/discover-tabs';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import { discoverHref, type DiscoverParams } from '@/services/discover/params';
@@ -32,6 +35,23 @@ function ShowMore({ params, hasMore }: { params: DiscoverParams; hasMore: boolea
 
 function Shelf({ view }: { view: Extract<DiscoverView, { mode: 'shelf' }> }) {
   const listings = sum(view.counts);
+  // An empty shelf means the listings did not load, not that the platform is
+  // empty: "That's everything for now" over zero listings read as a verdict.
+  if (listings === 0 && view.fresh.length === 0) {
+    return (
+      <div className="oc-discover-empty">
+        <p className="font-heading text-xl font-semibold text-fg-primary">
+          Nothing could be loaded.
+        </p>
+        <p className="mt-2 text-fg-secondary">The listings did not arrive. Try again.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href={ROUTES.DISCOVER} className="oc-discover-more">
+            Try again
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <>
       <DiscoverRail title="Just listed" hits={view.fresh} />
@@ -41,7 +61,9 @@ function Shelf({ view }: { view: Extract<DiscoverView, { mode: 'shelf' }> }) {
           title={pluralLabel(rail.type)}
           hits={rail.hits}
           seeAll={
-            rail.total > rail.hits.length
+            // From sm up a rail shows DISCOVER_RAIL_VISIBLE cards and hides the
+            // rest it fetched, so any rail longer than that needs the way on.
+            rail.total > DISCOVER_RAIL_VISIBLE
               ? { href: discoverHref({ type: rail.type }), label: `See all ${rail.total}` }
               : undefined
           }
@@ -138,14 +160,58 @@ function NothingFound({
   );
 }
 
+/** "1 product", "3 products" — the kind's own words from the registry. */
+export function countLabel(type: PublicHitType, total: number): string {
+  return `${total} ${(total === 1 ? kindLabel(type) : pluralLabel(type)).toLowerCase()}`;
+}
+
+/** One kind with nothing public yet: say so, and offer to be the first. */
+function NothingListed({
+  type,
+  fallback,
+}: {
+  type: PublicHitType;
+  fallback: Extract<DiscoverView, { mode: 'browse' }>['fallback'];
+}) {
+  const create = type === 'profile' ? ROUTES.CREATE : ENTITY_REGISTRY[type].createPath;
+  return (
+    <>
+      <div className="oc-discover-empty">
+        <p className="mb-0 font-heading text-xl font-semibold text-fg-primary">
+          No {pluralLabel(type).toLowerCase()} listed yet.
+        </p>
+        <Link href={create} className="oc-problem-action">
+          <Plus className="h-4 w-4" aria-hidden />
+          List the first one
+        </Link>
+      </div>
+      <DiscoverRail title="Just listed" hits={fallback} />
+    </>
+  );
+}
+
 /** /discover, whichever mode its URL asks for. */
 export function DiscoverScreen({ params, view }: { params: DiscoverParams; view: DiscoverView }) {
   const everything = view.mode === 'search' ? view.total : sum(view.counts);
+  // A kind's page names the kind; "Discover" over a grid of products did not
+  // say which page this was.
+  const kind = view.mode === 'browse' ? view.type : null;
   return (
     <div className="oc-discover">
       <header className="oc-discover-head">
-        <h1 className="oc-discover-h1">{DISCOVER_HERO.title}</h1>
-        <p className="oc-discover-lede">{DISCOVER_HERO.lede}</p>
+        {kind ? (
+          <>
+            <Link href={ROUTES.DISCOVER} className="oc-discover-up">
+              {DISCOVER_HERO.title}
+            </Link>
+            <h1 className="oc-discover-h1">{pluralLabel(kind)}</h1>
+          </>
+        ) : (
+          <>
+            <h1 className="oc-discover-h1">{DISCOVER_HERO.title}</h1>
+            <p className="oc-discover-lede">{DISCOVER_HERO.lede}</p>
+          </>
+        )}
         <DiscoverSearchBox initialQuery={params.q} type={params.type} />
         <DiscoverChips counts={view.counts} active={params.type} q={params.q} total={everything} />
       </header>
@@ -154,11 +220,22 @@ export function DiscoverScreen({ params, view }: { params: DiscoverParams; view:
 
       {view.mode === 'browse' && (
         <section aria-label={pluralLabel(view.type)}>
-          <p className="oc-discover-status">
-            {view.total} {pluralLabel(view.type).toLowerCase()}, newest first
-          </p>
-          <DiscoverGrid hits={view.hits} />
-          <ShowMore params={params} hasMore={view.hasMore} />
+          {view.type === 'event' && (
+            <div className="mb-10">
+              <EventsNearYou />
+            </div>
+          )}
+          {view.hits.length === 0 ? (
+            <NothingListed type={view.type} fallback={view.fallback} />
+          ) : (
+            <>
+              <p className="oc-discover-status">
+                {countLabel(view.type, view.total)}, newest first
+              </p>
+              <DiscoverGrid hits={view.hits} />
+              <ShowMore params={params} hasMore={view.hasMore} />
+            </>
+          )}
         </section>
       )}
 

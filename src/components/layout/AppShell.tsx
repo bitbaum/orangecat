@@ -8,12 +8,12 @@ import {
   useRootShellPathname,
   useShellPathname,
 } from '@/hooks/useShellPathname';
-import { getRouteChrome, getRouteSurface } from '@/config/routes';
+import { getRouteChrome, getShellSurface } from '@/config/routes';
 import GlobalCatLauncher from '@/components/ai-chat/GlobalCatLauncher';
 import { STORAGE_KEYS } from '@/config/storage-keys';
 import { Header } from './Header';
 import { Sidebar } from '@/components/sidebar/Sidebar';
-import Footer from './Footer';
+import Footer, { showsSiteFooter } from './Footer';
 import MobileBottomNav from './MobileBottomNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import { sidebarSections, bottomNavItems } from '@/config/navigation';
@@ -56,8 +56,8 @@ function AppShellChrome({ children }: AppShellProps) {
   const visitedPathname = usePathname();
   const { user, profile, hydrated, isLoading } = useAuth();
   // SSOT: every shell-related visibility decision derives from
-  // getRouteSurface (src/config/routes.ts). Do not branch on pathname here.
-  const surface = getRouteSurface(pathname ?? '/');
+  // getShellSurface (src/config/routes.ts). Do not branch on pathname here.
+  const surface = getShellSurface(pathname ?? '/', !!user);
   const isAppSurface = surface === 'app';
   // Auth pages render their own minimal chrome — global header + nav +
   // search are noise on a sign-in screen and dilute the focus from the
@@ -75,7 +75,7 @@ function AppShellChrome({ children }: AppShellProps) {
     toggleSidebar,
     toggleSidebarCollapse,
     toggleSection,
-    setSidebarCollapsed,
+    setSidebarOpen,
     isItemActive,
     getFilteredSections,
   } = useNavigation(sidebarSections);
@@ -87,12 +87,32 @@ function AppShellChrome({ children }: AppShellProps) {
   // Mirrors MobileBottomNav visibility — when the bottom nav renders, reserve
   // space below the main scroll area so its content isn't covered.
   const showsMobileBottomNav = isAppSurface && !routeChrome.hideMobileBottomNav;
+  // A visitor on an app surface gets the site footer below the page; the
+  // tab-bar clearance then belongs under the footer, not between it and the
+  // content.
+  const visitorFooterOnApp =
+    isAppSurface && showsSiteFooter(surface, { signedIn: !!user, settled: isAuthReady });
 
+  // A focus route (the Cat, a companion's room, the article editor) shows the
+  // rail collapsed, but it never writes the person's saved preference: doing
+  // that collapsed the sidebar everywhere after one visit to the Cat. Expanding
+  // on such a route lasts until the next page, recorded against its path.
+  const [focusExpandedOn, setFocusExpandedOn] = useState<string | null>(null);
+  const isFocusRoute = routeChrome.preferCollapsedSidebar;
+  const isSidebarCollapsed = isFocusRoute
+    ? focusExpandedOn !== pathname
+    : navigationState.isSidebarCollapsed;
+  const handleToggleCollapse = isFocusRoute
+    ? () => setFocusExpandedOn(current => (current === pathname ? null : (pathname ?? null)))
+    : toggleSidebarCollapse;
+  const sidebarState = { ...navigationState, isSidebarCollapsed };
+
+  // The phone drawer closes once you have gone somewhere — by a link in it, or
+  // by any other navigation (back button, a link in the page).
   useEffect(() => {
-    if (routeChrome.preferCollapsedSidebar) {
-      setSidebarCollapsed(true);
-    }
-  }, [pathname, routeChrome.preferCollapsedSidebar, setSidebarCollapsed]);
+    setSidebarOpen(false);
+  }, [visitedPathname, setSidebarOpen]);
+  const closeDrawer = () => setSidebarOpen(false);
 
   // Track the user's previous in-app path so Cat can reference "the page you
   // just came from" — document.referrer is stale across Next.js client-side
@@ -190,11 +210,12 @@ function AppShellChrome({ children }: AppShellProps) {
             profile={profile}
             sections={filteredSections}
             bottomItems={bottomNavItems}
-            navigationState={navigationState}
+            navigationState={sidebarState}
             isItemActive={isItemActive}
             toggleSidebar={toggleSidebar}
-            toggleSidebarCollapse={toggleSidebarCollapse}
+            toggleSidebarCollapse={handleToggleCollapse}
             toggleSection={toggleSection}
+            onNavigate={closeDrawer}
             aboveMobileNav={showsMobileBottomNav}
           />
         )}
@@ -209,20 +230,18 @@ function AppShellChrome({ children }: AppShellProps) {
           data-fc-place={routeChrome.feedbackTab ? 'tab' : undefined}
           className={`flex-1 min-w-0 ${
             allowMarginTransition ? 'transition-[margin-left] duration-300 ease-in-out' : ''
-          } ${
-            shouldShowSidebar
-              ? navigationState.isSidebarCollapsed
-                ? 'lg:ml-16'
-                : 'lg:ml-64'
-              : 'ml-0'
-          } ${showsMobileBottomNav && !routeChrome.ownsMobileNavClearance ? 'app-bottom-nav-clearance' : ''}`}
+          } ${shouldShowSidebar ? (isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64') : 'ml-0'} ${
+            showsMobileBottomNav && !routeChrome.ownsMobileNavClearance && !visitorFooterOnApp
+              ? 'app-bottom-nav-clearance'
+              : ''
+          }`}
         >
           {children}
         </main>
       </div>
 
-      {/* Footer - Only for public routes (handled internally by Footer component) */}
-      <Footer />
+      {/* Footer - public routes, and app surfaces for visitors (Footer decides) */}
+      <Footer clearsMobileNav={showsMobileBottomNav && visitorFooterOnApp} />
 
       {/* Mobile Bottom Navigation - Context-aware (handles its own visibility) */}
       <MobileBottomNav />

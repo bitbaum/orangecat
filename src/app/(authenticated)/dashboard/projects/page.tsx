@@ -30,7 +30,7 @@ export default function ProjectsDashboardPage() {
             title: 'No favorites yet',
             description: 'Start exploring projects and save your favorites to see them here.',
             action: (
-              <Button href={`${ROUTES.DISCOVER}?section=projects`} variant="outline">
+              <Button href={ROUTES.DISCOVER_TYPE('projects')} variant="outline">
                 Discover Projects
               </Button>
             ),

@@ -52,11 +52,5 @@ export function EntityCreateEditPage<T extends Record<string, unknown>>({
     return <EntityForm config={config} initialValues={entityData} mode="edit" entityId={editId} />;
   }
 
-  return (
-    <EntityCreationWizard<T>
-      config={config}
-      initialData={initialData}
-      onCancel={() => router.push(meta.basePath)}
-    />
-  );
+  return <EntityCreationWizard<T> config={config} initialData={initialData} />;
 }

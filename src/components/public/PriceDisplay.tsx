@@ -12,6 +12,7 @@
  * dropped — never fabricated (a wrong rate is a money-correctness bug).
  */
 
+import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/services/currency';
 import { convertBtcToOrNull, convertToBtcOrNull } from '@/services/currency/rates.server';
 import { PLATFORM_DEFAULT_CURRENCY, type CurrencyCode } from '@/config/currencies';
@@ -24,7 +25,7 @@ interface PriceDisplayProps {
   /** Tailwind classes for the primary amount. */
   className?: string;
   /**
-   * Per-unit suffix appended after both amounts (e.g. ' / hr', ' / message').
+   * Per-unit suffix set right after the amount (e.g. ' / hr', ' / message').
    * Include the leading space. Rendered muted so the amount stays the focus.
    */
   suffix?: string;
@@ -50,15 +51,18 @@ export default async function PriceDisplay({
     secondary = null;
   }
 
+  // The amount and its unit stay together; the equivalent takes its own line.
+  // Appending the suffix after the equivalent let a narrow row wrap it away
+  // from the amount it belongs to ("CHF 80.00 ≈ ₿0.001" … "/ hr").
   return (
-    <p className={className}>
+    <p className={cn('mb-0', className)}>
       {formatCurrency(amount, currency)}
+      {suffix && <span className="text-base font-normal text-fg-secondary">{suffix}</span>}
       {secondary !== null && secondary > 0 && (
-        <span className="ml-2 text-base font-normal text-fg-secondary">
+        <span className="block whitespace-nowrap text-sm font-normal text-fg-secondary">
           ≈ {formatCurrency(secondary, secondaryCurrency)}
         </span>
       )}
-      {suffix && <span className="text-base font-normal text-fg-secondary">{suffix}</span>}
     </p>
   );
 }

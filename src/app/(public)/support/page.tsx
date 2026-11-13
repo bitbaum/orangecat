@@ -152,11 +152,11 @@ export default function SupportPage() {
         </section>
 
         {/* BYOK — the works-today path */}
-        <section className="mx-auto mt-16 max-w-2xl rounded-lg border border-accent-warm/30 bg-accent-warm/5 p-8 text-fg-primary">
+        <section className="mx-auto mt-16 max-w-2xl rounded-lg border border-default bg-surface-raised p-8 text-fg-primary">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <KeyRound
-                className="mt-1 h-6 w-6 flex-shrink-0 text-accent-warm"
+                className="mt-1 h-6 w-6 flex-shrink-0 text-fg-secondary"
                 aria-hidden="true"
               />
               <div>

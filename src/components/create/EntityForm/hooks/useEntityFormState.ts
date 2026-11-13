@@ -62,10 +62,9 @@ export function useEntityFormState<T extends Record<string, unknown>>({
       const previousBaseline = baselineRef.current;
       baselineRef.current = data;
 
-      // New initial values on create are a template pick (the wizard keeps the
-      // form mounted behind its template step). They used to replace the whole
-      // form, so Previous → pick a template wiped everything typed, without a
-      // word. A template now fills only what the person has not touched. On
+      // New initial values on create are a template pick ("Start from a
+      // template" opens over a form that is already mounted). They used to
+      // replace the whole form, which wiped everything typed, without a word. A template now fills only what the person has not touched. On
       // edit, new initial values are the loaded entity: those replace.
       if (mode === 'create' && prev.isDirty) {
         const merged = { ...data } as Record<string, unknown>;

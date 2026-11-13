@@ -1,16 +1,17 @@
 /**
- * Profile Form Actions
+ * Profile Form Actions — Cancel and Save profile.
  *
- * Action buttons for profile form (Cancel, Save).
- *
- * Created: 2025-01-30
- * Last Modified: 2025-01-30
+ * On the edit page the form is long, and Save sat at its very end: thousands
+ * of pixels down on a phone, and not pinned. The inline bar now sticks above
+ * the mobile tab bar (the MoneyActionBar pattern) and settles into place from
+ * lg up; two equal cells, both 44px, Save the one primary action.
  */
 
 'use client';
 
-import { Save } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 interface ProfileFormActionsProps {
   isSaving: boolean;
@@ -25,36 +26,34 @@ export function ProfileFormActions({
   onCancel,
   variant = 'inline',
 }: ProfileFormActionsProps) {
-  const containerClass =
-    variant === 'inline'
-      ? 'flex items-center justify-between gap-3 pt-6 border-t border-default mt-6 bg-surface-raised -mx-6 px-6 py-4 rounded-b-xl'
-      : 'flex items-center justify-between gap-3 pt-6 border-t border-default bg-surface-raised -mx-6 px-6 py-4 rounded-b-lg';
-
   return (
-    <div className={containerClass}>
+    <div
+      className={cn(
+        'grid grid-cols-2 gap-3 border-t border-default',
+        variant === 'inline'
+          ? 'sticky bottom-[var(--mobile-nav-clearance)] z-10 -mx-3 rounded-b-lg bg-surface-page/95 px-3 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:bg-surface-base lg:backdrop-blur-none'
+          : 'pt-4'
+      )}
+    >
       <Button
         type="button"
-        variant="ghost"
+        variant="outline"
         onClick={onCancel}
         disabled={isSaving}
-        className="px-4 text-fg-secondary hover:text-fg-primary"
+        className="min-h-11"
       >
         Cancel
       </Button>
-      <Button
-        type="submit"
-        disabled={isSaving || !isValid}
-        className="px-8 py-3 text-base font-semibold bg-fg-primary hover:bg-fg-primary/90 text-fg-inverted shadow-sm oc-card-link duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <Button type="submit" variant="primary" disabled={isSaving || !isValid} className="min-h-11">
         {isSaving ? (
           <>
-            <div className="w-5 h-5 mr-2 border-2 border-fg-inverted border-t-transparent rounded-full animate-spin" />
-            Saving...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Saving…
           </>
         ) : (
           <>
-            <Save className="w-5 h-5 mr-2" />
-            Save Profile
+            <Save className="mr-2 h-4 w-4" />
+            Save profile
           </>
         )}
       </Button>

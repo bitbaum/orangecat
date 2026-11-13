@@ -4,6 +4,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#1 · high · Three create choosers with three anatomies, none using the registry's plain copy; the phone's Create tab opens the weakest one
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-create, mobile Create sheet (bottom tab on /dashboard), header Create menu (desktop) (both, both themes)
 - **What a person meets:** A person does not arrive knowing whether a used bike is a Product or an Asset, or whether four friends are a Circle or an Organization. The descriptions restate the name, and on a phone there are no descriptions at all, so the choice is a guess. A wrong guess costs a template gallery and a long form before it is noticed.
 - **Cause:** src/config/create-options.ts:42-51: optionFromEntity uses entity.name, entity.createActionLabel and entity.category, although src/config/entity-registry.ts:137-142 says every human-facing surface including the create hub shows `plain` instead of the type name, and src/config/intents.ts:8-11 says the create hub groups by intent. src/components/create/MobileCreateSheet.tsx:63-78 renders a name-only grid; src/components/dashboard/HeaderCreateButton.tsx:41-56 renders its own flat list; …
@@ -12,12 +14,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#2 · high · A wider filled "Save" sits directly above "Create Product": two primary buttons, and the committing pair is unequal and 40px tall
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-create-product, app-create-project, /dashboard/loans/create, /dashboard/investments/create, /dashboard/circles/create, /dashboard/services/create (both, both themes)
 - **What a person meets:** At the end of a long form the largest filled button says "Save". People press it believing the product is saved; it only stores a wallet, and with an empty wallet field it produces a wallet error. The actual commit is the smaller button underneath, at 40px below the 44px target.
 - **Cause:** src/components/wallets/WalletManager/components/WalletForm.tsx:475-482 (primary w-full submit) and :181 (heading derived from submitLabel === 'Save'); src/components/create/wallet-selector/WalletSelectorField.tsx:215-222 embeds it in every entity form unchanged; src/components/create/EntityForm/components/FormActions.tsx:119-130 (flex gap-4, content-width pair). Height is not a defect on phones.
 - **Fix:** src/components/wallets/WalletManager/types.ts WalletFormProps: add `title?: string` and `submitVariant?: 'primary' | 'outline'`. WalletForm.tsx:181 becomes `{title ?? (submitLabel === 'Save' ? 'Get paid in Bitcoin' : submitLabel)}`; the Button at :475 gets `variant={submitVariant ?? 'primary'}`. WalletPasteField passes both through. WalletSelectorField.tsx:215 passes `title="Get paid in Bitcoin" submitLabel="Save wallet" submitVariant="outline"`. Onboarding (OnboardingPay.tsx:62), ReceiveSetup.tsx:30 and WalletManager keep the primary 'Save' because there it is the only action on the screen. FormActions StandardActions: `&lt;div className="grid grid-cols-2 gap-3 sm:max-w-sm">` with `className="w-full"` on both buttons, commit first. WizardNavigation: `grid grid-cols-2 gap-3`, Previous in the first cell, Next/Create in the second with `col-span-2` when there is no Previous.
 
 ### create-manage#3 · high · The Tasks page shows a brand-new account someone else's task, with a complete button
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** app-tasks (both, both themes)
 - **What a person meets:** A first-time user opens Tasks and finds a German test chore they did not create, flagged as needing their attention. It reads as leaked or leftover test data and undermines trust in a product that handles money; it also means anything a real user writes in a task is visible to, and changeable by, every other account.
@@ -27,6 +33,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#0 · medium · A template gallery blocks ten create forms: "Start from scratch" is pre-ticked, there is no Continue, and a phone gets up to 50 full-height cards
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-create-product, /dashboard/services/create, /dashboard/events/create, /dashboard/loans/create, /dashboard/wishlists/create, /dashboard/companions/create, … (both, both themes)
 - **What a person meets:** Someone who tapped "Product" expects a form and gets a second chooser whose default looks already applied, so they look for a Continue button that does not exist. On a phone a person listing an asset scrolls about nine and a half screens of cards. The Cat-assisted path, which is the fastest one, is hidden until the gallery is passed.
 - **Cause:** src/components/create/templates/WizardTemplatePicker.tsx:41 (useState(selectedTemplateId ?? null) makes both null and undefined mean 'blank is selected', so the check at :80-86 always draws) with src/components/create/WizardTemplateOnlyView.tsx:35 (selectedTemplateId={null}); card anatomy at WizardTemplatePicker.tsx:64 (grid gap-3), :71-73 and :107-109 (min-h-[120px] flex-col p-4, icon block mb-3 h-11 w-11 above the text; the global &lt;p> bottom margin adds the rest of the 143px). …
@@ -35,12 +43,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#5 · medium · The project wizard repeats the "Fill with AI" panel on every step, so each step's own fields start below the fold on a phone
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-create-project (phone, both themes)
 - **What a person meets:** After pressing Next, a person sees the same AI box they already passed and nothing about the step they are on, and has to scroll past about 330px of repeated panel three times. It reads as if Next did not work.
 - **Cause:** src/components/create/EntityForm/index.tsx:199-206 renders AIPrefillBar unconditionally at the top of the form, and the wizard keeps one form instance mounted across steps (src/components/create/EntityCreationWizard.tsx:191-216), so the bar is drawn above every step's visible fields.
 - **Fix:** Hide, do not unmount. Add `showAiFill?: boolean` to WizardMode in EntityForm/index.tsx. In EntityCreationWizard.tsx pass `showAiFill: currentStep === (wizardSteps[0]?.id === 'template' ? 1 : 0)`. In EntityForm add `const [aiRevealed, setAiRevealed] = useState(false)` and `const aiCollapsed = !!wizardMode && wizardMode.showAiFill === false && !aiRevealed;` then render `{aiCollapsed && &lt;Button type="button" variant="ghost" size="sm" onClick={() => setAiRevealed(true)}>&lt;Sparkles className="h-4 w-4" />Fill with AI&lt;/Button>}` followed by `&lt;div className={aiCollapsed ? 'hidden' : undefined}>&lt;AIPrefillBar ... />&lt;/div>`. The bar stays mounted on every step, later steps start with their own fields about 320px higher, and the refine path stays one tap away.
 
 ### create-manage#6 · medium · My Projects on a phone: "Open Loki" is the only button on arrival and "Create Project" is hidden behind the tab bar
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** app-projects (phone, both themes)
 - **What a person meets:** The flagship thing to create is the one list where a first-time user's only visible button leaves the product for another one, and the in-page primary action needs a scroll to find. Tabs that filter an empty list add a decision before there is anything to filter, and at 28px they are hard to hit.
@@ -50,12 +62,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#7 · medium · Empty states that tell people to create something and give no way to do it: Wishlists and Bookings
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-wishlists, app-bookings (both, both themes)
 - **What a person meets:** The sentence names the action and the screen withholds it, which is the dead end the fleet rule forbids. On Bookings a new user cannot tell what they would have to do for a booking ever to appear.
 - **Cause:** src/config/entities/wishlists.tsx:57-60 defines emptyState without `action` (the same omission is in src/config/entities/circles.tsx:53 and src/config/entities/documents.tsx:93), and src/components/entity/EntityDashboardPage.tsx:125 passes the config's emptyState through unchanged. src/app/(authenticated)/dashboard/bookings/page.tsx:164-170 renders EmptyState with no action.
 - **Fix:** EntityDashboardPage.tsx:125: `const base = activeTab?.emptyState ?? config.emptyState; const emptyState = base && !base.action && !activeTab?.emptyState ? { ...base, action: &lt;Button href={config.createPath}>{createButtonLabel || `Create ${config.name}`}&lt;/Button> } : base;` (tab-specific empty states such as Investments 'Open Opportunities' keep no create button, correctly). In every src/config/entities/*.tsx remove `className={GRADIENTS.*}` from the empty-state Button (assets.tsx:94 and investments.tsx:82 are the visible ones; the others resolve to bg-fg-primary and are no-ops); keep the actions themselves because loans/page.tsx:146 reads loanEntityConfig.emptyState directly. Bookings: tab label 'Requests' (bookings/page.tsx:125); for the incoming tab use description 'Bookings appear here when someone books one of your services.' and `action={&lt;Button …
 
 ### create-manage#8 · medium · Help text and defaults leak the implementation: "-1 for unlimited", "Currency selector is included in this field", two currency controls, Bitcoin-scale placeholders in franc fields
+
+**Status:** Partly (fourth pull request): loans still ask for "Remaining balance" on a new loan (needs a schema decision).
 
 - **Where:** app-create-product, app-create-project, /dashboard/investments/create, /dashboard/loans/create (both, both themes)
 - **What a person meets:** A seller sees a negative number in a stock field and has to learn a sentinel value; a fundraiser is told about a currency selector instead of about their goal; an investor-seeker is shown "1.0 CHF" as an example target. Each one makes the form look machine-generated and makes the person doubt what will be published.
@@ -65,12 +81,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#9 · medium · A phone form with two required fields is 3,755px long, and a failed submit leaves the person at the bottom, 2,000px from the fields in error
 
+**Status:** Partly (fourth pull request): invalid fields are focused; the error summary links, "More options" and guidance position are open.
+
 - **Where:** app-create-product, /dashboard/loans/create, /dashboard/investments/create (phone, both themes)
 - **What a person meets:** The committing action is more than four screens below the two things that matter, and when it fails the person has to scroll up and hunt. The explanation of what a product is arrives after the form is finished, and tells a phone user to click.
 - **Cause:** src/components/create/EntityForm/hooks/entityFormSubmitAction.ts:226-240 (errors set, no focus move). Guidance copy: the hint string in src/lib/entity-guidance/{cause,event,group,product,proposal,service}-guidance.ts and src/lib/profile-guidance.ts.
 - **Fix:** In the ZodError branch after setErrors: `const order = config.fieldGroups.flatMap(g => (g.fields ?? []).map(f => f.name as string)); const first = order.find(n => n in fieldErrors); if (first) requestAnimationFrame(() => { const el = document.getElementById(first); el?.scrollIntoView({ block: 'center' }); el?.focus({ preventScroll: true }); });` (FormField gives text, number, select, textarea and currency inputs id={name}; fields are re-enabled by the frame because setSubmitting(false) runs in finally). Keep the summary box. Change the seven guidance hints to 'Tap a field for help with it' without the emoji. Leave group collapsing and guidance placement for a separate, measured change.
 
 ### create-manage#10 · medium · Create and manage pages are not one frame: three create headers, two title typefaces, a forked Loans page with two primary buttons, and names that change between chooser and page
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** app-create-product, app-create-project, app-loans, app-analytics, app-companions, app-tasks, … (both, both themes)
 - **What a person meets:** Each create flow has to be relearned: where Cancel is, how big the title is, whether there is a breadcrumb. Loans breaks the one-primary rule the other lists keep. A person who chose "Organization" lands on a page called "Group" that also offers circles, and cannot tell whether they are in the right place.
@@ -80,12 +100,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#11 · medium · The wizard's template step has three buttons where two do the same thing, the way forward is 1,300px down, and every step shows its heading twice
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** app-create-project (both, both themes)
 - **What a person meets:** On the first screen of the flagship flow a person has to decide between Skip and Next, which are identical, after scrolling past five cards. The same gesture (tap a template) means two different things in two create flows. Doubled headings make each step look longer and less finished than it is.
 - **Cause:** src/components/create/EntityCreationWizard.tsx:219-238 (Previous, Skip and Next on the template step) with src/components/create/useEntityCreationWizard.ts:29 ("(Optional)" in the title) and :93-103 (selecting a template does not advance); src/components/create/EntityCreationWizard.tsx:192-197 renders the step title and description as a CardHeader above FormFieldGroups, which renders each group's own title and description (titles at src/config/entity-configs/project-config.ts:28, :62 and :156, :163).
 - **Fix:** EntityCreationWizard.tsx:182: `onSelectTemplate={t => { handleTemplateSelect(t); handleNext(); }}` and delete the Previous/Skip/Next block at :219-238; pass the picker's no-pre-tick mode from finding 0 so 'Start from scratch' is not ticked before a choice. useEntityCreationWizard.ts:27-33: title 'Choose a template', description 'Pick one to pre-fill the form, or start blank.', optional: false (removes the badge and the '(Optional)' suffix). Applying a template after typing is safe: useEntityFormState.ts:63-76 merges it into untouched fields only. Headings: add `hideFirstHeading?: boolean` to FormFieldGroups, pass `!!wizardMode` from EntityForm, and skip GroupHeading for the first visible group, which restates the step card; later groups ('Pay into', 'Profile Visibility') keep theirs. Update tests/e2e/project-creation-wizard.spec.ts, which clicks Skip or Next on step 1 and expects the …
 
 ### create-manage#13 · low · Small craft breaks in forms: the Tags "Add" button is cut off on a phone, task actions are in reverse order, and radios and checkboxes are 13px browser-blue natives
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /dashboard/tasks/new, app-create-product, app-create-project (phone, both themes)
 - **What a person meets:** A clipped button looks broken on the one form where it appears. Reversed button order makes muscle memory wrong between Tasks and every other create form. Blue native controls are the only non-token colour on otherwise monochrome forms and are small next to 44px inputs.

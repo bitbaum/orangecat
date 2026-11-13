@@ -8,14 +8,11 @@
 
 import { EntityConfig } from '@/types/entity';
 import { UserCause } from '@/types/database';
-import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
 import type { Currency } from '@/types/settings';
-import { GRADIENTS } from '@/config/gradients';
 
 export const causeEntityConfig: EntityConfig<UserCause> = {
   name: ENTITY_REGISTRY['cause'].name,
@@ -92,11 +89,6 @@ export const causeEntityConfig: EntityConfig<UserCause> = {
   emptyState: {
     title: 'No causes yet',
     description: 'Start making a difference by creating your first cause or fundraiser.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.CAUSES_CREATE} className={GRADIENTS.brandOrangeDark}>
-        Create Cause
-      </Button>
-    ),
   },
 
   gridCols: {

@@ -126,7 +126,7 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
             <Button variant="ghost" size="sm" onClick={() => resetForm()}>
               Add another key
             </Button>
-            <Button href={ROUTES.DASHBOARD.CAT} variant="accent" size="sm">
+            <Button href={ROUTES.DASHBOARD.CAT} variant="primary" size="sm">
               <Sparkles className="mr-2 h-4 w-4" />
               Start chatting
             </Button>

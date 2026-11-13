@@ -117,14 +117,14 @@ export function QuotaMeter({ quota, className }: QuotaMeterProps) {
       className={cn(
         'inline-flex min-w-0 items-center gap-2 rounded-md border px-2 py-1 text-xs',
         isNearCap && 'border-status-warning/30 bg-status-warning-subtle text-status-warning',
-        !isNearCap && isPro && 'border-accent-warm/30 bg-accent-warm/10 text-fg-primary',
+        !isNearCap && isPro && 'border-default bg-surface-raised text-fg-primary',
         !isNearCap && !isPro && 'border-subtle bg-surface-raised text-fg-secondary',
         className
       )}
       title={explanation}
     >
       {isPro && !isNearCap && (
-        <Sparkles className="h-3 w-3 flex-shrink-0 text-accent-warm" aria-hidden="true" />
+        <Sparkles className="h-3 w-3 flex-shrink-0 text-fg-secondary" aria-hidden="true" />
       )}
       <Link
         href={ROUTES.SETTINGS_USAGE}

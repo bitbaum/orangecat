@@ -1,5 +1,6 @@
 'use client';
 
+import { FormattedDate } from '@/components/ui/FormattedDate';
 import Card from '@/components/ui/Card';
 import { Calendar, Clock, Tag } from 'lucide-react';
 import Link from 'next/link';
@@ -17,7 +18,9 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
     <Card className="relative p-6 oc-card-link">
       <div className="flex items-center text-sm text-fg-secondary mb-4">
         <Calendar className="w-4 h-4 mr-2" />
-        {post.date}
+        <time dateTime={post.date}>
+          <FormattedDate value={post.date} mode="isoDay" />
+        </time>
         <Clock className="w-4 h-4 ml-4 mr-2" />
         {post.readTime}
       </div>

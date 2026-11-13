@@ -1,19 +1,19 @@
-'use client';
-
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { Shield, Zap, Eye, Sparkles, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { CapabilityMap } from '@/components/map/CapabilityMap';
-import { HOW_IT_WORKS_STEPS, SECTION_HEADERS, CTA_LABELS, FEE_CLAIMS } from '@/config/landing-page';
+import { Shield, Zap, Eye, Sparkles } from 'lucide-react';
+import { HOW_IT_WORKS_STEPS, SECTION_HEADERS, FEE_CLAIMS } from '@/config/landing-page';
+import { INTENT_LIST } from '@/config/intents';
 import { ROUTES } from '@/config/routes';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { PublicLinkList } from '@/components/layout/PublicLinkList';
+import { PublicStartBand } from '@/components/layout/PublicStartBand';
 
 /**
- * How It Works Page - Detailed walkthrough
+ * How it works: the steps a person takes, what each kind of thing they can
+ * do here is for, and why it settles in Bitcoin — then the one way to start.
  *
- * Uses the same 4-step process as the home page for consistency.
- * Provides more detail and explanation for users who want to learn more.
+ * Its title used to be "Meet Your Cat" and its middle a compact copy of the
+ * capability cards on /what-you-can-do. The middle is now one row per intent,
+ * each a link into that page's section, so the detail lives in one place.
  */
 
 const whyBitcoin = [
@@ -42,38 +42,38 @@ const whyBitcoin = [
   },
 ];
 
+const intentRows = INTENT_LIST.map(intent => ({
+  href: `${ROUTES.WHAT_YOU_CAN_DO}#do-${intent.id}`,
+  title: intent.title,
+  line: intent.how,
+}));
+
 export default function HowItWorksPage() {
   const { howItWorks, whatCanYouDo } = SECTION_HEADERS;
 
   return (
     <div className="min-h-screen bg-surface-page pb-16">
       <div className={PUBLIC_PAGE_WIDTH.wide}>
-        <PublicPageHeader
-          title={howItWorks.title}
-          lede="One platform. Endless possibilities. Here's how to get started with anything on OrangeCat."
-        />
+        <PublicPageHeader title={howItWorks.title} lede={howItWorks.subtitle} />
 
-        {/* Steps Section - Matches home page (4 steps) */}
-        <div className="max-w-5xl mx-auto mb-20">
-          <h2 className="text-2xl font-semibold text-center mb-12">
-            Get Started in {HOW_IT_WORKS_STEPS.length} Simple Steps
+        <section aria-labelledby="steps-heading" className="max-w-5xl mx-auto mb-20">
+          <h2 id="steps-heading" className="text-2xl font-semibold text-center mb-12">
+            Get started in {HOW_IT_WORKS_STEPS.length} steps
           </h2>
 
-          <div className="space-y-8">
+          <ol className="space-y-8">
             {HOW_IT_WORKS_STEPS.map(step => {
               const Icon = step.icon;
               return (
-                <div key={step.number}>
-                  <Card className="p-6 md:p-8 oc-card-link">
+                <li key={step.number}>
+                  <Card className="p-6 md:p-8">
                     <div className="flex flex-col md:flex-row gap-6">
-                      {/* Step Number & Icon */}
                       <div className="flex-shrink-0">
                         <div className="oc-icon-tile mb-4 h-12 w-12 md:mb-0">
                           <Icon className="h-6 w-6" />
                         </div>
                       </div>
 
-                      {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-start gap-3 mb-3">
                           <span className="mt-1 shrink-0 rounded-full border border-default bg-surface-raised px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-secondary">
@@ -83,41 +83,33 @@ export default function HowItWorksPage() {
                             {step.title}
                           </h3>
                         </div>
-                        <p className="text-fg-secondary text-lg leading-relaxed">
+                        <p className="mb-0 text-fg-secondary text-lg leading-relaxed">
                           {step.description}
                         </p>
                       </div>
                     </div>
                   </Card>
-                </div>
+                </li>
               );
             })}
+          </ol>
+        </section>
+
+        <section aria-labelledby="what-heading" className="max-w-3xl mx-auto mb-20">
+          <div className="text-center mb-8">
+            <h2 id="what-heading" className="text-2xl font-semibold mb-4">
+              {whatCanYouDo.title}
+            </h2>
+            <p className="text-xl text-fg-secondary">{whatCanYouDo.subtitle}</p>
           </div>
-        </div>
+          <PublicLinkList rows={intentRows} />
+        </section>
 
-        {/* What You Can Do Section */}
-        <div className="mb-20">
+        <section aria-labelledby="why-bitcoin-heading" className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-semibold mb-4">{whatCanYouDo.title}</h2>
-            <p className="text-xl text-fg-secondary max-w-3xl mx-auto">{whatCanYouDo.subtitle}</p>
-          </div>
-
-          <CapabilityMap compact className="max-w-5xl mx-auto" />
-          <p className="mt-8 text-center">
-            <Link
-              href={ROUTES.WHAT_YOU_CAN_DO}
-              className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary underline underline-offset-2"
-            >
-              The whole map, with an example and the three steps for each
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-          </p>
-        </div>
-
-        {/* Why Bitcoin Section */}
-        <div className="mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-semibold mb-4">Why Bitcoin Powers Everything</h2>
+            <h2 id="why-bitcoin-heading" className="text-2xl font-semibold mb-4">
+              Why Bitcoin powers everything
+            </h2>
             <p className="text-xl text-fg-secondary max-w-3xl mx-auto">
               Bitcoin isn't just a payment method—it's the foundation for transparent, global,
               permissionless transactions.
@@ -128,64 +120,25 @@ export default function HowItWorksPage() {
             {whyBitcoin.map(item => {
               const Icon = item.icon;
               return (
-                <div key={item.title}>
-                  <Card className="p-6 h-full oc-card-link">
-                    <div className="flex items-start gap-4">
-                      <div className="bg-surface-raised p-3 rounded-lg flex-shrink-0">
-                        <Icon className="w-6 h-6 text-fg-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                        <p className="text-fg-secondary leading-relaxed">{item.description}</p>
-                      </div>
+                <Card key={item.title} className="p-6 h-full">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-surface-raised p-3 rounded-lg flex-shrink-0">
+                      <Icon className="w-6 h-6 text-fg-primary" />
                     </div>
-                  </Card>
-                </div>
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                      <p className="mb-0 text-fg-secondary leading-relaxed">{item.description}</p>
+                    </div>
+                  </div>
+                </Card>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* CTA Section */}
-        <div className="text-center">
-          <Card className="p-12 bg-surface-raised/30 border-default">
-            <h2 className="text-2xl font-semibold mb-4">Ready to Get Started?</h2>
-            <p className="text-xl text-fg-secondary mb-8 max-w-2xl mx-auto">
-              Publish, fund, and coordinate work with your AI agent. Bitcoin is the settlement rail
-              available today.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button
-                href={`${ROUTES.AUTH}?mode=register`}
-                size="lg"
-                variant="gradient"
-                className="group"
-              >
-                {CTA_LABELS.createAccount}
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button href={ROUTES.DISCOVER} variant="outline" size="lg">
-                {CTA_LABELS.secondaryAction}
-              </Button>
-            </div>
-            <p className="mt-6 text-sm text-fg-secondary">
-              No credit card required • Free forever • Set up in minutes
-            </p>
-          </Card>
-        </div>
-
-        {/* Additional Help */}
-        <div className="mt-12 text-center">
-          <p className="text-fg-secondary mb-4">Need more help?</p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Button href={ROUTES.DISCOVER} variant="ghost">
-              See What Others Are Doing
-            </Button>
-            <Button href={ROUTES.ABOUT} variant="ghost">
-              About OrangeCat
-            </Button>
-          </div>
-        </div>
+        <PublicStartBand className="max-w-5xl mx-auto">
+          Tell your Cat what you want to do. It sets it up; Bitcoin settles; you stay in charge.
+        </PublicStartBand>
       </div>
     </div>
   );

@@ -183,7 +183,7 @@ export function ActorSelector({
             placeholder="Their name"
             className={cn(
               'rounded-md border border-subtle bg-surface-page px-2 py-1 text-sm text-fg-primary pointer-coarse:min-h-11',
-              'placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent-warm/40'
+              'placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-ring'
             )}
           />
         </label>

@@ -5,58 +5,40 @@
  *
  * The header button and the account-dropdown row both cycle in one tap, which
  * is the right cost for a preference you flip; this is the surface where you
- * pick a mode directly and read what each one means. All three render from
+ * pick a mode directly and read what it means. All three render from
  * THEME_MODES and write through useThemeMode, so there is one option list and
- * one save path, not three.
+ * one save path, not three. A pick of three is one SegmentedControl row, like
+ * every other pick of a few.
  */
 
-import { Palette, Check } from 'lucide-react';
-import { THEME_MODES } from '@/config/theme';
+import { Palette } from 'lucide-react';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { DEFAULT_THEME_MODE, THEME_MODES, getThemeModeOption } from '@/config/theme';
 import { useThemeMode } from '@/hooks/useThemeMode';
-import { cn } from '@/lib/utils';
 
 export function SettingsAppearanceSection() {
   const { mode, setMode, mounted } = useThemeMode();
+  const current = mounted ? mode : DEFAULT_THEME_MODE;
 
   return (
-    <div className="border-t border-subtle pt-10">
-      <h3 className="mb-4 flex items-center text-lg font-semibold text-fg-primary">
+    <div>
+      <h3 className="mb-2 flex items-center text-lg font-semibold text-fg-primary">
         <Palette className="mr-2 h-6 w-6 text-fg-secondary" />
-        Appearance
+        Theme
       </h3>
-      <p className="mb-6 text-fg-secondary">
-        Choose how OrangeCat looks. Your choice follows you to any device you sign in on.
+      <p className="mb-4 max-w-prose text-fg-secondary">
+        Your choice follows you to any device you sign in on.
       </p>
-      <div role="radiogroup" aria-label="Theme" className="grid max-w-2xl gap-3 sm:grid-cols-3">
-        {THEME_MODES.map(({ value, label, description, icon: Icon }) => {
-          const active = mounted && mode === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              disabled={!mounted}
-              onClick={() => setMode(value)}
-              className={cn(
-                'flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                'disabled:opacity-50',
-                active
-                  ? 'border-fg-primary bg-surface-raised'
-                  : 'border-default hover:border-interactive hover:bg-surface-raised'
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <Icon className="h-5 w-5 text-fg-secondary" />
-                {active && <Check className="h-4 w-4 text-fg-primary" />}
-              </div>
-              <span className="font-medium text-fg-primary">{label}</span>
-              <span className="text-sm text-fg-secondary">{description}</span>
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        label="Theme"
+        items={THEME_MODES.map(({ value, label, icon }) => ({ value, label, icon }))}
+        value={current}
+        onChange={setMode}
+        className="max-w-md"
+      />
+      <p className="mb-0 mt-2 text-sm text-fg-secondary">
+        {getThemeModeOption(current).description}
+      </p>
     </div>
   );
 }

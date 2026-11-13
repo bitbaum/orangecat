@@ -1,62 +1,79 @@
-/**
- * The door — one sentence in, the right thing out.
- *
- * Not a search box: this submits an intent to Cat, so searchkit does not apply.
- * Uses the shared field tokens and Button while retaining native GET submission.
- *
- * A plain GET form to the Cat: no JavaScript needed, works before sign-in
- * (the middleware sends the visitor through login and back to the Cat with
- * the sentence intact), and the Cat page already auto-sends `?q=` into an
- * empty conversation and answers with a draft card. Wherever a surface once
- * offered a grid of nouns, it now offers this first and the grid second.
- */
-import { ArrowRight } from 'lucide-react';
-import { ROUTES } from '@/config/routes';
-import { CAT_DOOR, CAT_QUERY_PARAM } from '@/config/cat-door';
-import { cn } from '@/lib/utils';
-import { COMPONENT_STYLES } from '@/config/design-system';
-import Button from '@/components/ui/Button';
+'use client';
+
+import { useId, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
 import { DoorExamples } from '@/components/dashboard/DoorExamples';
+import { CAT_DOOR, CAT_QUERY_PARAM } from '@/config/cat-door';
+import { ROUTES } from '@/config/routes';
+import { CHAT_VOICE, SIGNED_OUT_VOICE } from '@/hooks/useDictation';
+import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth';
 
 interface TheDoorProps {
-  /** The question above the box. Defaults to the platform's. */
-  prompt?: string;
-  placeholder?: string;
-  className?: string;
   /** A short row of example sentences the visitor can tap. */
   examples?: readonly string[];
+  className?: string;
 }
 
-export function TheDoor({ prompt, placeholder, className, examples }: TheDoorProps) {
+/**
+ * The door — "What do you want to do?", one sentence in, the Cat out.
+ *
+ * The one entry of its kind, signed in or not: the dashboard, My things and
+ * the public map all render this. The public map used to hand-roll a text
+ * input with no microphone while the signed-in one had chatkit's Composer
+ * (via ChatInput): two components for one thing, and the one a newcomer met
+ * could not be spoken to.
+ *
+ * Sending pushes `/dashboard/cat?q=…`. A signed-out visitor is carried
+ * through sign-up by the middleware and arrives at the Cat with the sentence
+ * intact. Their microphone is the browser's (SIGNED_OUT_VOICE): the server
+ * transcriber needs a session.
+ */
+export function TheDoor({ examples, className }: TheDoorProps = {}) {
+  const router = useRouter();
+  const headingId = useId();
+  const signedIn = useAuthStore(state => !!state.user);
+  const [value, setValue] = useState('');
+  const text = value.trim();
+  const tooLong = text.length > CAT_DOOR.maxLength;
+  const blockedReason = tooLong
+    ? `Use ${CAT_DOOR.maxLength} characters or fewer to start a conversation.`
+    : text.length < CAT_DOOR.minLength
+      ? `Enter at least ${CAT_DOOR.minLength} characters.`
+      : null;
+
   return (
-    <form
-      action={ROUTES.DASHBOARD.CAT}
-      method="get"
-      aria-label="Tell your Cat what you want to do"
-      className={cn('w-full', className)}
-    >
-      <label htmlFor="the-door" className="block font-heading text-lg text-fg-primary">
-        {prompt ?? CAT_DOOR.prompt}
-      </label>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-        <input
-          id="the-door"
-          name={CAT_QUERY_PARAM}
-          type="text"
-          autoComplete="off"
-          required
-          minLength={CAT_DOOR.minLength}
-          maxLength={CAT_DOOR.maxLength}
-          placeholder={placeholder ?? CAT_DOOR.placeholder}
-          className={cn(COMPONENT_STYLES.field.control, 'min-h-12 min-w-0 flex-1 px-3 text-base')}
-        />
-        <Button type="submit" className="min-h-12 gap-1.5">
-          {CAT_DOOR.submit}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </Button>
-      </div>
-      <DoorExamples examples={examples} className="mt-2" />
-    </form>
+    <section aria-labelledby={headingId} className={cn('space-y-2', className)}>
+      <h2 id={headingId} className="font-heading text-lg text-fg-primary">
+        {CAT_DOOR.prompt}
+      </h2>
+      <ChatInput
+        value={value}
+        onChange={setValue}
+        onSend={() => {
+          if (!blockedReason) {
+            router.push(`${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(text)}`);
+          }
+          // Keep the words until navigation succeeds and this entry unmounts.
+          return false;
+        }}
+        isLoading={false}
+        placement="inline"
+        autoFocus={false}
+        placeholder={CAT_DOOR.placeholder}
+        ariaLabel={CAT_DOOR.prompt}
+        sendLabel={CAT_DOOR.submit}
+        sendBlockedReason={blockedReason}
+        voice={signedIn ? CHAT_VOICE : SIGNED_OUT_VOICE}
+      />
+      <DoorExamples examples={examples} />
+      {tooLong && (
+        <p role="alert" className="text-sm text-status-negative">
+          {blockedReason}
+        </p>
+      )}
+    </section>
   );
 }
 

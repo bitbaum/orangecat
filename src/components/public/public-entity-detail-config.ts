@@ -40,7 +40,7 @@ export interface EntityDetailConfig {
   ownerLabel?: string;
   /** Label for the timestamps card (e.g., "Listed") */
   createdLabel?: string;
-  /** Description card title (e.g., "About this Service") */
+  /** Description card title; defaults to "About this <kind>" from the registry name. */
   descriptionTitle?: string;
   /** Back link text override */
   backText?: string;
@@ -151,6 +151,14 @@ export interface EntityDetailConfig {
 /**
  * Fetch entity data for metadata generation
  */
+/**
+ * A status only the owner needs: "Active" is the owner's word and tells a buyer
+ * nothing (an active listing is simply the listing). For entities whose status
+ * never changes a visitor's plans; events say "Full" or "Cancelled" instead.
+ */
+export const ownerOnlyStatus = (entity: EntityData, isOwner: boolean): string | null =>
+  isOwner ? ((entity.status as string | null) ?? null) : null;
+
 export async function fetchEntityForMetadata(
   entityType: EntityType,
   id: string,

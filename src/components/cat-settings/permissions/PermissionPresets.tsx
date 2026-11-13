@@ -1,73 +1,85 @@
 'use client';
 
-import { Shield, ShieldCheck, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import type { PermissionPreset } from '@/config/cat-autonomy';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import {
+  PERMISSION_PRESET_META,
+  PERMISSION_PRESET_ORDER,
+  type PermissionPreset,
+} from '@/config/cat-autonomy';
 
 interface PermissionPresetsProps {
   saving: string | null;
-  onApplyPreset: (preset: PermissionPreset) => void;
+  /** The preset the current choices match; null when they are a custom mix. */
+  active: PermissionPreset | null;
+  onApplyPreset: (preset: PermissionPreset) => void | Promise<void>;
 }
 
-export function PermissionPresets({ saving, onApplyPreset }: PermissionPresetsProps) {
+/**
+ * Four presets as one pick-one group of equal cells. A preset replaces every
+ * individual choice, so picking a different one asks first; the one the
+ * current choices match is marked, and a mix of choices reads "Custom".
+ */
+export function PermissionPresets({ saving, active, onApplyPreset }: PermissionPresetsProps) {
+  const [pending, setPending] = useState<PermissionPreset | null>(null);
+  const pendingLabel = pending ? PERMISSION_PRESET_META[pending].label : '';
+
   return (
-    <div className="mt-8">
-      <h3 className="mb-3 text-base font-semibold text-fg-primary">Quick presets</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button
-          onClick={() => onApplyPreset('minimal')}
-          disabled={saving !== null}
-          className="rounded-md border border-subtle p-4 text-left transition-colors hover:border-strong hover:bg-surface-raised disabled:opacity-50"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <ShieldCheck className="h-5 w-5 text-status-positive" />
-            <span className="font-medium text-fg-primary">Minimal</span>
-          </div>
-          <p className="text-sm text-fg-secondary">
-            Only context management. Safest option for new users.
-          </p>
-        </button>
-
-        <button
-          onClick={() => onApplyPreset('creator')}
-          disabled={saving !== null}
-          className="rounded-md border border-subtle p-4 text-left transition-colors hover:border-strong hover:bg-surface-raised disabled:opacity-50"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="h-5 w-5 text-fg-primary" />
-            <span className="font-medium text-fg-primary">Creator</span>
-          </div>
-          <p className="text-sm text-fg-secondary">
-            Create content & communicate. Best for most users.
-          </p>
-        </button>
-
-        <button
-          onClick={() => onApplyPreset('power')}
-          disabled={saving !== null}
-          className="rounded-md border border-subtle p-4 text-left transition-colors hover:border-strong hover:bg-surface-raised disabled:opacity-50"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="h-5 w-5 text-status-warning" />
-            <span className="font-medium text-fg-primary">Power User</span>
-          </div>
-          <p className="text-sm text-fg-secondary">
-            Everything except payments. For experienced users.
-          </p>
-        </button>
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 id="cat-presets-heading" className="text-base font-semibold text-fg-primary">
+          Start from a preset
+        </h3>
+        {active === null && <span className="text-sm text-fg-secondary">Custom</span>}
+      </div>
+      <div
+        role="radiogroup"
+        aria-labelledby="cat-presets-heading"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+      >
+        {PERMISSION_PRESET_ORDER.map(preset => {
+          const meta = PERMISSION_PRESET_META[preset];
+          const checked = active === preset;
+          return (
+            <button
+              key={preset}
+              type="button"
+              role="radio"
+              aria-checked={checked}
+              disabled={saving !== null}
+              onClick={() => {
+                if (!checked) {
+                  setPending(preset);
+                }
+              }}
+              className={`flex min-h-11 flex-col items-start gap-1 rounded-md border p-3 text-left transition-colors disabled:opacity-50 ${
+                checked
+                  ? 'border-fg-primary bg-surface-raised'
+                  : 'border-subtle hover:border-strong hover:bg-surface-raised'
+              }`}
+            >
+              <span className="font-medium text-fg-primary">{meta.label}</span>
+              <span className="text-sm text-fg-secondary">{meta.description}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onApplyPreset('none')}
-          disabled={saving !== null}
-          className="text-fg-secondary hover:text-status-negative"
-        >
-          Disable All Permissions
-        </Button>
-      </div>
+      <ConfirmDialog
+        isOpen={pending !== null}
+        onClose={() => setPending(null)}
+        onConfirm={async () => {
+          const preset = pending;
+          setPending(null);
+          if (preset) {
+            await onApplyPreset(preset);
+          }
+        }}
+        title={`Switch to ${pendingLabel}?`}
+        description="This replaces your individual choices."
+        confirmLabel={`Switch to ${pendingLabel}`}
+        isLoading={saving === 'preset'}
+      />
     </div>
   );
 }

@@ -1,7 +1,28 @@
+import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
+import { CONTACT_EMAIL } from '@/config/brand';
 import { LEGAL_DRAFT_NOTICE, type LegalDocument } from '@/config/legal-content';
+import { ROUTES } from '@/config/routes';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { cn } from '@/lib/utils';
+import { linkify } from './linkify';
+
+/** A paragraph whose email and web addresses are links. */
+function Rich({ text }: { text: string }) {
+  return (
+    <>
+      {linkify(text).map((part, i) =>
+        part.kind === 'link' ? (
+          <a key={i} href={part.href} className="oc-text-link">
+            {part.text}
+          </a>
+        ) : (
+          part.text
+        )
+      )}
+    </>
+  );
+}
 
 /**
  * Shared renderer for the /privacy and /terms pages. Content lives in
@@ -28,7 +49,9 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
           )}
           <div className="mt-6 space-y-4 text-base leading-7 text-fg-secondary">
             {document.intro.map(paragraph => (
-              <p key={paragraph}>{paragraph}</p>
+              <p key={paragraph}>
+                <Rich text={paragraph} />
+              </p>
             ))}
           </div>
         </div>
@@ -41,22 +64,40 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
               </h2>
               <div className="mt-4 space-y-4 text-base leading-7 text-fg-secondary">
                 {section.paragraphs?.map(paragraph => (
-                  <p key={paragraph}>{paragraph}</p>
+                  <p key={paragraph}>
+                    <Rich text={paragraph} />
+                  </p>
                 ))}
                 {section.bullets && (
                   <ul className="list-disc space-y-2 pl-6">
                     {section.bullets.map(bullet => (
-                      <li key={bullet}>{bullet}</li>
+                      <li key={bullet}>
+                        <Rich text={bullet} />
+                      </li>
                     ))}
                   </ul>
                 )}
                 {section.closing?.map(paragraph => (
-                  <p key={paragraph}>{paragraph}</p>
+                  <p key={paragraph}>
+                    <Rich text={paragraph} />
+                  </p>
                 ))}
               </div>
             </section>
           ))}
         </div>
+
+        <p className="mb-0 border-t border-default pt-8 text-base leading-7 text-fg-secondary">
+          A question about this?{' '}
+          <Link href={ROUTES.FEEDBACK} className="oc-text-link">
+            Ask the Cat
+          </Link>
+          , or write to{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="oc-text-link">
+            {CONTACT_EMAIL}
+          </a>
+          .
+        </p>
       </article>
     </div>
   );

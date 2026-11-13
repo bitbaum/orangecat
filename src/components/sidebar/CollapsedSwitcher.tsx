@@ -24,7 +24,7 @@ export function CollapsedSwitcher({
     <div className={cn('px-2 py-3 border-b border-subtle flex justify-center', className)}>
       <button
         onClick={onOpen}
-        className="rounded-md p-1.5 transition-colors hover:bg-surface-raised"
+        className="rounded-md p-1.5 transition-colors hover:bg-surface-overlay"
         aria-label={`Switch context — ${displayName}`}
         title={`Switch context — ${displayName}`}
       >

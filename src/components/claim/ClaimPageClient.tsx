@@ -154,7 +154,7 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
               <div className="mt-6 h-11 animate-pulse rounded-lg bg-surface-raised" />
             ) : isAuthenticated ? (
               <Button
-                variant="accent"
+                variant="primary"
                 size="lg"
                 className="mt-6 w-full"
                 onClick={handleClaim}

@@ -127,7 +127,7 @@ export function DeckEditor({
           Nothing is invented: every word comes from the room, and the proof slides read live data
           each time the deck is opened. Then change anything you like.
         </p>
-        <Button variant="accent" size="lg" className="mt-6" onClick={generate}>
+        <Button variant="primary" size="lg" className="mt-6" onClick={generate}>
           <Sparkles className="h-4 w-4" aria-hidden />
           Generate a first draft from this room
         </Button>
@@ -180,7 +180,7 @@ export function DeckEditor({
             <Play className="h-4 w-4" aria-hidden />
             Present
           </Button>
-          <Button variant="accent" onClick={save} isLoading={saving} disabled={!dirty}>
+          <Button variant="primary" onClick={save} isLoading={saving} disabled={!dirty}>
             {dirty ? 'Save' : 'Saved'}
           </Button>
         </div>

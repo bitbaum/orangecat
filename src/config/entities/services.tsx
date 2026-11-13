@@ -8,14 +8,11 @@
 
 import { EntityConfig } from '@/types/entity';
 import { UserService } from '@/types/database';
-import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
 import type { Currency } from '@/types/settings';
-import { GRADIENTS } from '@/config/gradients';
 
 export const serviceEntityConfig: EntityConfig<UserService> = {
   name: ENTITY_REGISTRY['service'].name,
@@ -92,11 +89,6 @@ export const serviceEntityConfig: EntityConfig<UserService> = {
   emptyState: {
     title: 'No services yet',
     description: 'Start offering your expertise to the community by creating your first service.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.SERVICES_CREATE} className={GRADIENTS.brandOrangeDark}>
-        Create Service
-      </Button>
-    ),
   },
 
   gridCols: {

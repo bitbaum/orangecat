@@ -183,7 +183,7 @@ export function MFAVerify({ onVerificationComplete, onCancel }: MFAVerifyProps) 
           {onCancel && (
             <Button type="button" variant="ghost" onClick={onCancel} className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Login
+              Back to sign in
             </Button>
           )}
         </form>

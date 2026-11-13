@@ -10,7 +10,8 @@ export const SEND_NOTE_MAX_LENGTH = 120;
 
 export const SEND_COPY = {
   title: 'Send',
-  subtitle: 'Pay a person, an address, or an invoice. From your own wallet.',
+  /** One line at 390px: the frame is the same on all three tabs. */
+  subtitle: 'Pay a person, an address or an invoice.',
 
   recipientLabel: 'To',
   recipientPlaceholder: 'Name, lena@wallet.com or an invoice',
@@ -62,9 +63,10 @@ export const SEND_COPY = {
   again: 'Send another',
 
   noWalletTitle: 'Connect a wallet to send',
+  /** Same words as the wallets page it leads to: "wallet connection". */
   noWalletBody:
-    'Sending needs a wallet OrangeCat can ask to pay — any NWC-compatible Lightning wallet. Your keys stay yours.',
-  noWalletCta: 'Set up a wallet',
+    'To send, connect a Lightning wallet with a wallet connection link. Your keys stay in your wallet.',
+  noWalletCta: 'Connect a wallet',
 
   /** Shown when sending is broken on our side — never blame the payer's wallet. */
   unavailableTitle: 'Sending is paused right now',

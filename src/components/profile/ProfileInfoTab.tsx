@@ -1,13 +1,8 @@
 'use client';
 
-import { logger } from '@/utils/logger';
-import { useState } from 'react';
 import { Profile as DatabaseProfile, ProfileFormData } from '@/types/database';
-import { Profile } from '@/types/profile';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
-import { Shield, Edit as EditIcon } from 'lucide-react';
-import Button from '@/components/ui/Button';
-import ModernProfileEditor from './ModernProfileEditor';
+import { Shield } from 'lucide-react';
 import { ProfileDetailsCard } from './ProfileDetailsCard';
 
 interface ProfileInfoTabProps {
@@ -24,53 +19,21 @@ interface ProfileInfoTabProps {
   context?: 'public' | 'dashboard';
 }
 
+/**
+ * Info — the owner's field-by-field view. Editing happens in one place, the
+ * profile editor that the header's "Edit profile" opens; this tab used to
+ * carry a second Edit button and a second inline editor.
+ */
 export default function ProfileInfoTab({
   profile,
   isOwnProfile = false,
-  userId,
   userEmail,
-  onSave,
   context = 'public',
 }: ProfileInfoTabProps) {
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
   const isDashboardView = context === 'dashboard';
-
-  const handleSave = async (data: ProfileFormData) => {
-    if (onSave) {
-      try {
-        await onSave(data);
-        setMode('view');
-      } catch (error) {
-        logger.error('Failed to save profile:', error);
-      }
-    }
-  };
-
-  if (mode === 'edit' && isOwnProfile && userId && onSave) {
-    return (
-      <div className="space-y-6">
-        <ModernProfileEditor
-          profile={profile as Profile}
-          userId={userId}
-          userEmail={userEmail}
-          onSave={handleSave}
-          onCancel={() => setMode('view')}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      {isOwnProfile && userId && onSave && (
-        <div className="flex justify-end">
-          <Button onClick={() => setMode('edit')} variant="outline">
-            <EditIcon className="w-4 h-4 mr-2" />
-            Edit Profile
-          </Button>
-        </div>
-      )}
-
       <ProfileDetailsCard
         profile={profile}
         isOwnProfile={isOwnProfile}
@@ -90,14 +53,19 @@ export default function ProfileInfoTab({
             </h3>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-fg-secondary">Email Verified</span>
-              <span
-                className={profile.email ? 'text-status-positive font-medium' : 'text-fg-tertiary'}
-              >
-                {profile.email ? '✓ Verified' : 'Not verified'}
-              </span>
-            </div>
+            {/* No email at all is not "not verified": the row waits until there is one. */}
+            {(profile.email || userEmail) && (
+              <div className="flex items-center justify-between">
+                <span className="text-fg-secondary">Email Verified</span>
+                <span
+                  className={
+                    profile.email ? 'text-status-positive font-medium' : 'text-fg-tertiary'
+                  }
+                >
+                  {profile.email ? '✓ Verified' : 'Not verified'}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-fg-secondary">Profile Complete</span>
               <span

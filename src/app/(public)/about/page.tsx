@@ -1,10 +1,14 @@
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import React from 'react';
 import { Metadata } from 'next';
-import { Zap, TreePine } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import Link from 'next/link';
+import { Zap, Lock } from 'lucide-react';
+import { CONTACT_EMAIL, SOURCE_REPO_URL } from '@/config/brand';
+import { ECOSYSTEM } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { PublicLinkList } from '@/components/layout/PublicLinkList';
+import { PublicStartBand } from '@/components/layout/PublicStartBand';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -12,6 +16,34 @@ export const metadata: Metadata = {
   description:
     'OrangeCat is your AI economic agent — buy, sell, fund, lend, invest, and govern with any identity. Bitcoin is the first live payment rail.',
 };
+
+/**
+ * Who builds OrangeCat and how to check: the page used to state values and
+ * stop, with no way out but sign-up. Each row is a place a reader can verify
+ * the claim for themselves.
+ */
+const WHO_BUILDS_IT = [
+  {
+    href: ECOSYSTEM.studio.siteUrl,
+    title: ECOSYSTEM.studio.title,
+    line: 'The studio behind OrangeCat, Loki and Solon.',
+  },
+  {
+    href: SOURCE_REPO_URL,
+    title: 'Open source (MIT)',
+    line: 'The source code, on GitHub.',
+  },
+  {
+    href: ROUTES.ECOSYSTEM,
+    title: 'The stack',
+    line: 'The three products and what binds them.',
+  },
+  {
+    href: `mailto:${CONTACT_EMAIL}`,
+    title: 'Write to us',
+    line: CONTACT_EMAIL,
+  },
+] as const;
 
 export default function AboutPage() {
   return (
@@ -40,7 +72,7 @@ export default function AboutPage() {
             {/* Mission cards — monochrome neutral tiles per migration 6/N */}
             <div className="text-center">
               <div className="w-16 h-16 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mx-auto mb-4">
-                <TreePine className="w-8 h-8 text-fg-secondary" />
+                <Lock className="w-8 h-8 text-fg-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-fg-primary mb-2">
                 Pseudonymous by Default
@@ -78,22 +110,27 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* CTA Section — public-surface (near-black) per Loki pattern */}
-      <div className="bg-surface-public">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-on-public mb-4">
-              Join the Open Economy
-            </h2>
-            <p className="text-xl text-on-public/70 mb-8">
-              Exchange, fund, lend, invest, and govern — with your AI agent, under any identity, in
-              Bitcoin.
-            </p>
-            <Button href={`${ROUTES.AUTH}?mode=register`} variant="accent" size="lg">
-              Get Started Free
-            </Button>
-          </div>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
+        <section aria-labelledby="who-builds-it" className="mx-auto max-w-3xl">
+          <h2 id="who-builds-it" className="mb-4 text-2xl font-semibold text-fg-primary">
+            Who builds it
+          </h2>
+          <PublicLinkList rows={WHO_BUILDS_IT} />
+        </section>
+
+        <PublicStartBand className="mt-16">
+          Exchange, fund, lend, invest, and govern — with your AI agent, under any identity, in
+          Bitcoin.
+        </PublicStartBand>
+        <p className="mb-0 mt-6 text-center text-base text-fg-secondary">
+          Or build it with us:{' '}
+          <Link
+            href="/company/careers"
+            className="inline-flex min-h-11 items-center underline underline-offset-4"
+          >
+            the ways in
+          </Link>
+        </p>
       </div>
     </div>
   );

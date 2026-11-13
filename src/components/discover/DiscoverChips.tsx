@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { DiscoverChipsRow } from './DiscoverChipsRow';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { discoverHref } from '@/services/discover/params';
 import { presentTypes, type TypeCounts } from '@/services/discover/view';
@@ -42,9 +43,9 @@ export function DiscoverChips({
     </Link>
   );
   return (
-    <nav aria-label="Kinds of things" className="oc-discover-chips no-scrollbar">
+    <DiscoverChipsRow>
       {chip('Everything', total, null)}
       {types.map(type => chip(pluralLabel(type), counts[type] ?? 0, type))}
-    </nav>
+    </DiscoverChipsRow>
   );
 }

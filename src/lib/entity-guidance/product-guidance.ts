@@ -133,16 +133,16 @@ export const productGuidanceContent: Record<NonNullable<ProductFieldType>, Guida
   inventory_count: {
     icon: React.createElement(BarChart3, { className: 'w-5 h-5 text-fg-primary' }),
     title: 'Inventory Count',
-    description: 'Track how many items you have available. Set to -1 for unlimited stock.',
+    description: 'Track how many items you have available. Leave it empty for unlimited stock.',
     tips: [
       'Set accurate counts to avoid overselling',
-      'Use -1 for digital products or unlimited stock',
+      'Leave it empty for digital products or anything you can always make more of',
       'Inventory updates automatically when sold',
       "You'll be notified when stock is low",
     ],
     examples: [
       '10 - Limited edition items',
-      '-1 - Unlimited (digital products)',
+      'Empty - Unlimited (digital products)',
       '50 - Standard inventory',
     ],
   },

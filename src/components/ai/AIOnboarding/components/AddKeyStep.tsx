@@ -131,7 +131,7 @@ export function AddKeyStep({
             <Button
               onClick={onAddKey}
               disabled={!apiKey || !keyValidation?.valid || isSubmitting}
-              variant="accent"
+              variant="primary"
               className="w-full"
             >
               {isSubmitting ? 'Adding Key...' : 'Add API Key'}

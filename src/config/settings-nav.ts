@@ -5,6 +5,7 @@ import {
   Gauge,
   KeyRound,
   ShieldCheck,
+  SlidersHorizontal,
   UserRound,
   Wallet,
   type LucideIcon,
@@ -30,8 +31,14 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
     href: ROUTES.SETTINGS,
     label: 'Account',
-    description: 'Email, password, security, and your data.',
+    description: 'Sign-in, devices, identities, your data, and deleting the account.',
     icon: UserRound,
+  },
+  {
+    href: ROUTES.SETTINGS_PREFERENCES,
+    label: 'Preferences',
+    description: 'Currency, date format, and theme.',
+    icon: SlidersHorizontal,
   },
   {
     href: ROUTES.SETTINGS_NOTIFICATIONS,

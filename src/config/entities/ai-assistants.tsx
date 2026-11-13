@@ -8,13 +8,10 @@
 
 import { EntityConfig } from '@/types/entity';
 import { AIAssistant } from '@/types/database';
-import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
-import { GRADIENTS } from '@/config/gradients';
 import type { Currency } from '@/types/settings';
 
 export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
@@ -94,11 +91,6 @@ export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
   emptyState: {
     title: 'No companions yet',
     description: 'Create your first companion: a being with its own voice that remembers you.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.AI_ASSISTANTS_CREATE} className={GRADIENTS.brandTiffany}>
-        Create a companion
-      </Button>
-    ),
   },
 
   gridCols: {

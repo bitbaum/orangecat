@@ -131,7 +131,7 @@ export default function CoverImageUpload({
         className={cn(
           'flex w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed px-4 py-8 text-center transition-colors',
           dragging
-            ? 'border-accent-warm bg-accent-warm/5'
+            ? 'border-fg-primary bg-surface-raised'
             : 'border-default hover:bg-surface-raised/40',
           (disabled || uploading) && 'cursor-not-allowed opacity-60'
         )}

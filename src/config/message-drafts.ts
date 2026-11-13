@@ -17,6 +17,12 @@ export const MESSAGE_DRAFTS = {
    */
   'add-wallet': (origin: string) =>
     `Hi! I went to send you Bitcoin on OrangeCat, but you haven't added a wallet to receive it yet. It takes about a minute, and this page shows how: ${origin}${ROUTES.WALLETS.LIST}`,
+  /**
+   * "Ask" on a way to pay whose details are shared on request: the payer opens
+   * a conversation with the question already typed, not an empty composer.
+   */
+  'ask-payment-details': (_origin: string) =>
+    "Hi! I'd like to pay you, and your page says you share the details when asked. Could you send them?",
 } as const;
 
 export type MessageDraftKey = keyof typeof MESSAGE_DRAFTS;

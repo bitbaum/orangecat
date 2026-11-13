@@ -20,7 +20,9 @@ export function ProfileBannerSection({ profile }: ProfileBannerSectionProps) {
   // that is the identity card in ProfileLayout, which the avatar overlaps.
   return (
     <div className="relative">
-      <div className="relative h-32 sm:h-48 md:h-64 lg:h-80 bg-surface-raised border border-subtle rounded-lg sm:rounded-md shadow-none overflow-hidden">
+      <div
+        className={`relative ${profile.banner_url ? 'h-32 sm:h-48 md:h-64 lg:h-80' : 'h-20 sm:h-24'} bg-surface-raised border border-subtle rounded-lg sm:rounded-md shadow-none overflow-hidden`}
+      >
         {profile.banner_url && (
           <Image
             src={profile.banner_url}
@@ -46,10 +48,7 @@ export function ProfileBannerSection({ profile }: ProfileBannerSectionProps) {
             className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-lg object-cover border-2 sm:border-4 border-surface-page bg-surface-page shadow-sm"
           />
         ) : (
-          <DefaultAvatar
-            size={128}
-            className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-lg border-2 sm:border-4 border-surface-page shadow-sm"
-          />
+          <DefaultAvatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-lg border-2 sm:border-4 border-surface-page shadow-sm" />
         )}
       </div>
     </div>

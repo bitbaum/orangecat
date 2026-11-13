@@ -21,3 +21,12 @@ export function sanitize(raw: string): string {
   const [head, ...rest] = unified.split('.');
   return rest.length > 0 ? `${head}.${rest.join('')}` : head;
 }
+
+/**
+ * Whether an amount can be committed: positive and inside the bounds the field
+ * enforces. Every money action gates on this, so a committing button is never
+ * live while the field shows its red "below the minimum" line.
+ */
+export function isAmountInRange(btc: number, minBtc: number, maxBtc: number): boolean {
+  return Number.isFinite(btc) && btc > 0 && btc >= minBtc && btc <= maxBtc;
+}

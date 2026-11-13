@@ -29,6 +29,8 @@ export interface NavItem {
   requiresProfile?: boolean;
   children?: NavItem[];
   external?: boolean;
+  /** Other paths this item owns: it shows active on them as well as on href. */
+  activeFor?: readonly string[];
 }
 
 export interface NavSection {
@@ -56,7 +58,7 @@ interface UseNavigationReturn {
   toggleSection: (sectionId: string) => void;
   setSidebarOpen: (open: boolean) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  isItemActive: (href: string) => boolean;
+  isItemActive: (href: string, activeFor?: readonly string[]) => boolean;
   getFilteredSections: () => NavSection[];
   resetNavigation: () => void;
 }
@@ -70,13 +72,11 @@ export function useNavigation(sections: NavSection[]): UseNavigationReturn {
 
   // Stable refs to break the inline-function dep cycle in useNavigationStorage
   type LoadedState = {
-    isSidebarOpen: boolean;
     isSidebarCollapsed: boolean;
     collapsedSections: Set<string>;
   };
   const onStateLoadedRef = useRef<(s: LoadedState) => void>(undefined);
-  onStateLoadedRef.current = ({ isSidebarOpen, isSidebarCollapsed, collapsedSections: cs }) => {
-    setIsSidebarOpen(isSidebarOpen);
+  onStateLoadedRef.current = ({ isSidebarCollapsed, collapsedSections: cs }) => {
     setIsSidebarCollapsed(isSidebarCollapsed);
     setCollapsedSections(cs);
   };
@@ -86,31 +86,17 @@ export function useNavigation(sections: NavSection[]): UseNavigationReturn {
   const onStateLoaded = useCallback((s: LoadedState) => onStateLoadedRef.current?.(s), []);
   const onLoadFailed = useCallback((d: Set<string>) => onLoadFailedRef.current?.(d), []);
 
-  const { persistSidebarState, persistSidebarCollapsedState, persistCollapsedSections } =
-    useNavigationStorage(hydrated, sections, { onStateLoaded, onLoadFailed });
+  const { persistSidebarCollapsedState, persistCollapsedSections } = useNavigationStorage(
+    hydrated,
+    sections,
+    { onStateLoaded, onLoadFailed }
+  );
 
   const { activeSection, activeItem, isItemActive } = useActiveNavItem(sections);
 
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => {
-      const next = !prev;
-      persistSidebarState(next);
-      return next;
-    });
-  }, [persistSidebarState]);
-
-  const setSidebarOpen = useCallback(
-    (open: boolean) => {
-      setIsSidebarOpen(prev => {
-        if (prev === open) {
-          return prev;
-        }
-        persistSidebarState(open);
-        return open;
-      });
-    },
-    [persistSidebarState]
-  );
+  // The phone drawer is transient: never saved, always starts closed.
+  const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
+  const setSidebarOpen = useCallback((open: boolean) => setIsSidebarOpen(open), []);
 
   const toggleSidebarCollapse = useCallback(() => {
     setIsSidebarCollapsed(prev => {

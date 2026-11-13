@@ -4,12 +4,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### money#1 · high · Pay page does not show who is being paid beyond a display name
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /pay/[username] (both, both themes)
 - **What a person meets:** A stranger arriving from a link is asked to send irreversible money to a first name. Display names are not unique, so the page gives no way to tell this Cato from another, which is the first thing a payer checks on any payment link.
 - **Cause:** src/app/(public)/pay/[username]/page.tsx:94-100 renders only `recipient.displayName`; src/domain/lightning-address/lnurl-service.ts:51 and :73 select `id, username, display_name:name`, so no avatar reaches the page. The identity block exists but is private to src/components/receive/ReceiveCode.tsx:76-89.
 - **Fix:** New src/components/money/PayeeIdentity.tsx with props { name, username, avatarUrl?, href?, nameAs?: 'p' | 'h1' }: the block from ReceiveCode.tsx:77-88 unchanged (Avatar `h-12 w-12`, name `mb-0 mt-3 font-heading text-xl font-semibold leading-tight tracking-display text-fg-primary`, handle `mb-0 text-sm text-fg-secondary`); when href is set the handle is a Link with `inline-flex min-h-11 items-center text-sm text-fg-secondary underline underline-offset-2 hover:text-fg-primary`. ReceiveCode.tsx renders it without href. In src/app/(public)/pay/[username]/page.tsx:94-100 keep the 'Pay' eyebrow and the subtitle, and replace the h1 with `&lt;PayeeIdentity nameAs="h1" name={recipient.displayName} username={recipient.username} avatarUrl={recipient.avatarUrl} href={ROUTES.PROFILES.VIEW(recipient.username)} />` (the page keeps exactly one h1). In lnurl-service.ts add `avatar_url` to both selects …
 
 ### money#4 · high · First-run Send sends you to a page about receiving, in different words, to find a field hidden under 'Other ways to get paid (advanced)'
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /send, /dashboard/wallets (both, both themes)
 - **What a person meets:** A new person who wants to pay someone is told to connect an 'NWC-compatible' wallet, lands on a screen that only talks about getting paid, and has to guess that sending lives behind a disclosure named for the opposite direction. Context from the Send screen is lost on arrival.
@@ -18,12 +22,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### money#5 · high · The first-run wallet form breaks the surface's own rules: orange text links, 16px tap targets, '(optional)' labels, a card around the field
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /receive, /dashboard/wallets (phone, both themes)
 - **What a person meets:** This is what a brand-new account sees on the app's centre tab. Three of its controls are a third of the minimum touch height, orange is spent on two help links, and the labels are the '(optional)' pattern the rules name as not a label.
 - **Cause:** src/components/wallets/WhyReceive.tsx:17 and src/components/wallets/WalletManager/components/WalletForm.tsx:259 use `text-accent-warm underline`; WalletForm.tsx:259, :294 and the toggle at :353 have no min height; :177 wraps the form in `rounded-lg border border-default bg-surface-raised p-4`; src/components/receive/ReceiveSetup.tsx:30-38 hosts it with `submitLabel="Save"`.
 - **Fix:** WhyReceive.tsx:17: replace `text-accent-warm underline hover:text-accent-warm-hover` with `text-fg-primary underline underline-offset-2 hover:text-fg-secondary` (15.96:1 light on raised, 13.02:1 dark). WalletForm.tsx:259: `mt-1 inline-flex min-h-11 items-center text-xs font-medium text-fg-primary underline underline-offset-2 hover:text-fg-secondary`. :294 and :346: add `min-h-11`, drop `mb-2`. Labels: :301 'Add an on-chain address or a wallet connection'; :353 'Add a name and details' (the section also holds category, goal and the ledger switch, so 'Name this wallet' undersells it). Add `bare?: boolean` to WalletFormProps (WalletManager/types.ts:41-58); WalletForm.tsx:177 `className={bare ? undefined : 'rounded-lg border border-default bg-surface-raised p-4'}`; add the pass-through prop to WalletPasteField and set it from ReceiveSetup.tsx:30. Actions (:474): `className={cn('grid gap-2', …
 
 ### money#2 · medium · The pay page's one action says 'Show the code' and arrives as a dimmed orange slab under a brighter 'Get Started'
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /pay/[username] (both, both themes)
 - **What a person meets:** The label does not say 'pay', names a code the next phone screen does not show, and the fleet rule's own counter-example (a disabled accent button is a washed-out orange slab) is the first thing a payer sees, while a sign-up button outranks the payment.
@@ -33,12 +41,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### money#6 · medium · The three tabs do not share one frame in four states: first-run, no-wallet, loading, and Send's two-line subtitle
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /receive, /send, /requests (phone, both themes)
 - **What a person meets:** Switching tabs makes the tab row jump by 23px to 84px under the thumb and disappear entirely while data loads, on the surface documented as 'the frame is identical on every tab'.
 - **Cause:** src/config/send.ts:13 (62-character subtitle); src/components/receive/ReceiveSetup.tsx:25-28 builds its own column with a raw `&lt;h1 className="text-2xl font-bold">` and `py-10` instead of MoneyPage; src/components/send/SendScreen.tsx:167-170 passes the empty-state headline as `title`; ReceiveScreen.tsx:92-94, SendScreen.tsx:156-158 and RequestsScreen.tsx:142-144 return `&lt;MoneyLoading />` with no frame (MoneyPage.tsx:36-42).
 - **Fix:** send.ts:13 `subtitle: 'Pay a person, an address or an invoice.'` (one line at 390; 'from your own wallet' is already in the disclaimer). The three loading returns become `&lt;MoneyPage title={X_COPY.title} subtitle={X_COPY.subtitle}>&lt;MoneyLoading />&lt;/MoneyPage>`. ReceiveSetup.tsx: wrap in `&lt;MoneyPage title={RECEIVE_COPY.title} subtitle={RECEIVE_COPY.subtitle}>`, drop its own column and MoneyTabs, and render `&lt;h2 className="mb-0 font-heading text-lg font-semibold tracking-display text-fg-primary">{RECEIVE_COPY.noWalletTitle}&lt;/h2>` and `&lt;p className="mb-0 mt-1 text-sm text-fg-secondary">` with noWalletBody cut to 'Paste what your Bitcoin app shows when you tap Receive. You can skip this and come back later.' SendScreen.tsx:167-176: `title={SEND_COPY.title}`, `subtitle={SEND_COPY.subtitle}`, with the same h2 (noWalletTitle or unavailableTitle) and one `mb-0` sentence …
 
 ### money#7 · medium · 'Ask' on a non-Bitcoin way to pay drops a signed-out payer on 'Welcome back' with no explanation and an empty message
+
+**Status:** Partly (fourth pull request): the /auth heading does not yet name the person being messaged.
 
 - **Where:** /pay/[username], /auth (both, both themes)
 - **What a person meets:** For a payer without a Bitcoin wallet this row is the only way to pay. One tap replaces the payment page with a login form addressed to an existing user, and after getting in they face a blank composer and must work out what to write.
@@ -47,12 +59,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### money#8 · medium · An amount outside the limits shows an error but leaves the committing button live
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /pay/[username], /send, /requests (both, both themes)
 - **What a person meets:** The screen says the amount is not allowed and at the same time invites the tap; the payer then gets a second, server-side error (or reaches the review step on Send) for a number the form already knew was invalid.
 - **Cause:** src/components/money/AmountField.tsx:157-158 computes `tooSmall` / `tooLarge` only for its own message; the actions test only `amount &lt;= 0`: src/components/payment/PayFlow.tsx:231, :240, :251, src/components/send/SendScreen.tsx:220, src/components/requests/RequestsScreen.tsx:221.
 - **Fix:** Add to src/components/money/amount-draft.ts (the pure helpers shared by the field and its suggestions): `export function isAmountInRange(btc: number, minBtc: number, maxBtc: number): boolean { return Number.isFinite(btc) && btc >= minBtc && btc &lt;= maxBtc; }`. Use it in place of `amount &lt;= 0` / `amount > 0` at PayFlow.tsx:231, :240, :251 (TIP_MIN_BTC, TIP_MAX_BTC), SendScreen.tsx:220 (PAY_MIN_BTC, PAY_MAX_BTC), RequestsScreen.tsx:221, PaymentDialog.tsx:105 (contribution branch), and replace the inline expression at PublicSupportPanel.tsx:62 with it.
 
 ### money#9 · medium · A focus rectangle is drawn around the digits inside the amount plate
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /pay/[username], /send, /requests (both, both themes)
 - **What a person meets:** The hero element of the reference surface looks like a selected text box inside a card the moment anyone taps it: two focus indicators, one of them a rectangle that changes width with every digit.
@@ -61,12 +77,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### money#10 · medium · In BTC entry the four suggested amounts are cut off
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /pay/[username], /send, /requests (phone, both themes)
 - **What a person meets:** A Bitcoin-native payer, the product's core audience, cannot tell the suggestions apart without tapping each one.
 - **Cause:** src/components/money/AmountPresets.tsx:68 and :73 (unit in the label) and :101 (`px-2` leaves 48px of text in a 64px cell)
 - **Fix:** AmountPresets.tsx: build `{ btc, label, name }` where in BTC mode `label = toDraft(btc, BTC_DECIMALS)` and `name = `${label} BTC``, and in fiat mode `name = label`; render `key={name}` and `aria-label={name}`. At :101 change `px-2` to `px-1` and add `inBtc && 'tracking-tight'`. The grid stays `grid-cols-4` with 44px cells.
 
 ### money#11 · medium · Request rows: two actions squeeze the detail to 'Dinn…', the status line carries a stray margin, and the commit button is not where Send's is
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /requests (phone, both themes)
 - **What a person meets:** The reason for the ask, the thing that tells you whether to pay, is the part that gets truncated; and the two sibling forms commit from different places.
@@ -76,6 +96,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### money#12 · medium · Finances: first-run cards name actions that are not links, and 'Add a wallet' opens a page where no wallet can be added
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard/finances (both, both themes)
 - **What a person meets:** A new account sees five boxes of 'nothing yet' with two links, one of which promises an action its destination cannot perform. The page reads as a report, not as part of the money product.
 - **Cause:** src/config/finances.ts:43 with src/components/finances/MoneyRoutes.tsx:121; src/config/finances.ts:13; src/components/finances/PersonalFinances.tsx:38, :58, :110, :159
@@ -83,6 +105,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** As written, 'fed by the display-currency formatter' contradicts the page's documented valuation (price at arrival), and the proposed label class fails the contrast floor.
 
 ### money#13 · medium · Wallets reads as a different product from the money tabs it is linked from
+
+**Status:** Partly (fourth pull request): the guidance heading in the shared create sidebar is unchanged.
 
 - **Where:** /dashboard/wallets (both, both themes)
 - **What a person meets:** 'Change' and 'Set up' on the Receive screen land here. The person leaves a calm single-column surface for a dashboard with a different title shape, a competing primary button and help text as loud as the page title, and has to relearn the screen.

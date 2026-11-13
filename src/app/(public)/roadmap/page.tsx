@@ -70,15 +70,12 @@ export default async function RoadmapPage() {
           Read from the fleet map. The record is{' '}
           <a
             href="https://github.com/bitbaum/orangecat/blob/main/ROADMAP.md"
-            className="text-fg-secondary underline underline-offset-4 hover:text-fg-primary"
+            className="oc-text-link"
           >
             ROADMAP.md
           </a>{' '}
           in the repository; the project&apos;s place in the fleet is{' '}
-          <a
-            href={FLEET_PROFILE_URL}
-            className="text-fg-secondary underline underline-offset-4 hover:text-fg-primary"
-          >
+          <a href={FLEET_PROFILE_URL} className="oc-text-link">
             on Loki
           </a>
           .

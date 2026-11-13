@@ -65,6 +65,13 @@ export interface PublicSearchOptions {
    * searchkit). Any one of them makes a row a candidate.
    */
   terms?: string[];
+  /**
+   * Throw on a failed call instead of answering "nothing". For a page that
+   * caches what it shows (/discover's shelf): an empty answer there was cached
+   * and rendered as "That's everything for now" — a broken database read as an
+   * empty marketplace. A throw reaches the route's error page and is not cached.
+   */
+  strict?: boolean;
 }
 
 interface SearchRow {
@@ -153,10 +160,18 @@ export function toPublicHit(row: SearchRow): PublicHit {
   };
 }
 
-/** Search (or, with no query, browse) everything public. Never throws. */
+/** Search (or, with no query, browse) everything public. Never throws unless `strict`. */
 export async function searchPublic(
   client: AnySupabaseClient,
-  { query = '', types, limit = 24, offset = 0, perType, terms }: PublicSearchOptions = {}
+  {
+    query = '',
+    types,
+    limit = 24,
+    offset = 0,
+    perType,
+    terms,
+    strict = false,
+  }: PublicSearchOptions = {}
 ): Promise<PublicSearchPage> {
   try {
     const { data, error } = await client.rpc('search_public', {
@@ -170,6 +185,9 @@ export async function searchPublic(
     } as never);
     if (error) {
       logger.warn('search_public failed', error, 'Search');
+      if (strict) {
+        throw new PublicSearchError('search_public failed');
+      }
       return { hits: [], total: 0 };
     }
     const rows = (data as SearchRow[] | null) ?? [];
@@ -178,19 +196,37 @@ export async function searchPublic(
       total: toNumber(rows[0]?.total ?? 0) ?? 0,
     };
   } catch (error) {
+    if (error instanceof PublicSearchError) {
+      throw error;
+    }
     logger.warn('search_public threw', error, 'Search');
+    if (strict) {
+      throw new PublicSearchError('search_public threw');
+    }
     return { hits: [], total: 0 };
+  }
+}
+
+/** A public search or count that failed, raised only when the caller asked (`strict`). */
+export class PublicSearchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PublicSearchError';
   }
 }
 
 /** How many public rows each type has, by the same rules as the search. */
 export async function countPublic(
-  client: AnySupabaseClient
+  client: AnySupabaseClient,
+  { strict = false }: { strict?: boolean } = {}
 ): Promise<Partial<Record<PublicHitType, number>>> {
   try {
     const { data, error } = await client.rpc('public_counts', FIXTURE_RPC_ARGS as never);
     if (error) {
       logger.warn('public_counts failed', error, 'Search');
+      if (strict) {
+        throw new PublicSearchError('public_counts failed');
+      }
       return {};
     }
     const counts: Partial<Record<PublicHitType, number>> = {};
@@ -199,7 +235,13 @@ export async function countPublic(
     }
     return counts;
   } catch (error) {
+    if (error instanceof PublicSearchError) {
+      throw error;
+    }
     logger.warn('public_counts threw', error, 'Search');
+    if (strict) {
+      throw new PublicSearchError('public_counts threw');
+    }
     return {};
   }
 }

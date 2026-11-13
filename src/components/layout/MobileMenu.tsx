@@ -36,7 +36,7 @@ interface MobileMenuProps {
 }
 
 const ROW =
-  'flex min-h-11 flex-col justify-center rounded-md px-3 py-2 text-fg-primary hover:bg-surface-raised';
+  'flex min-h-11 flex-col justify-center rounded-md px-3 py-2 text-fg-primary hover:bg-surface-overlay';
 
 function MenuRow({ item, onClose }: { item: NavigationItem; onClose: () => void }) {
   if (!item.href) {
@@ -161,7 +161,7 @@ export function MobileMenu({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-fg-primary hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg-primary"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-fg-primary hover:bg-surface-overlay focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg-primary"
             >
               <X className="h-5 w-5" aria-hidden />
               <span className="sr-only">Close menu</span>

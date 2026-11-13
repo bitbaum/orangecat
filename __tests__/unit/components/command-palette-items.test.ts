@@ -10,7 +10,7 @@ import {
 } from '@/components/search/command-palette-items';
 import { publicHref, type PublicHit } from '@/services/search/public-search';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
-import { sidebarSections } from '@/config/navigation';
+import { footerNavigation, sidebarSections } from '@/config/navigation';
 import { ROUTES } from '@/config/routes';
 import type { Thing } from '@/domain/things/service';
 
@@ -53,9 +53,20 @@ describe('command palette items', () => {
 
   it('offers a visitor no page that only bounces to sign-in', () => {
     const visitor = buildPages(false).map(p => p.href);
-    const membersOnly = sidebarSections.flatMap(section =>
-      section.items.filter(item => section.requiresAuth || item.requiresAuth).map(item => item.href)
+    // A page the public chrome also links (the footer's Community) is open to
+    // visitors even where the sidebar files it under a members-only section.
+    const publicHrefs = new Set(
+      Object.values(footerNavigation)
+        .flat()
+        .map(link => link.href)
     );
+    const membersOnly = sidebarSections
+      .flatMap(section =>
+        section.items
+          .filter(item => section.requiresAuth || item.requiresAuth)
+          .map(item => item.href)
+      )
+      .filter(href => !publicHrefs.has(href));
     expect(membersOnly).toContain(ROUTES.DASHBOARD.CAT);
     for (const href of membersOnly) {
       expect(visitor).not.toContain(href);

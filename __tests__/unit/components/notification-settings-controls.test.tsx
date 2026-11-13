@@ -25,9 +25,9 @@ it('names every category and prevents overlapping autosave requests', async () =
   const fetcher = vi.fn().mockResolvedValueOnce(response()).mockReturnValueOnce(pending);
   vi.stubGlobal('fetch', fetcher);
   render(<NotificationSettingsPage />);
-  const economic = await screen.findByRole('checkbox', { name: 'Payments & orders' });
-  const social = screen.getByRole('checkbox', { name: 'Social' });
-  expect(screen.getByRole('checkbox', { name: 'Organizations' })).toBeChecked();
+  const economic = await screen.findByRole('switch', { name: 'Payments & orders' });
+  const social = screen.getByRole('switch', { name: 'Social' });
+  expect(screen.getByRole('switch', { name: 'Organizations' })).toBeChecked();
   fireEvent.click(economic);
   expect(social).toBeDisabled();
   fireEvent.click(social);
@@ -43,6 +43,6 @@ it('offers a real retry after the initial load fails', async () => {
   vi.stubGlobal('fetch', fetcher);
   render(<NotificationSettingsPage />);
   fireEvent.click(await screen.findByRole('button', { name: 'Retry loading preferences' }));
-  expect(await screen.findByRole('checkbox', { name: 'Payments & orders' })).toBeChecked();
+  expect(await screen.findByRole('switch', { name: 'Payments & orders' })).toBeChecked();
   expect(fetcher).toHaveBeenCalledTimes(2);
 });

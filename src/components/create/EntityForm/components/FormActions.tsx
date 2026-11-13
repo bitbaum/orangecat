@@ -63,6 +63,14 @@ export function FormActions({
   );
 }
 
+/**
+ * Both action rows are a two-column grid of full-width, 44px buttons, so the
+ * committing pair is equal: they used to be content-width, 40px tall, and
+ * "Create" sat beside a "Cancel" of a different size.
+ */
+const ACTION_GRID = 'grid grid-cols-2 gap-3';
+const ACTION_BUTTON = 'min-h-11 w-full';
+
 function WizardNavigation({
   wizardMode,
   isSubmitting,
@@ -72,34 +80,43 @@ function WizardNavigation({
   isSubmitting: boolean;
   entityName: string;
 }) {
+  const forward = wizardMode.onNext ? (
+    <Button type="submit" disabled={isSubmitting} className={ACTION_BUTTON}>
+      Next
+    </Button>
+  ) : wizardMode.isLastStep ? (
+    <Button type="submit" disabled={isSubmitting} className={ACTION_BUTTON}>
+      {isSubmitting ? 'Creating...' : `Create ${entityName}`}
+    </Button>
+  ) : null;
+
   return (
-    <div className="flex justify-between">
-      {wizardMode.onPrevious && (
+    <div className={ACTION_GRID}>
+      {wizardMode.onPrevious ? (
         <Button
           type="button"
           variant="outline"
           onClick={wizardMode.onPrevious}
           disabled={isSubmitting}
+          className={ACTION_BUTTON}
         >
           Previous
         </Button>
+      ) : (
+        <span aria-hidden />
       )}
-      <div className="flex gap-3 ml-auto">
-        {wizardMode.onSkip && (
-          <Button type="button" variant="ghost" onClick={wizardMode.onSkip} disabled={isSubmitting}>
-            Skip
-          </Button>
-        )}
-        {wizardMode.onNext ? (
-          <Button type="submit" disabled={isSubmitting}>
-            Next
-          </Button>
-        ) : wizardMode.isLastStep ? (
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : `Create ${entityName}`}
-          </Button>
-        ) : null}
-      </div>
+      {forward}
+      {wizardMode.onSkip && (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={wizardMode.onSkip}
+          disabled={isSubmitting}
+          className={`${ACTION_BUTTON} col-span-2`}
+        >
+          Skip this step
+        </Button>
+      )}
     </div>
   );
 }
@@ -116,15 +133,15 @@ function StandardActions({
   backUrl: string;
 }) {
   return (
-    <div className="flex gap-4">
-      <Button type="submit" disabled={isSubmitting}>
+    <div className={ACTION_GRID}>
+      <Button type="submit" disabled={isSubmitting} className={ACTION_BUTTON}>
         {isSubmitting
           ? `${mode === 'create' ? 'Creating' : 'Saving'}...`
           : `${mode === 'create' ? 'Create' : 'Save'} ${entityName}`}
       </Button>
       {/* Button renders the link itself — a <button> inside an <a> is
           invalid HTML and two tab stops for one control. */}
-      <Button href={backUrl} variant="outline" disabled={isSubmitting}>
+      <Button href={backUrl} variant="outline" disabled={isSubmitting} className={ACTION_BUTTON}>
         Cancel
       </Button>
     </div>

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { Markdown } from '@bitbaum/chatkit/react';
 import Button from '@/components/ui/Button';
+import { DictationButton } from '@/components/ui/DictationButton';
+import { useAuth } from '@/hooks/useAuth';
 import { CREATIVE_FORMS, type CreativeForm } from '@/domain/creative/brief';
 import { MusicPlayer } from './MusicPlayer';
 import { IMAGE_PROMPT_LIMITS } from '@/config/images';
@@ -10,6 +12,8 @@ import { ROUTES } from '@/config/routes';
 import { useCreativeStudio, EXAMPLE } from './useCreativeStudio';
 
 export function CreativeStudio() {
+  // Transcription is a signed-in endpoint; a visitor types.
+  const { user } = useAuth();
   const {
     ready,
     feeling,
@@ -77,13 +81,21 @@ export function CreativeStudio() {
               disabled={busy}
             />
           </label>
+          {user && (
+            <DictationButton
+              ariaLabel="Say what it feels like"
+              disabled={busy}
+              className="-mt-4"
+              onTranscript={t => setFeeling(prev => (prev ? `${prev} ${t}` : t))}
+            />
+          )}
           <fieldset disabled={busy}>
             <legend className="font-medium">Give it a form</legend>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               {(Object.keys(CREATIVE_FORMS) as CreativeForm[]).map(key => (
                 <label
                   key={key}
-                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm ${form === key ? 'border-interactive bg-surface-raised text-fg-primary' : 'border-default text-fg-secondary'}`}
+                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${form === key ? 'border-interactive bg-surface-raised text-fg-primary' : 'border-default text-fg-secondary'}`}
                 >
                   <input
                     type="radio"

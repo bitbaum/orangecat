@@ -7,7 +7,7 @@
  * Split into smaller subcomponents for maintainability.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { logger } from '@/utils/logger';
 import {
   WalletHeader,
@@ -30,8 +30,15 @@ export function WalletManager({
   isOwner = false,
   onFieldFocus,
   unusableConnectionWalletIds,
+  openFor,
 }: WalletManagerProps) {
-  const [isAdding, setIsAdding] = useState(false);
+  const [isAdding, setIsAdding] = useState(!!openFor);
+  // The link can be read after first render (the page reads it from the URL).
+  useEffect(() => {
+    if (openFor) {
+      setIsAdding(true);
+    }
+  }, [openFor]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [walletToDelete, setWalletToDelete] = useState<(typeof wallets)[0] | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -80,6 +87,7 @@ export function WalletManager({
       {/* Add new wallet form */}
       {isAdding && isOwner && (
         <WalletForm
+          purpose={openFor ?? 'receive'}
           onFieldFocus={onFieldFocus}
           onSubmit={async data => {
             await onAdd?.(data);

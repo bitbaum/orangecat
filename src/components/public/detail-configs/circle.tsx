@@ -14,7 +14,6 @@ import { ROUTES } from '@/config/routes';
 export const circleDetailConfig: EntityDetailConfig = {
   entityType: 'circle',
   ownerLabel: 'Created by',
-  descriptionTitle: 'About this Circle',
   metadataSelect: 'title, description',
   showPaymentSection: false,
   getViewRoute: id => ROUTES.CIRCLES.VIEW(id),

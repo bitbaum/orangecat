@@ -11,7 +11,12 @@ export async function loginE2EUser(page: Page) {
   await page.getByLabel('Email address').fill(email);
   // Avoid getByLabel('Password') — matches the "Show password" toggle too.
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  // The form's own button: the page also has a "Sign in | Create account" switch.
+  await page
+    .locator('form')
+    .filter({ has: page.getByRole('textbox', { name: 'Password' }) })
+    .getByRole('button', { name: 'Sign in', exact: true })
+    .click();
 
   await expect(page).toHaveURL(/dashboard|profile|create|projects|cat|onboarding/i);
 }

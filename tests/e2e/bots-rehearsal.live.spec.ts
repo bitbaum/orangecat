@@ -123,9 +123,9 @@ async function shot(page: Page, name: string) {
   });
 }
 
-/** A new person: the pseudonymous start, which needs no email. */
+/** A new person: the pseudonymous start, which needs no email (the create-account side). */
 async function startInstantly(page: Page) {
-  await page.goto(`${baseURL}/auth`, { waitUntil: 'networkidle' });
+  await page.goto(`${baseURL}/auth?mode=register`, { waitUntil: 'networkidle' });
   await page
     .locator('button, a')
     .filter({ hasText: /Start instantly/ })

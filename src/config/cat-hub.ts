@@ -24,6 +24,10 @@ export const CAT_HUB_COPY = {
   title: CAT_AGENT.name,
   /** The personal greeting ("Good evening, Cato") is built in EmptyState. */
   greetingNewUser: 'Tell Cat what you want to do',
+  /** Under that greeting: what kind of message it takes. */
+  newUserHint: 'Say it in a sentence. Cat drafts it and asks before anything goes live.',
+  /** The way to the name-and-bio form from the welcome. */
+  newUserIntroduce: 'Or tell Cat who you are first',
   composerPlaceholder: 'Message Cat…',
   /** What a message of only a photo or one of your things says. */
   attachmentOnly: 'Have a look at this.',

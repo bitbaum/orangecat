@@ -40,7 +40,6 @@ const ticketOf = (entity: Record<string, unknown>) => {
 export const eventDetailConfig: EntityDetailConfig = {
   entityType: 'event',
   ownerLabel: 'Organizer',
-  descriptionTitle: 'About this Event',
   backText: 'Back to Events',
   backHref: '/events',
   // Events are public in several statuses and never 'active' — the default

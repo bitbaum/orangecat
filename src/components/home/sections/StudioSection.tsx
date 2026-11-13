@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ProjectMark } from '@/components/brand/ProjectMark';
 import { StudioFleetGrid } from '@/components/ecosystem/StudioFleetGrid';
-import { selectHomeFleet } from '@/components/ecosystem/studio-fleet';
+import { homeFleetPreview, selectHomeFleet } from '@/components/ecosystem/studio-fleet';
 import { ECOSYSTEM, ECOSYSTEM_PILLARS } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
@@ -11,15 +11,18 @@ import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
  * The studio behind the product, on the front page.
  *
  * Three marks, three products — the economy, the execution, the governance —
- * and under them every product the studio has live, each with its own face
- * and a link to its page. This is the proof the hero cannot give on its own:
- * not a pitch but a working economy with things in it, built in the open.
+ * and under them a handful of the products built on them, each with its own
+ * face and a link to its page, then a link to all of them. It used to list
+ * every live product, pillars again included: about 4,100px on a phone.
+ * This is the proof the hero cannot give on its own: not a pitch but a
+ * working economy with things in it, built in the open.
  * The list is Loki's fleet map, never a copy kept here; if the map cannot be
  * reached the pillars still stand and the grid is simply absent.
  */
 export default async function StudioSection() {
   const map = await fetchStudioMapForCat();
   const tiles = selectHomeFleet(map);
+  const preview = homeFleetPreview(tiles);
 
   return (
     <section
@@ -60,7 +63,7 @@ export default async function StudioSection() {
           ))}
         </ul>
 
-        {tiles.length > 0 && (
+        {preview.length > 0 && (
           <div className="mt-10 sm:mt-14">
             <div className="mb-4 flex items-end justify-between gap-4">
               <h3 className="text-sm font-medium uppercase tracking-caps text-fg-tertiary">
@@ -70,10 +73,11 @@ export default async function StudioSection() {
                 href={ROUTES.ECOSYSTEM}
                 className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-fg-primary hover:underline"
               >
-                The whole stack <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                All {tiles.length} live products{' '}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
-            <StudioFleetGrid tiles={tiles} />
+            <StudioFleetGrid tiles={preview} />
           </div>
         )}
       </div>

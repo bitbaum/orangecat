@@ -11,6 +11,7 @@
 
 import type { Metadata } from 'next';
 import { DiscoverScreen } from '@/components/discover/DiscoverScreen';
+import { pluralLabel } from '@/components/discover/DiscoverChips';
 import { parseDiscoverParams } from '@/services/discover/params';
 import { loadDiscoverView } from '@/services/discover/view';
 
@@ -21,9 +22,13 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParams;
 }): Promise<Metadata> {
-  const { q } = parseDiscoverParams(await searchParams);
+  const { q, type } = parseDiscoverParams(await searchParams);
   // A results page for one query is not a page worth indexing; the shelf is.
-  return q ? { title: `“${q}” — Discover`, robots: { index: false, follow: true } } : {};
+  if (q) {
+    return { title: `“${q}” — Discover`, robots: { index: false, follow: true } };
+  }
+  // One kind's page is named for the kind, as its heading is.
+  return type ? { title: `${pluralLabel(type)} — Discover` } : {};
 }
 
 export default async function DiscoverPage({ searchParams }: { searchParams: SearchParams }) {

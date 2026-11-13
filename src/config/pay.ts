@@ -121,7 +121,11 @@ export const PAY_COPY = {
   shareHint: 'Send this link and they can pay you from any Bitcoin wallet.',
   copyLink: 'Copy link',
   copiedLink: 'Link copied',
+  /** Beside "Pay from my wallet": the code, for a different wallet. */
   generate: 'Show the code',
+  /** The one action when no wallet is in hand: the verb and the figure. */
+  payAmount: (amount: string) => `Pay ${amount}`,
+  enterAmount: 'Enter an amount',
   generating: 'Preparing…',
   scan: 'Waiting for the payment…',
   again: 'Change amount',

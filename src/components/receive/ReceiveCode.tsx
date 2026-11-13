@@ -23,12 +23,11 @@ import { useCallback, useMemo } from 'react';
 import { Check, Copy, Share2 } from 'lucide-react';
 import { ScanCode } from '@/components/ui/ScanCode';
 import brandAssets from '@/config/brand-assets.json';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/Button';
+import { PayeeIdentity } from '@/components/money/PayeeIdentity';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { buildPayUrl, payLinkOrigin, PAY_COPY } from '@/config/pay';
 import { RECEIVE_SHARE_COPY } from '@/config/receive';
-import { getInitial } from '@/utils/string';
 import { cn } from '@/lib/utils';
 
 interface ReceiveCodeProps {
@@ -72,20 +71,7 @@ export function ReceiveCode({ username, name, avatarUrl, className }: ReceiveCod
         three borders competing for one object. The person and the code sit on
         the page itself; the code is the only thing with a surface.
       */}
-      {name && (
-        <div className="flex flex-col items-center">
-          <Avatar className="h-12 w-12">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
-            <AvatarFallback className="text-lg font-semibold text-fg-secondary">
-              {getInitial(name)}
-            </AvatarFallback>
-          </Avatar>
-          <p className="mb-0 mt-3 font-heading text-xl font-semibold leading-tight tracking-display text-fg-primary">
-            {name}
-          </p>
-          <p className="mb-0 text-sm text-fg-secondary">@{username}</p>
-        </div>
-      )}
+      {name && <PayeeIdentity name={name} username={username} avatarUrl={avatarUrl} />}
 
       {/* The Cat sits in the middle of the code: the symbol is recognisably ours
           before it is read, and it costs the scanner ~4% of the modules. */}

@@ -54,7 +54,7 @@ export function WalletsHelpSection({ isDesktop }: WalletsHelpSectionProps) {
             <li>Active wallets appear on the Wallets tab of your public profile</li>
           </ul>
           <details className="mt-3">
-            <summary className="cursor-pointer text-fg-primary hover:underline underline-offset-4 text-xs font-medium">
+            <summary className="flex min-h-11 cursor-pointer items-center text-fg-primary hover:underline underline-offset-4 text-xs font-medium">
               What about extended public keys (xpub/ypub/zpub)?
             </summary>
             <p className="mt-2 text-xs text-fg-secondary pl-4">

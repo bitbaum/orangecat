@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { footerNavigation } from '@/config/navigation';
-import { shouldShowFooter } from '@/config/routes';
+import { getRouteSurface, type RouteSurface } from '@/config/routes';
 import Logo from './Logo';
 import { useShellPathname } from '@/hooks/useShellPathname';
 import { ArrowUp } from 'lucide-react';
@@ -61,10 +61,34 @@ function FooterColumn({
   );
 }
 
-const Footer = React.memo(function Footer() {
+/**
+ * Whether the site footer belongs on this page: every public page, and an app
+ * surface (Discover, a public listing) when a visitor is on it — signed out it
+ * was a page with no way to the rest of the site. Waits for auth to settle on
+ * app surfaces so a signed-in person never sees it flash.
+ */
+export function showsSiteFooter(
+  surface: RouteSurface,
+  auth: { signedIn: boolean; settled: boolean }
+): boolean {
+  if (auth.signedIn) {
+    return false;
+  }
+  return surface === 'public' || (surface === 'app' && auth.settled);
+}
+
+interface FooterProps {
+  /** Pad below for the phone tab bar (a visitor's footer on an app surface). */
+  clearsMobileNav?: boolean;
+}
+
+const Footer = React.memo(function Footer({ clearsMobileNav = false }: FooterProps) {
   const pathname = useShellPathname();
-  const { user, hydrated } = useAuth();
-  const shouldRender = shouldShowFooter(pathname);
+  const { user, hydrated, isLoading } = useAuth();
+  const shouldRender = showsSiteFooter(getRouteSurface(pathname), {
+    signedIn: hydrated && !!user,
+    settled: hydrated && !isLoading,
+  });
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: scrollBehavior() });
@@ -72,18 +96,21 @@ const Footer = React.memo(function Footer() {
 
   // Marketing footer is for anonymous visitors only. Signed-in users keep
   // the app chrome everywhere — including public pages and 404/error pages
-  // — instead of getting a second marketing nav system. Also never render
-  // on app surfaces (layout conflicts with the sidebar).
-  if (!shouldRender || (hydrated && !!user)) {
+  // — instead of getting a second marketing nav system.
+  if (!shouldRender) {
     return null;
   }
 
   return (
-    <footer className="bg-surface-page border-t border-default mt-auto relative">
+    <footer
+      className={`bg-surface-page border-t border-default mt-auto relative ${
+        clearsMobileNav ? 'app-bottom-nav-clearance' : ''
+      }`}
+    >
       {/* Back to top button */}
       <button
         onClick={scrollToTop}
-        className="absolute -top-5.5 right-4 sm:right-8 h-11 w-11 bg-surface-base text-fg-primary rounded-md border border-default hover:bg-surface-raised transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center group z-10"
+        className="absolute -top-5.5 right-4 sm:right-8 h-11 w-11 bg-surface-base text-fg-primary rounded-md border border-default hover:bg-surface-overlay transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center group z-10"
         aria-label="Back to top"
         type="button"
       >
@@ -110,7 +137,7 @@ const Footer = React.memo(function Footer() {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="group h-11 w-11 bg-surface-base border border-default rounded-md flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-surface-raised transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                  className="group h-11 w-11 bg-surface-base border border-default rounded-md flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Follow us on ${item.name}`}

@@ -10,23 +10,21 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { TASK_CATEGORIES, TASK_STATUSES, TASK_TYPES } from '@/config/tasks';
 import type { Task } from '@/lib/schemas/tasks';
-import {
-  ClipboardList,
-  AlertTriangle,
-  Play,
-  Clock,
-  Filter,
-  Plus,
-  ChevronDown,
-  ChevronUp,
-  BarChart3,
-} from 'lucide-react';
+import { ClipboardList, AlertTriangle, Play, Clock, Plus } from 'lucide-react';
 import QuickStatCard from './components/QuickStatCard';
 import TaskCard from './components/TaskCard';
 import TaskFilters from './components/TaskFilters';
-import { GRADIENTS } from '@/config/gradients';
+import TasksHeaderActions from './components/TasksHeaderActions';
+import EmptyState from '@/components/ui/EmptyState';
 import { API_ROUTES } from '@/config/api-routes';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+
+/**
+ * Whose tasks these are, said on the page: the ones you made and the ones
+ * someone asked of you (RLS, 20261113120000). "Manage and complete team
+ * tasks" read as if every account's tasks were yours to complete.
+ */
+const TASKS_PAGE_SCOPE = 'Tasks you made, and tasks someone asked of you';
 
 type TaskCategory = (typeof TASK_CATEGORIES)[keyof typeof TASK_CATEGORIES];
 type TaskStatus = (typeof TASK_STATUSES)[keyof typeof TASK_STATUSES];
@@ -167,56 +165,36 @@ export default function TasksPage() {
     return null;
   }
 
+  const hasFilters = Boolean(categoryFilter || statusFilter || typeFilter || showArchived);
+  const clearFilters = () => {
+    setCategoryFilter('');
+    setStatusFilter('');
+    setTypeFilter('');
+    setShowArchived(false);
+  };
+
   const headerActions = (
-    <div className="flex items-center gap-2">
-      <Button
-        href={ROUTES.DASHBOARD.TASKS_ANALYTICS}
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2"
-      >
-        <BarChart3 className="h-4 w-4" aria-hidden="true" />
-        <span>Analytics</span>
-      </Button>
-      <Button
-        onClick={() => setShowFilters(!showFilters)}
-        aria-expanded={showFilters}
-        aria-controls="task-filters"
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2"
-      >
-        <Filter className="h-4 w-4" />
-        <span>Filter</span>
-        {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </Button>
-      <Button
-        href={ROUTES.DASHBOARD.TASKS_NEW}
-        className={`flex items-center gap-2 ${GRADIENTS.brandTiffanyDark}`}
-      >
-        <Plus className="h-4 w-4" />
-        <span>Create Task</span>
-      </Button>
-    </div>
+    <TasksHeaderActions
+      showFilters={showFilters}
+      onToggleFilters={() => setShowFilters(!showFilters)}
+    />
   );
 
   return (
-    <EntityListShell
-      title="Tasks"
-      description="Manage and complete team tasks"
-      headerActions={headerActions}
-    >
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <QuickStatCard icon={ClipboardList} label="Total" value={taskCounts.total} />
-        <QuickStatCard icon={Clock} label="Ready" value={taskCounts.idle} />
-        <QuickStatCard
-          icon={AlertTriangle}
-          label="Needs attention"
-          value={taskCounts.needsAttention}
-        />
-        <QuickStatCard icon={Play} label="In progress" value={taskCounts.inProgress} />
-      </div>
+    <EntityListShell title="Tasks" description={TASKS_PAGE_SCOPE} headerActions={headerActions}>
+      {/* Quick Stats — not four zeros above an empty list. */}
+      {tasks.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <QuickStatCard icon={ClipboardList} label="Total" value={taskCounts.total} />
+          <QuickStatCard icon={Clock} label="Ready" value={taskCounts.idle} />
+          <QuickStatCard
+            icon={AlertTriangle}
+            label="Needs attention"
+            value={taskCounts.needsAttention}
+          />
+          <QuickStatCard icon={Play} label="In progress" value={taskCounts.inProgress} />
+        </div>
+      )}
 
       {showFilters && (
         <TaskFilters
@@ -255,28 +233,30 @@ export default function TasksPage() {
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <div className="bg-surface-base rounded-lg border border-default p-12 text-center">
-          <ClipboardList className="h-12 w-12 text-fg-tertiary mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-fg-primary mb-2">No tasks found</h3>
-          <p className="text-fg-secondary mb-6">
-            {categoryFilter || statusFilter || typeFilter
-              ? 'Try different filter settings'
-              : 'Create your first task'}
-          </p>
-          {(categoryFilter || statusFilter || typeFilter || showArchived) && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCategoryFilter('');
-                setStatusFilter('');
-                setTypeFilter('');
-                setShowArchived(false);
-              }}
-            >
-              Clear filters
-            </Button>
-          )}
-        </div>
+        hasFilters ? (
+          <EmptyState
+            icon={ClipboardList}
+            title="No tasks match these filters"
+            description="Try different filter settings."
+            action={
+              <Button variant="outline" className="min-h-11" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={ClipboardList}
+            title="No tasks yet"
+            description="Tasks you make, and tasks someone asks of you, appear here."
+            action={
+              <Button href={ROUTES.DASHBOARD.TASKS_NEW} className="min-h-11">
+                <Plus className="mr-2 h-4 w-4" aria-hidden />
+                Create Task
+              </Button>
+            }
+          />
+        )
       ) : (
         <div className="space-y-3">
           {tasks.map(task => (

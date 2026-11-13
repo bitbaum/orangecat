@@ -129,6 +129,8 @@ describe('AccountMenuControl', () => {
     render(<AccountMenuControl />);
     const labels = seen.props?.groups?.flatMap(g => g.items.map(i => i.label));
     expect(labels).toContain('Appearance: Dark');
-    expect(labels).toEqual(expect.arrayContaining(['Dashboard', 'My projects', 'Your page']));
+    expect(labels).toEqual(
+      expect.arrayContaining(['Your page', 'Edit profile', 'Settings', 'Help'])
+    );
   });
 });

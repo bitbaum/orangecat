@@ -25,11 +25,8 @@ it('offers writing through a named dialog and restores focus after Escape', asyn
   trigger.focus();
   fireEvent.click(trigger);
   expect(screen.getByRole('dialog', { name: 'Create' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Article', exact: true })).toHaveAttribute(
-    'href',
-    '/articles/new'
-  );
-  expect(screen.getByRole('link', { name: 'Post', exact: true })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /^Article/ })).toHaveAttribute('href', '/articles/new');
+  expect(screen.getByRole('link', { name: /^Post/ })).toHaveAttribute(
     'href',
     '/timeline?compose=true'
   );

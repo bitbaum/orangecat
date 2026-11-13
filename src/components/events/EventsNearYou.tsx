@@ -100,7 +100,7 @@ export default function EventsNearYou() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button variant="accent" onClick={useMyLocation} disabled={loading}>
+        <Button variant="outline" onClick={useMyLocation} disabled={loading}>
           <LocateFixed className="mr-2 h-4 w-4" />
           Near me
         </Button>
@@ -113,8 +113,8 @@ export default function EventsNearYou() {
             className="min-h-11 w-full min-w-0 rounded-md border border-default bg-surface-base px-3 text-sm text-fg-primary"
           />
           <Button type="submit" variant="outline" disabled={loading || place.trim().length < 2}>
-            <Search className="h-4 w-4" />
-            <span className="sr-only">Search</span>
+            <Search className="mr-2 h-4 w-4" aria-hidden="true" />
+            Search
           </Button>
         </form>
       </div>

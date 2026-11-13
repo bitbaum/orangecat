@@ -18,7 +18,7 @@ import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicP
 import { cn } from '@/lib/utils';
 
 export default function ChannelComingSoonPage() {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const [showShare, setShowShare] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -143,24 +143,28 @@ export default function ChannelComingSoonPage() {
                 </form>
               </div>
               <div className="flex flex-col-reverse sm:flex-row items-center gap-2 relative">
-                <Button href={ROUTES.DASHBOARD.PEOPLE} variant="outline">
+                <Button href={ROUTES.DISCOVER_TYPE('people')} variant="outline">
                   <Users className="w-4 h-4 mr-2" /> Discover People
                 </Button>
-                <div className="relative">
-                  <Button variant="accent" onClick={() => setShowShare(!showShare)}>
-                    <Share2 className="w-4 h-4 mr-2" /> Share My Profile
-                  </Button>
-                  {showShare && (
-                    <div className="absolute right-0 mt-2 z-50">
-                      <ProfileShare
-                        username={profile?.username || user?.id || ''}
-                        profileName={profile?.name || profile?.username || 'My Profile'}
-                        profileBio={profile?.bio || undefined}
-                        onClose={() => setShowShare(false)}
-                      />
-                    </div>
-                  )}
-                </div>
+                {/* Only someone with a profile has one to share; a visitor got a
+                    share sheet for an empty username. */}
+                {profile?.username && (
+                  <div className="relative">
+                    <Button variant="outline" onClick={() => setShowShare(!showShare)}>
+                      <Share2 className="w-4 h-4 mr-2" /> Share My Profile
+                    </Button>
+                    {showShare && (
+                      <div className="absolute right-0 mt-2 z-50">
+                        <ProfileShare
+                          username={profile.username}
+                          profileName={profile.name || profile.username}
+                          profileBio={profile.bio || undefined}
+                          onClose={() => setShowShare(false)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -171,7 +175,7 @@ export default function ChannelComingSoonPage() {
           {[
             {
               title: 'Phase 1 — Uploads',
-              desc: 'Upload videos and audio, with shareable links, Bitcoin tipping, and basic analytics.',
+              desc: 'Upload videos and audio, with shareable links, Bitcoin payments, and basic analytics.',
             },
             {
               title: 'Phase 2 — Live',

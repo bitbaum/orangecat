@@ -122,7 +122,8 @@ export default function BookingsDashboardPage() {
   const tabs: TabConfig[] = [
     {
       id: 'incoming',
-      label: 'Incoming Requests',
+      // One short word per tab, so the three fit on one line on a phone.
+      label: 'Requests',
       count: bookings.filter(b => b.status === STATUS.BOOKINGS.PENDING).length,
     },
     {
@@ -161,15 +162,22 @@ export default function BookingsDashboardPage() {
           <Loader2 className="h-8 w-8 animate-spin text-fg-tertiary" />
         </div>
       ) : filteredBookings.length === 0 ? (
+        // Every empty tab ends in the one thing that brings bookings: a
+        // service to book. It said "no bookings found" and stopped there.
         <EmptyState
           icon={Calendar}
-          title="No bookings found"
-          description={
+          title={
             activeTab === 'incoming'
-              ? "You don't have any pending booking requests"
+              ? 'No requests waiting'
               : activeTab === 'confirmed'
-                ? "You don't have any confirmed bookings"
+                ? 'No confirmed bookings'
                 : 'No booking history yet'
+          }
+          description="Bookings appear here when someone books one of your services."
+          action={
+            <Button href={ROUTES.DASHBOARD.SERVICES_CREATE} className="min-h-11">
+              Create a service
+            </Button>
           }
         />
       ) : (

@@ -178,11 +178,11 @@ export function CatMemoryImport({ onImported }: CatMemoryImportProps) {
               disabled={isImporting}
               rows={6}
               placeholder="Paste everything your other AI exported…"
-              className="mt-2 w-full resize-y rounded-md border border-subtle bg-surface-page p-3 text-sm text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent-warm disabled:opacity-60"
+              className="mt-2 w-full resize-y rounded-md border border-subtle bg-surface-page p-3 text-sm text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
             />
             <div className="mt-3 flex items-center justify-end">
               <Button
-                variant="accent"
+                variant="primary"
                 onClick={handleImport}
                 disabled={isImporting || !text.trim()}
                 className="h-11 gap-2 px-4 text-sm"

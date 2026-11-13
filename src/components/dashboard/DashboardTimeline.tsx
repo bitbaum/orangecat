@@ -37,12 +37,15 @@ export function DashboardTimeline({
   return (
     <DashboardSection
       id="dashboard-activity"
-      title="Recent activity"
+      // The feed is the platform's public activity as well as the person's own
+      // and their follows'; "Recent activity" read as theirs, to someone who
+      // had done nothing yet.
+      title="From people on OrangeCat"
       action={{ label: 'View timeline', href: ROUTES.TIMELINE }}
     >
       <div className="overflow-hidden rounded-lg border border-default bg-surface-base">
         {isLoading ? (
-          <div aria-label="Loading recent activity">
+          <div aria-label="Loading activity">
             {Array.from({ length: PREVIEW_LIMIT }, (_, index) => (
               <TimelinePostSkeleton key={index} />
             ))}
@@ -50,7 +53,7 @@ export function DashboardTimeline({
         ) : error ? (
           <div className="space-y-3 p-4">
             <p role="status" className="text-sm text-fg-secondary">
-              Recent activity could not be loaded.
+              Activity could not be loaded.
             </p>
             <Button variant="outline" size="sm" onClick={onRefresh}>
               Try again
@@ -64,8 +67,8 @@ export function DashboardTimeline({
             compact
           />
         ) : (
-          <p className="p-4 text-sm text-fg-secondary">
-            Posts and project updates from your network will appear here.
+          <p className="mb-0 p-4 text-sm text-fg-secondary">
+            Posts and project updates from people on OrangeCat will appear here.
           </p>
         )}
       </div>
