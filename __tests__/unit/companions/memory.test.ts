@@ -5,6 +5,7 @@ import {
   extractCompanionMemories,
   rememberCompanionFacts,
   deleteAllCompanionMemories,
+  writeCompanionMemory,
   MAX_MEMORIES_PER_PAIR,
   MAX_MEMORY_CHARS,
 } from '@/services/companions/memory';
@@ -206,5 +207,43 @@ describe('deleteAllCompanionMemories', () => {
       ['user_id', 'user-1'],
       ['assistant_id', 'comp-1'],
     ]);
+  });
+});
+
+describe('writeCompanionMemory', () => {
+  const key = { assistantId: 'a-1', userId: 'u-1' };
+
+  it("stores the person's own words for the pair, marked as theirs", async () => {
+    const { client, captured } = mockSupabase();
+    const stored = await writeCompanionMemory(client, key, '  I am vegetarian  ');
+    expect(stored).toBe('I am vegetarian');
+    expect(captured.inserted).toEqual([
+      expect.objectContaining({
+        assistant_id: 'a-1',
+        user_id: 'u-1',
+        content: 'I am vegetarian',
+        source: 'owner',
+      }),
+    ]);
+    expect(captured.deletes).toEqual([]);
+  });
+
+  it('forgets the line it corrects, scoped to the person, only after the new one is stored', async () => {
+    const { client, captured } = mockSupabase();
+    await writeCompanionMemory(client, key, 'Lives in Bern', 'm-9');
+    expect(captured.inserted).toHaveLength(1);
+    expect(captured.deletes).toEqual([
+      [
+        ['user_id', 'u-1'],
+        ['id', 'm-9'],
+      ],
+    ]);
+  });
+
+  it('forgets nothing when there is nothing to store', async () => {
+    const { client, captured } = mockSupabase();
+    expect(await writeCompanionMemory(client, key, '  ', 'm-9')).toBeNull();
+    expect(captured.inserted).toEqual([]);
+    expect(captured.deletes).toEqual([]);
   });
 });

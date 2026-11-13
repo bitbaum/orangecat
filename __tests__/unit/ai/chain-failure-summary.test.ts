@@ -29,6 +29,22 @@ describe('a bot turn the shared pool could not answer', () => {
     expect(JSON.stringify(summary)).not.toContain('private');
   });
 
+  it("marks our own daily cap, so it is not read as the vendor's 429", () => {
+    const capped = Object.assign(new Error('daily spending cap reached for groq (rate limit)'), {
+      name: 'VendorCapReached',
+      status: 429,
+    });
+    expect(
+      chainFailureSummary([
+        { provider: 'groq', error: capped },
+        { provider: 'openrouter', error: { status: 429 } },
+      ])
+    ).toEqual([
+      { provider: 'groq', status: 429, cap: true },
+      { provider: 'openrouter', status: 429 },
+    ]);
+  });
+
   it('tells the person the way out that works whatever the pool does', () => {
     expect(SHARED_POOL_DOWN_MESSAGE).toMatch(/your own API key in Settings → AI/);
     expect(SHARED_POOL_DOWN_MESSAGE).not.toMatch(/Gemini|Groq|OpenRouter|502|chain/i);

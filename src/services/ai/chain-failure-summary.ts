@@ -26,9 +26,9 @@ export const SHARED_POOL_DOWN_MESSAGE =
  */
 export function chainFailureSummary(
   failures: ReadonlyArray<{ provider: string; error: unknown }>
-): Array<{ provider: string; status: number | null }> {
+): Array<{ provider: string; status: number | null; cap?: true }> {
   return failures.map(f => {
-    const e = f.error as { statusCode?: unknown; status?: unknown } | null;
+    const e = f.error as { statusCode?: unknown; status?: unknown; name?: unknown } | null;
     const candidate = e?.statusCode ?? e?.status;
     const status =
       typeof candidate === 'number' &&
@@ -37,6 +37,14 @@ export function chainFailureSummary(
       candidate <= 599
         ? candidate
         : null;
-    return { provider: String(f.provider).slice(0, 40), status };
+    // Our own daily cap refuses a call as a 429 so the chain moves on
+    // (vendor-spend-cap.ts). In the summary it is told apart from the vendor's
+    // own 429: "the pool is rationed by them" and "by us" need different fixes.
+    const cap = e?.name === 'VendorCapReached';
+    return {
+      provider: String(f.provider).slice(0, 40),
+      status,
+      ...(cap ? { cap: true as const } : {}),
+    };
   });
 }

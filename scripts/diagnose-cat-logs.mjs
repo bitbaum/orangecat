@@ -24,10 +24,14 @@ export function summarizeCatJournal(input) {
           typeof link?.provider === 'string' && /^[a-z0-9_-]{1,40}$/.test(link.provider)
             ? link.provider
             : 'unknown';
+        // "cap" is OrangeCat's own daily spending cap refusing the call; a
+        // number is what the vendor answered.
         const status =
-          Number.isInteger(link?.status) && link.status >= 400 && link.status <= 599
-            ? link.status
-            : 'unknown';
+          link?.cap === true
+            ? 'cap'
+            : Number.isInteger(link?.status) && link.status >= 400 && link.status <= 599
+              ? link.status
+              : 'unknown';
         const key = `${provider}:${status}`;
         botLinks.set(key, (botLinks.get(key) ?? 0) + 1);
       }
