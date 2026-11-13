@@ -46,7 +46,7 @@ export function RoadmapSteps({ goal }: { goal: LinkedGoal }) {
                   key={`${c.anchor}-${j}`}
                   href={`${ROUTES.CHANGELOG}#${c.anchor}`}
                   title={c.line}
-                  className="font-mono text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
+                  className="oc-text-link font-mono"
                 >
                   {c.date}
                 </a>
@@ -71,19 +71,13 @@ export function GoalRecord({ goal }: { goal: LinkedGoal }) {
   return (
     <p className="text-xs text-fg-tertiary">
       In the changelog{' '}
-      <a
-        href={`${ROUTES.CHANGELOG}#${first?.anchor ?? ''}`}
-        className="font-mono text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
-      >
+      <a href={`${ROUTES.CHANGELOG}#${first?.anchor ?? ''}`} className="oc-text-link font-mono">
         {goal.firstDate}
       </a>
       {goal.lastDate && goal.lastDate !== goal.firstDate && (
         <>
           {' → '}
-          <a
-            href={`${ROUTES.CHANGELOG}#${last?.anchor ?? ''}`}
-            className="font-mono text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
-          >
+          <a href={`${ROUTES.CHANGELOG}#${last?.anchor ?? ''}`} className="oc-text-link font-mono">
             {goal.lastDate}
           </a>
         </>

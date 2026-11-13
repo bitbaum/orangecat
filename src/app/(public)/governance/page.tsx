@@ -60,7 +60,7 @@ export default async function GovernancePage() {
             <>
               The Cat&apos;s platform-wide spending limits are set by governance, not by us:
               changing them requires a Bitcoin-signed vote on{' '}
-              <a href={solonBase} className="underline" rel="noopener">
+              <a href={solonBase} className="oc-text-link" rel="noopener">
                 Solon
               </a>
               , and every decision is independently verifiable.
@@ -110,7 +110,7 @@ export default async function GovernancePage() {
                 {v.solon_decision_id ? (
                   <a
                     href={`${solonBase}/api/v1/decisions/${v.solon_decision_id}`}
-                    className="underline text-fg-primary"
+                    className="oc-text-link"
                     rel="noopener"
                   >
                     Solon decision {v.solon_decision_id.slice(0, 8)}… — verify the signed votes
@@ -131,18 +131,18 @@ export default async function GovernancePage() {
             <p className="mt-2 text-fg-secondary">
               Don&apos;t take this page&apos;s word for it. Every proposal and how its vote went is
               published on{' '}
-              <a href={`${solonBase}/proposals`} className="underline" rel="noopener">
+              <a href={`${solonBase}/proposals`} className="oc-text-link" rel="noopener">
                 Solon&apos;s decisions page
               </a>
               , and the live governed state of the whole stack is published at{' '}
-              <a href={`${solonBase}/ecosystem`} className="underline" rel="noopener">
+              <a href={`${solonBase}/ecosystem`} className="oc-text-link" rel="noopener">
                 solon.orangecat.ch/ecosystem
               </a>
               .
             </p>
             <p className="mt-3 text-fg-secondary">
               For why the governance layer sits outside the product it governs, see{' '}
-              <Link href={ROUTES.ECOSYSTEM} className="underline text-fg-primary">
+              <Link href={ROUTES.ECOSYSTEM} className="oc-text-link">
                 the three-pillar stack
               </Link>
               .
