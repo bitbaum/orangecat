@@ -9,13 +9,15 @@
  * match first. An empty query browses instead: everything public, newest first.
  *
  * Fixture patterns travel as RPC arguments from src/config/public-directory.ts,
- * the one list. The two rules SQL cannot express the same way (stamped audit
- * group names, the "User" display name) are applied here to the rows returned.
+ * the one list, so a count, a total and the rows it counts agree. The rule SQL
+ * does not take (the "User" display name) is applied here to the rows returned;
+ * the group-name check below repeats what SQL already did, from the same list.
  */
 
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import {
   EXACT_FIXTURE_USERNAMES,
+  FIXTURE_GROUP_NAME_PATTERNS,
   FIXTURE_TITLE_LIKE_PATTERNS,
   FIXTURE_USERNAME_ILIKE_PATTERNS,
   isFixtureDisplayName,
@@ -95,6 +97,7 @@ export const FIXTURE_RPC_ARGS = {
   p_exclude_title_like: [...FIXTURE_TITLE_LIKE_PATTERNS],
   p_exclude_handle_ilike: [...FIXTURE_USERNAME_ILIKE_PATTERNS],
   p_exclude_handles: [...EXACT_FIXTURE_USERNAMES],
+  p_exclude_group_names: [...FIXTURE_GROUP_NAME_PATTERNS],
 };
 
 /**

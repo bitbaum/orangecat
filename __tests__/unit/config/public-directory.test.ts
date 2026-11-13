@@ -1,9 +1,11 @@
 import {
+  FIXTURE_GROUP_NAME_PATTERNS,
   isFixtureUsername,
   isFixtureDisplayName,
   isFixtureProfile,
   isFixtureGroupTitle,
   isEmailDerivedHandle,
+  withoutFixtureGroups,
 } from '@/config/public-directory';
 
 describe('public-directory', () => {
@@ -46,6 +48,30 @@ describe('public-directory', () => {
     expect(isFixtureGroupTitle('Audit Committee')).toBe(false);
     expect(isFixtureGroupTitle('Audit Committee 2026')).toBe(false);
     expect(isFixtureGroupTitle('Workflow Design Guild')).toBe(false);
+  });
+
+  // The same strings run as Postgres `~*` (the search RPCs, PostgREST imatch)
+  // and as JS RegExp, so they keep to what both read alike: `\b` is a
+  // backspace to Postgres, and a padded name must not slip past the SQL side.
+  it('spells the group rule so Postgres and JavaScript read it alike', () => {
+    for (const pattern of FIXTURE_GROUP_NAME_PATTERNS) {
+      expect(pattern).not.toMatch(/\\[bByYdDwW]|\(\?/);
+    }
+    expect(isFixtureGroupTitle('  Audit Group 1783191071580  ')).toBe(true);
+    expect(isFixtureGroupTitle('AUDIT GROUP 1783191071580')).toBe(true);
+    expect(isFixtureGroupTitle('Auditorium 1783191071580')).toBe(false);
+  });
+
+  it('filters a groups query by the same patterns', () => {
+    const calls: unknown[][] = [];
+    const query = {
+      not(...args: unknown[]) {
+        calls.push(args);
+        return query;
+      },
+    };
+    expect(withoutFixtureGroups(query)).toBe(query);
+    expect(calls).toEqual(FIXTURE_GROUP_NAME_PATTERNS.map(p => ['name', 'imatch', p]));
   });
 
   it('treats a profile as fixture if either field matches', () => {
