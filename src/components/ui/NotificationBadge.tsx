@@ -37,7 +37,7 @@ export function NotificationBadge({ count, maxDisplay = 99, className }: Notific
   return (
     <span
       className={cn(
-        'absolute top-1 right-1 bg-status-negative text-white text-2xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-semibold leading-none',
+        'absolute top-1 right-1 bg-status-negative text-fg-inverted text-2xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-semibold leading-none',
         className
       )}
       aria-label={`${count} unread`}

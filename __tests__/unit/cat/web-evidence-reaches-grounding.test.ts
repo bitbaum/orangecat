@@ -22,6 +22,15 @@ import { maybeEnrichWithSearchResults } from '@/services/cat/tool-use';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ToolAugmentedMessage } from '@/services/cat/tool-use-types';
 
+// This file is not about spending caps, and with no database here the cap
+// refuses every call. The cap has its own tests
+// (__tests__/unit/ai/vendor-spend-cap.test.ts).
+vi.mock('@/services/ai/vendor-spend-cap', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/services/ai/vendor-spend-cap')>()),
+  reservePlatformCall: async () => {},
+  reserveServiceCall: async () => {},
+}));
+
 const supabase = {} as AnySupabaseClient;
 const USER_ID = 'user-1';
 

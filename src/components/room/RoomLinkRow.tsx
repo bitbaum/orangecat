@@ -46,12 +46,14 @@ export function RoomLinkRow({ link, opens, onRevoke }: RoomLinkRowProps) {
     <li className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
         <p
-          className={`text-sm font-medium ${off ? 'text-fg-muted line-through' : 'text-fg-primary'}`}
+          className={`text-sm font-medium ${off ? 'text-fg-tertiary line-through' : 'text-fg-primary'}`}
         >
           {link.label}
-          {link.is_shared && <span className="ml-2 text-xs font-normal text-fg-muted">shared</span>}
+          {link.is_shared && (
+            <span className="ml-2 text-xs font-normal text-fg-tertiary">shared</span>
+          )}
         </p>
-        {link.email && <p className="text-xs text-fg-muted">{link.email}</p>}
+        {link.email && <p className="text-xs text-fg-tertiary">{link.email}</p>}
         <p className="mt-1 text-xs text-fg-secondary">
           {link.last_opened_at
             ? `${visits || link.open_count} ${visits === 1 ? 'visit' : 'visits'} · last ${formatRelativeTime(link.last_opened_at)}`
@@ -60,7 +62,7 @@ export function RoomLinkRow({ link, opens, onRevoke }: RoomLinkRowProps) {
               : 'Not opened yet'}
           {off && link.last_opened_at ? ' · switched off' : ''}
         </p>
-        {opened && <p className="mt-0.5 text-xs text-fg-muted">Opened {opened}</p>}
+        {opened && <p className="mt-0.5 text-xs text-fg-tertiary">Opened {opened}</p>}
       </div>
       {!off && (
         <div className="flex items-center gap-2">

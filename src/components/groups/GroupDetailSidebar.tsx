@@ -13,7 +13,8 @@ import type { ElementType } from 'react';
 interface GroupDetailSidebarProps {
   group: Group;
   members: GroupMember[];
-  wallets: unknown[];
+  /** null: this viewer cannot read the group's wallets (members only) — no count. */
+  wallets: unknown[] | null;
   labelConfig: (typeof GROUP_LABELS)[GroupLabel] | null;
   governanceConfig: (typeof GOVERNANCE_PRESETS)[GovernancePreset] | null;
   LabelIcon: ElementType;
@@ -129,15 +130,17 @@ export function GroupDetailSidebar({
           <CardTitle>Statistics</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${wallets ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div className="text-center">
               <div className="text-2xl font-bold text-fg-primary">{members.length}</div>
               <div className="text-sm text-fg-secondary">Members</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-fg-primary">{wallets.length}</div>
-              <div className="text-sm text-fg-secondary">Wallets</div>
-            </div>
+            {wallets && (
+              <div className="text-center">
+                <div className="text-2xl font-bold text-fg-primary">{wallets.length}</div>
+                <div className="text-sm text-fg-secondary">Wallets</div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

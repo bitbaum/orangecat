@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import { formatCurrency } from '@/services/currency';
 import { useMobileActionBar } from '@/hooks/useMobileActionBar';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 import { useSectionInView } from '@/hooks/useSectionInView';
 
 interface FundBarProject {
@@ -50,7 +51,7 @@ export function ProjectMobileFundBar({ project }: { project: FundBarProject }) {
   // only existed on projects with a legacy address — on every other project
   // the button did nothing.
   const scrollToSupport = () => {
-    document.getElementById('pay')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('pay')?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
   };
 
   return (

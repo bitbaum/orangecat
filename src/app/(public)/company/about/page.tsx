@@ -4,6 +4,8 @@ import { Users, Heart, Zap, TreePine, Target, Award } from 'lucide-react';
 import BitBaumLogo from '@/components/layout/BitBaumLogo';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Button from '@/components/ui/Button';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'About bitbaum',
@@ -20,26 +22,12 @@ export const metadata: Metadata = {
 export default function BitBaumAboutPage() {
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Hero Section */}
-      <div className="bg-surface-base border-b border-default">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <div className="flex justify-center mb-8">
-              <BitBaumLogo className="scale-150" />
-            </div>
-            <h1 className="font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-5xl mb-4">
-              About bitbaum
-            </h1>
-            <p className="text-xl text-fg-secondary max-w-3xl mx-auto">
-              Building open economic infrastructure for the Bitcoin era. The studio behind OrangeCat
-              and Loki.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Mission Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
+        <PublicPageHeader
+          title="About bitbaum"
+          lede="Building open economic infrastructure for the Bitcoin era. The studio behind OrangeCat and Loki."
+        />
         <div className="text-center mb-16">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-surface-raised border border-subtle rounded-full mb-6">
             <Target className="w-8 h-8 text-fg-secondary" />

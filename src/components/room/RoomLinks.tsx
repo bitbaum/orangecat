@@ -118,7 +118,7 @@ export function RoomLinks({ projectId, links, opens, onLinksChange }: RoomLinksP
             onChange={e => setShared(e.target.checked)}
           />
           <span>
-            Shared link — <span className="text-fg-muted">{ROOM_COPY.sharedLinkHint}</span>
+            Shared link — <span className="text-fg-tertiary">{ROOM_COPY.sharedLinkHint}</span>
           </span>
         </label>
         <Button type="submit" variant="accent" isLoading={busy} disabled={!label.trim()}>
@@ -128,7 +128,7 @@ export function RoomLinks({ projectId, links, opens, onLinksChange }: RoomLinksP
       </form>
 
       {links.length === 0 ? (
-        <p className="mt-4 flex items-center gap-2 text-sm text-fg-muted">
+        <p className="mt-4 flex items-center gap-2 text-sm text-fg-tertiary">
           <Link2 className="h-4 w-4" aria-hidden />
           No links yet. Create one for each person you send the room to.
         </p>
@@ -145,7 +145,7 @@ export function RoomLinks({ projectId, links, opens, onLinksChange }: RoomLinksP
         </ul>
       )}
       {links.length > 0 && (
-        <p className="mt-2 flex items-center gap-1 text-xs text-fg-muted">
+        <p className="mt-2 flex items-center gap-1 text-xs text-fg-tertiary">
           <Eye className="h-3 w-3" aria-hidden />
           Your own visits through a preview are not counted.
         </p>

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { COMPONENT_STYLES } from '@/config/design-system';
 import { PAY_DESTINATION_COPY } from '@/config/pay-destination';
+import { cn } from '@/lib/utils';
 
 /** One sentence, in place. Protocol names stay off this control. */
 export function WhyReceive() {
@@ -14,7 +16,10 @@ export function WhyReceive() {
         type="button"
         onClick={() => setOpen(value => !value)}
         aria-expanded={open}
-        className="flex min-h-11 items-center gap-1 text-xs font-medium text-accent-warm underline hover:text-accent-warm-hover"
+        className={cn(
+          'flex min-h-11 items-center gap-1 text-xs font-medium',
+          COMPONENT_STYLES.link.text
+        )}
       >
         {open ? (
           <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />

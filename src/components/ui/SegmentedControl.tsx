@@ -41,9 +41,12 @@ interface SegmentedControlProps<T extends string> {
 }
 
 const SEGMENT_BASE =
-  'flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3 sm:text-sm';
-const SEGMENT_ACTIVE = 'bg-surface-base text-fg-primary shadow-sm';
-const SEGMENT_IDLE = 'text-fg-secondary hover:text-fg-primary';
+  'flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3 sm:text-sm';
+// The chosen cell carries an edge as well as a fill: in dark the fill alone is
+// 1.1:1 against the trough, which left the label's brightness to say which
+// one is selected.
+const SEGMENT_ACTIVE = 'border-default bg-surface-base text-fg-primary shadow-sm';
+const SEGMENT_IDLE = 'border-transparent text-fg-secondary hover:text-fg-primary';
 
 export function SegmentedControl<T extends string>({
   items,

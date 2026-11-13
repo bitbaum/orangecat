@@ -54,7 +54,7 @@ export function OnboardingHeader({
               <span className="text-sm font-medium text-fg-primary">{currentStepTitle}</span>
               <span className="text-sm text-fg-secondary">{Math.round(progress)}% Complete</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} aria-label="Setup progress" className="h-2" />
           </div>
         </div>
       </div>

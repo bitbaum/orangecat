@@ -16,6 +16,7 @@ import { CAT_DOOR, CAT_QUERY_PARAM } from '@/config/cat-door';
 import { cn } from '@/lib/utils';
 import { COMPONENT_STYLES } from '@/config/design-system';
 import Button from '@/components/ui/Button';
+import { DoorExamples } from '@/components/dashboard/DoorExamples';
 
 interface TheDoorProps {
   /** The question above the box. Defaults to the platform's. */
@@ -54,20 +55,7 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
-      {examples && examples.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-2" aria-label="Examples">
-          {examples.map(example => (
-            <li key={example}>
-              <a
-                href={`${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(example)}`}
-                className="inline-block rounded-full border border-default px-3 py-1.5 text-xs text-fg-secondary hover:border-interactive hover:text-fg-primary"
-              >
-                {example}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DoorExamples examples={examples} className="mt-2" />
     </form>
   );
 }

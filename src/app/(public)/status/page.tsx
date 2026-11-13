@@ -1,8 +1,9 @@
 import { CheckCircle, AlertTriangle, XCircle, Clock, CircleHelp } from 'lucide-react';
 import Link from 'next/link';
 import { checkHealth } from '@/lib/health';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import { CONTACT_EMAIL } from '@/config/brand';
 import type { LucideIcon } from 'lucide-react';
 import type { ServiceStatus } from '@/lib/health';
@@ -100,13 +101,12 @@ export default async function StatusPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <PageHeading className="mb-4">System Status</PageHeading>
-          <p className="text-xl text-fg-secondary">Current status of OrangeCat platform services</p>
-          <p className="text-sm text-fg-tertiary mt-2">Last checked: {checkedAt}</p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-12')}>
+        <PublicPageHeader
+          title="System Status"
+          lede="Current status of OrangeCat platform services"
+          meta={`Last checked: ${checkedAt}`}
+        />
 
         {/* Overall Status */}
         <div className="bg-surface-base rounded-lg shadow-sm border border-default p-6 mb-8">
@@ -124,7 +124,7 @@ export default async function StatusPage() {
           <div className="px-6 py-4 border-b border-default">
             <h3 className="text-lg font-semibold text-fg-primary">Services</h3>
           </div>
-          <div className="divide-y divide-fg-tertiary dark:divide-fg-tertiary">
+          <div className="divide-y divide-subtle">
             {report.services.map(service => (
               <div key={service.name} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">

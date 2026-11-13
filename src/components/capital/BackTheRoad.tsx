@@ -72,7 +72,7 @@ export function BackTheRoad({ capital }: { capital: OpenCapital }) {
         Need money for something yourself?{' '}
         <Link
           href={ROUTES.RAISE}
-          className="font-medium text-fg-primary underline-offset-4 hover:underline"
+          className="font-medium text-fg-primary underline underline-offset-4"
         >
           Raise it in a sentence
         </Link>{' '}

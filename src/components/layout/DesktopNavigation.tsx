@@ -12,7 +12,7 @@
 
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useShellPathname } from '@/hooks/useShellPathname';
 import type { NavigationItem } from '@/config/navigation';
 import { isNavHrefActive } from '@/lib/navigation/isActive';
 import { HeaderNavigation } from './HeaderNavigation';
@@ -36,7 +36,7 @@ interface DesktopNavigationProps {
  * fourth implementation.
  */
 export function DesktopNavigation({ items }: DesktopNavigationProps) {
-  const pathname = usePathname();
+  const pathname = useShellPathname();
 
   return (
     <div className="hidden lg:flex items-center gap-1 xl:gap-2 ml-2">

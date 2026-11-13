@@ -108,7 +108,7 @@ export default function JobsPage() {
           <CardContent className="py-12 text-center">
             <Briefcase className="h-12 w-12 text-fg-tertiary/50 mx-auto mb-4" />
             <p className="text-fg-secondary mb-2">No job postings available</p>
-            <p className="text-base text-fg-tertiary/70">
+            <p className="text-base text-fg-tertiary">
               Check back later or create a group to post jobs
             </p>
           </CardContent>

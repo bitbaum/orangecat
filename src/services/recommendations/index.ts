@@ -159,26 +159,6 @@ export function getCelebrationMessage(
 }
 
 /**
- * Get task completion percentage
- *
- * @param context - User's current state
- * @returns Completion percentage (0-100)
- */
-export function getTaskCompletionPercentage(context: UserContext): number {
-  const allTasks = TASK_DEFINITIONS.filter(
-    task => task.priority === 'critical' || task.priority === 'high'
-  );
-
-  const completedTasks = allTasks.filter(task => !task.condition(context));
-
-  if (allTasks.length === 0) {
-    return 100;
-  }
-
-  return Math.round((completedTasks.length / allTasks.length) * 100);
-}
-
-/**
  * Get next most important action for user
  *
  * @param context - User's current state

@@ -5,7 +5,7 @@
  * Extracted from GroupWallets.tsx to keep that component under 300 lines.
  * Owns its own form + submit state; calls onCreated after a successful POST.
  */
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus, Loader2, X } from 'lucide-react';
@@ -49,6 +49,9 @@ export function GroupWalletCreateForm({
   const [creating, setCreating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<CreateWalletForm>(EMPTY_FORM);
+  // Each label names its field for a screen reader.
+  const fieldId = useId();
+  const idFor = (field: keyof CreateWalletForm) => `${fieldId}-${field}`;
 
   const reset = () => {
     setCreating(false);
@@ -95,16 +98,17 @@ export function GroupWalletCreateForm({
           <form onSubmit={handleCreateWallet} className="space-y-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium text-sm">New Wallet</h3>
-              <Button type="button" size="sm" variant="ghost" onClick={reset}>
+              <Button type="button" size="sm" variant="ghost" onClick={reset} aria-label="Close">
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor={idFor('name')} className="block text-sm font-medium mb-1">
                 Name <span className="text-status-negative">*</span>
               </label>
               <input
+                id={idFor('name')}
                 type="text"
                 required
                 maxLength={100}
@@ -116,8 +120,11 @@ export function GroupWalletCreateForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Purpose</label>
+              <label htmlFor={idFor('purpose')} className="block text-sm font-medium mb-1">
+                Purpose
+              </label>
               <select
+                id={idFor('purpose')}
                 value={form.purpose}
                 onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))}
                 className="w-full border border-default rounded-md px-3 py-2 text-sm bg-surface-page focus:outline-none focus:ring-2 focus:ring-ring"
@@ -131,8 +138,11 @@ export function GroupWalletCreateForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label htmlFor={idFor('description')} className="block text-sm font-medium mb-1">
+                Description
+              </label>
               <input
+                id={idFor('description')}
                 type="text"
                 maxLength={500}
                 value={form.description}
@@ -143,8 +153,11 @@ export function GroupWalletCreateForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Bitcoin Address</label>
+              <label htmlFor={idFor('bitcoin_address')} className="block text-sm font-medium mb-1">
+                Bitcoin Address
+              </label>
               <input
+                id={idFor('bitcoin_address')}
                 type="text"
                 value={form.bitcoin_address}
                 onChange={e => setForm(f => ({ ...f, bitcoin_address: e.target.value }))}
@@ -154,8 +167,14 @@ export function GroupWalletCreateForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Lightning Address</label>
+              <label
+                htmlFor={idFor('lightning_address')}
+                className="block text-sm font-medium mb-1"
+              >
+                Lightning Address
+              </label>
               <input
+                id={idFor('lightning_address')}
                 type="text"
                 value={form.lightning_address}
                 onChange={e => setForm(f => ({ ...f, lightning_address: e.target.value }))}

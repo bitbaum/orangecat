@@ -99,3 +99,22 @@ export function computeWalletGoalProgress(
 function orNull(converted: number): number | null {
   return Number.isFinite(converted) && converted > 0 ? converted : null;
 }
+
+/**
+ * A wallet's balance as far as anyone has measured it: `balance_btc` only when
+ * `balance_updated_at` says a chain lookup happened, else null (unknown).
+ *
+ * The column defaults to 0, so a wallet nobody has read carries 0 — and the
+ * owner's own profile showed "Current Balance CHF 0.00" and the wallet list
+ * "0.0% funded" beside "Not checked yet" (production, 2026-11-12). A balance we
+ * never read is not a balance of zero. A visitor's payload carries neither
+ * field, which is also null here.
+ */
+export function measuredBalanceBtc(wallet: {
+  balance_btc?: number | null;
+  balance_updated_at?: string | null;
+}): number | null {
+  return wallet.balance_updated_at && typeof wallet.balance_btc === 'number'
+    ? wallet.balance_btc
+    : null;
+}

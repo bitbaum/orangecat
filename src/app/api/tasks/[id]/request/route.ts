@@ -3,8 +3,8 @@
  *
  * POST /api/tasks/[id]/request - Request someone to do a task
  *
- * If requested_user_id is provided, sends to specific user.
- * If omitted, broadcasts to ALL team members.
+ * Asks one named person. There is no broadcast: a request with no one named
+ * used to notify every account on the platform.
  */
 
 import { apiNotFound, apiInternalError, apiSuccess } from '@/lib/api/standardResponse';
@@ -29,16 +29,14 @@ export const POST = createTaskActionRoute({
       return taskError.code === 'PGRST116' ? apiNotFound('Task not found') : apiInternalError();
     }
 
-    // If specific user, verify they exist
-    if (d.requested_user_id) {
-      const { data: target, error: userError } = await supabase
-        .from(DATABASE_TABLES.PROFILES)
-        .select('id')
-        .eq('id', d.requested_user_id)
-        .single();
-      if (userError || !target) {
-        return apiNotFound('Requested user not found');
-      }
+    // The person asked must exist
+    const { data: target, error: userError } = await supabase
+      .from(DATABASE_TABLES.PROFILES)
+      .select('id')
+      .eq('id', d.requested_user_id)
+      .single();
+    if (userError || !target) {
+      return apiNotFound('Requested user not found');
     }
 
     const { data: taskRequest, error: requestError } = await supabase
@@ -46,7 +44,7 @@ export const POST = createTaskActionRoute({
       .insert({
         task_id: taskId,
         requested_by: user.id,
-        requested_user_id: d.requested_user_id || null,
+        requested_user_id: d.requested_user_id,
         message: d.message || null,
         status: REQUEST_STATUSES.PENDING,
       })
@@ -79,21 +77,12 @@ export const POST = createTaskActionRoute({
       sourceEntityId: taskId,
     };
 
-    if (!d.requested_user_id) {
-      await notificationService.createBroadcastNotification({
-        ...notifBase,
-        excludeUserId: user.id,
-        type: 'task_broadcast',
-        title: `${requesterName} is asking for help: "${task.title}"`,
-      });
-    } else {
-      await notificationService.createNotification({
-        ...notifBase,
-        recipientUserId: d.requested_user_id,
-        type: 'task_request',
-        title: `${requesterName} is asking you: "${task.title}"`,
-      });
-    }
+    await notificationService.createNotification({
+      ...notifBase,
+      recipientUserId: d.requested_user_id,
+      type: 'task_request',
+      title: `${requesterName} is asking you: "${task.title}"`,
+    });
 
     return apiSuccess({ request: taskRequest }, { status: 201 });
   },

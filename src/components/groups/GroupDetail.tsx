@@ -3,21 +3,33 @@
 import { useRouter } from 'next/navigation';
 import EntityDetailLayout from '@/components/entity/EntityDetailLayout';
 import { Button } from '@/components/ui/Button';
-import { Settings } from 'lucide-react';
+import { Settings, Wallet } from 'lucide-react';
 import { useGroupDetail } from './useGroupDetail';
 import { GroupDetailSidebar } from './GroupDetailSidebar';
 import { GroupDetailTabs } from './GroupDetailTabs';
+import { GroupMembersOnly } from './GroupMembersOnly';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import LokiBuildCta from '@/components/integrations/LokiBuildCta';
 import EntityShare from '@/components/sharing/EntityShare';
 import { PublicSupportPanel } from '@/components/payment/PublicSupportPanel';
+import { NoWalletYetNotice } from '@/components/payment/NoWalletYetNotice';
+import { STATUS } from '@/config/database-constants';
+
+/** The tab strip's anchor, so "Go to Wallets" can bring it into view on a phone. */
+const GROUP_TABS_ID = 'group-tabs';
 
 interface GroupDetailProps {
   groupSlug: string;
+  /**
+   * Whether a payment to this group can reach a wallet, resolved on the server
+   * by the payment's own resolution (resolveSellerReceiveInfo). Without one the
+   * page offers no pay form: the form could only fail after the amount.
+   */
+  canReceive: boolean;
 }
 
-export function GroupDetail({ groupSlug }: GroupDetailProps) {
+export function GroupDetail({ groupSlug, canReceive }: GroupDetailProps) {
   const router = useRouter();
   const {
     user,
@@ -29,6 +41,8 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
     activeTab,
     setActiveTab,
     canCreateProposal,
+    canSeeContent,
+    viewerRole,
     loadGroupData,
     labelConfig,
     governanceConfig,
@@ -57,6 +71,18 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
     );
   }
 
+  if (!canSeeContent) {
+    return (
+      <GroupMembersOnly
+        name={group.name}
+        slug={groupSlug}
+        labelName={labelConfig?.name || group.label}
+        LabelIcon={LabelIcon}
+        signedIn={!!user}
+      />
+    );
+  }
+
   // SSOT edit convention: createPath?edit=<id> (the old
   // /groups/[slug]/settings route never existed — dead link).
   const headerActions = isOwner ? (
@@ -66,6 +92,23 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
     </Button>
   ) : null;
 
+  // A group's wallets are readable by its members only (RLS group_wallets_select),
+  // so anyone else gets an empty list whatever the group holds. Printing that as
+  // "0 Wallets" beside a pay card contradicted the card; say nothing instead.
+  // Adding one is for founders and admins, the roles the create route accepts.
+  const visibleWallets = viewerRole ? wallets : null;
+  const canManageWallets =
+    viewerRole === STATUS.GROUP_MEMBERS.FOUNDER || viewerRole === STATUS.GROUP_MEMBERS.ADMIN;
+  // canReceive comes from the server: after a wallet is added, ask it again.
+  const reload = () => {
+    void loadGroupData();
+    router.refresh();
+  };
+  const goToWallets = () => {
+    setActiveTab('wallets');
+    document.getElementById(GROUP_TABS_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <EntityDetailLayout
       title={group.name}
@@ -73,16 +116,18 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
       headerActions={headerActions}
       left={
         <GroupDetailTabs
+          id={GROUP_TABS_ID}
           group={group}
           members={members}
-          wallets={wallets}
+          wallets={visibleWallets}
+          canManageWallets={canManageWallets}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           hasGovernanceFeatures={hasGovernanceFeatures}
           isOwner={isOwner}
           user={user}
           canCreateProposal={canCreateProposal}
-          onUpdate={loadGroupData}
+          onUpdate={reload}
           labelConfig={labelConfig}
         />
       }
@@ -91,7 +136,7 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
           <GroupDetailSidebar
             group={group}
             members={members}
-            wallets={wallets}
+            wallets={visibleWallets}
             labelConfig={labelConfig}
             governanceConfig={governanceConfig}
             LabelIcon={LabelIcon}
@@ -104,12 +149,23 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
             publicPath={`/groups/${groupSlug}`}
             className="w-full justify-center"
           />
-          <PublicSupportPanel
-            entityType="group"
-            entityId={group.id}
-            entityTitle={group.name}
-            recipientName={group.name}
-          />
+          {canReceive ? (
+            <PublicSupportPanel
+              entityType="group"
+              entityId={group.id}
+              entityTitle={group.name}
+              recipientName={group.name}
+            />
+          ) : (
+            <NoWalletYetNotice payee="This group">
+              {canManageWallets && (
+                <Button variant="outline" className="w-full" onClick={goToWallets}>
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Go to Wallets
+                </Button>
+              )}
+            </NoWalletYetNotice>
+          )}
           {isOwner && (
             <LokiBuildCta
               variant="card"
