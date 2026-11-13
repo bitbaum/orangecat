@@ -18,17 +18,26 @@ ALTER TABLE public.user_ai_preferences
   ADD COLUMN IF NOT EXISTS bot_rules TEXT,
   ADD COLUMN IF NOT EXISTS time_zone TEXT;
 
-ALTER TABLE public.user_ai_preferences
-  DROP CONSTRAINT IF EXISTS user_ai_preferences_bot_rules_len;
-ALTER TABLE public.user_ai_preferences
-  ADD CONSTRAINT user_ai_preferences_bot_rules_len
-  CHECK (bot_rules IS NULL OR char_length(bot_rules) <= 2000);
-
-ALTER TABLE public.user_ai_preferences
-  DROP CONSTRAINT IF EXISTS user_ai_preferences_time_zone_len;
-ALTER TABLE public.user_ai_preferences
-  ADD CONSTRAINT user_ai_preferences_time_zone_len
-  CHECK (time_zone IS NULL OR char_length(time_zone) <= 64);
+-- Added only when missing, so a second run changes nothing and nothing is
+-- ever dropped (the previous release never knew these constraints).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'user_ai_preferences_bot_rules_len'
+  ) THEN
+    ALTER TABLE public.user_ai_preferences
+      ADD CONSTRAINT user_ai_preferences_bot_rules_len
+      CHECK (bot_rules IS NULL OR char_length(bot_rules) <= 2000);
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'user_ai_preferences_time_zone_len'
+  ) THEN
+    ALTER TABLE public.user_ai_preferences
+      ADD CONSTRAINT user_ai_preferences_time_zone_len
+      CHECK (time_zone IS NULL OR char_length(time_zone) <= 64);
+  END IF;
+END
+$$;
 
 COMMENT ON COLUMN public.user_ai_preferences.bot_rules IS
   'The person''s own rules for their bots. In the bot''s prompt for its owner; a step a bot would run on its own is checked against them first.';
