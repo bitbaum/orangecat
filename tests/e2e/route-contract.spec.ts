@@ -7,8 +7,8 @@ import { test, expect } from '@playwright/test';
  * against https://orangecat.ch alike (E2E_BASE_URL).
  *
  * This replaces six specs that ran nowhere and had drifted: they expected
- * /loans, /circles and /assets to ask for a sign-in, but /loans and /circles
- * became Discover tabs and /assets moved under the dashboard. Nobody noticed
+ * /loans, /circles and /assets to ask for a sign-in, but all three became
+ * Discover tabs (the owner's assets are /dashboard/assets). Nobody noticed
  * because nothing ran them. CI now runs this file on every push to main.
  *
  * Every check reads the HTTP status. The old ones only asked whether a <body>
@@ -42,6 +42,9 @@ const LEGACY_REDIRECTS: Array<[from: string, to: RegExp]> = [
   ['/technology', /\/docs$/],
   ['/company/about', /\/about$/],
   ['/pages', /\/discover$/],
+  // The breadcrumb on a public asset page; it opens public assets like its
+  // siblings. The owner's own list is /dashboard/assets.
+  ['/assets', /\/discover\?type=assets$/],
 ];
 
 /** Signed-in pages, and where the sign-in sends the person back to. */
@@ -50,7 +53,7 @@ const PROTECTED: Array<[path: string, returnTo: string]> = [
   ['/timeline', '/timeline'],
   ['/settings', '/settings'],
   ['/messages', '/messages'],
-  ['/assets', '/dashboard/assets'],
+  ['/dashboard/assets', '/dashboard/assets'],
 ];
 
 test.describe('route contract (signed out)', () => {

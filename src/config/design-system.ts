@@ -34,7 +34,9 @@ export const UI_TOKENS = {
 export const COMPONENT_STYLES = {
   button: {
     base: [
-      'inline-flex items-center justify-center gap-2 whitespace-nowrap',
+      // An icon never gives up its width to the label: in a flex-1 button on a
+      // phone, Add Wallet's icon was squeezed to 0.8px.
+      'inline-flex items-center justify-center gap-2 whitespace-nowrap [&_svg]:shrink-0',
       UI_TOKENS.radius.control,
       'font-medium',
       UI_TOKENS.transition,

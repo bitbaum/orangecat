@@ -108,6 +108,27 @@ export { isValidUsername } from '@/config/usernames';
  * Optional text field that accepts empty strings from form submissions.
  * Replaces the repeated `.optional().nullable().or(z.literal(''))` pattern.
  */
+/**
+ * Number rules with words a person can act on. Without a message, zod's
+ * default reaches the form as written for developers: "Too small: expected
+ * number to be >=-1", "Invalid input: expected int, received number".
+ */
+export const positiveNumber = () => z.number().positive('Must be more than 0');
+
+export const wholeNumber = ({ min, max }: { min?: number; max?: number } = {}) => {
+  let rule = z.number().int('Use a whole number');
+  if (min !== undefined) {
+    rule = rule.min(min, `Must be ${min} or more`);
+  }
+  if (max !== undefined) {
+    rule = rule.max(max, `Must be ${max} or less`);
+  }
+  return rule;
+};
+
+export const percentage = () =>
+  z.number().min(0, 'Must be 0 or more').max(100, 'Must be 100 or less');
+
 export const optionalText = (maxLen?: number) => {
   const base = maxLen ? z.string().max(maxLen) : z.string();
   return base.optional().nullable().or(z.literal(''));

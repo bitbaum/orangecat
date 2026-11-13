@@ -203,7 +203,7 @@ export function CollateralSelector({
             disabled={disabled || loading}
             className="flex-1"
           >
-            <Package className="w-4 h-4 mr-2" />
+            <Package className="w-4 h-4" />
             Add Asset
           </Button>
           <Button
@@ -213,7 +213,7 @@ export function CollateralSelector({
             disabled={disabled || loading}
             className="flex-1"
           >
-            <Wallet className="w-4 h-4 mr-2" />
+            <Wallet className="w-4 h-4" />
             Add Wallet
           </Button>
         </div>

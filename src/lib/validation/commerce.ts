@@ -10,6 +10,7 @@ import {
   optionalUrl,
   webUrl,
   publicBitcoinAddress,
+  positiveNumber,
 } from './base';
 import { ENTITY_STATUS } from '@/config/database-constants';
 
@@ -86,7 +87,11 @@ export const userProductSchema = z.object({
     .default('physical'),
   images: z.array(webUrl()).optional().default([]),
   thumbnail_url: optionalUrl(),
-  inventory_count: z.number().int().min(-1).default(-1), // -1 = unlimited
+  inventory_count: z
+    .number()
+    .int('Use a whole number')
+    .min(-1, 'Use a number of items, or -1 for unlimited')
+    .default(-1), // -1 = unlimited
   fulfillment_type: z
     .enum(PRODUCT_FULFILLMENT_TYPES.map(t => t.value) as [string, ...string[]])
     .default('manual'),
@@ -109,7 +114,7 @@ export const userServiceSchema = z
     hourly_rate: z.number().positive().optional().nullable(),
     fixed_price: z.number().positive().optional().nullable(),
     currency: z.enum(CURRENCY_CODES).optional(),
-    duration_minutes: z.number().positive().optional().nullable(),
+    duration_minutes: positiveNumber().optional().nullable(),
     availability_schedule: availabilityScheduleSchema.optional().nullable(),
     service_location_type: z
       .enum(SERVICE_LOCATION_TYPES.map(t => t.value) as [string, ...string[]])
