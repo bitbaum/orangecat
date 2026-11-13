@@ -1,5 +1,6 @@
 'use client';
 
+import type { RefObject } from 'react';
 import { Bell, Check, MessageSquare, Trash2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -12,6 +13,11 @@ interface NotificationCenterProps {
   isOpen: boolean;
   onClose: () => void;
   className?: string;
+  /**
+   * The control that opened it. It is opened from header state, not from a
+   * Dialog.Trigger, so without this Radix returns focus nowhere on close.
+   */
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 const FILTER_TABS: { key: UIFilter; label: string }[] = [
@@ -26,6 +32,7 @@ export default function NotificationCenter({
   isOpen,
   onClose,
   className = '',
+  returnFocusRef,
 }: NotificationCenterProps) {
   const {
     notifications,
@@ -49,7 +56,15 @@ export default function NotificationCenter({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className={`max-w-md max-h-[80vh] flex flex-col p-0 ${className}`}>
+      <DialogContent
+        className={`max-w-md max-h-[80vh] flex flex-col p-0 ${className}`}
+        onCloseAutoFocus={event => {
+          if (returnFocusRef?.current) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
+      >
         <DialogTitle className="sr-only">Notifications</DialogTitle>
         <Card className="w-full max-h-[80vh] flex flex-col border-0 shadow-none">
           <CardHeader className="flex flex-row items-center justify-between pb-3">

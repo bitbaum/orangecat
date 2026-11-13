@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHeaderScroll } from '@/hooks/useHeaderScroll';
 import { useMobileMenu } from '@/hooks/useMobileMenu';
@@ -51,6 +51,7 @@ export function Header({
   className = '',
 }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null);
 
   const authState = useAuth();
   const authStatus = getAuthStatus(authState);
@@ -163,6 +164,7 @@ export function Header({
             {/* Notifications - Always visible for authenticated users regardless of route */}
             {authStatus.authenticated && (
               <NotificationsButton
+                ref={notificationsButtonRef}
                 onClick={() => setShowNotifications(!showNotifications)}
                 isOpen={showNotifications}
               />
@@ -206,6 +208,7 @@ export function Header({
         <NotificationCenter
           isOpen={showNotifications}
           onClose={() => setShowNotifications(false)}
+          returnFocusRef={notificationsButtonRef}
         />
       )}
 

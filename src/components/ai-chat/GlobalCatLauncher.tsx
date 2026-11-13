@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import FocusLock from 'react-focus-lock';
 import { X, Maximize2 } from 'lucide-react';
 import { ModernChatPanel } from '@/components/ai-chat/ModernChatPanel/index';
 import { describePageForCat } from '@/config/cat-page-context';
@@ -79,8 +80,10 @@ export default function GlobalCatLauncher() {
   return (
     <>
       {/* Floating launcher — anchored clear of the bottom nav and the home
-          indicator (.app-fab-anchor), and faded while the page scrolls. */}
-      {!open && !typing && (
+          indicator (.app-fab-anchor), and faded while the page scrolls. It
+          stays mounted (invisible) while the panel is open, so closing the
+          panel can hand focus back to it instead of the top of the page. */}
+      {!typing && (
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -94,7 +97,8 @@ export default function GlobalCatLauncher() {
             'transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             // Still focusable while faded: a keyboard user never triggers the
             // scroll state, and hiding it from them would be a regression.
-            scrolling && 'pointer-events-none opacity-0 focus-visible:opacity-100'
+            scrolling && 'pointer-events-none opacity-0 focus-visible:opacity-100',
+            open && 'invisible'
           )}
           title="Ask Cat about this page"
         >
@@ -111,49 +115,54 @@ export default function GlobalCatLauncher() {
             aria-hidden
           />
 
-          <aside
-            role="dialog"
-            aria-label="Cat"
-            className={cn(
-              'fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-surface-page shadow-2xl',
-              'sm:w-[420px] sm:border-l sm:border-default'
-            )}
-          >
-            <ModernChatPanel
-              className="min-h-0 flex-1"
-              conversationId={conversationId}
-              onConversationChange={setConversationId}
-              // The panel is 420px wide whatever the window is: the chat list
-              // is always a drawer here, and a reload starts on a new chat
-              // about the page then on screen.
-              railQuery="not all"
-              rememberKey={null}
-              pageContext={page}
-              footnote={page?.label ? `Looking at ${page.label}` : undefined}
-              headerStart={
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="ck-glass ck-app-icon"
-                  aria-label="Close Cat"
-                  title="Close Cat"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              }
-              headerEnd={
-                <Link
-                  href={ROUTES.DASHBOARD.CAT}
-                  onClick={() => setOpen(false)}
-                  className="ck-glass ck-app-icon"
-                  title="Open the full Cat"
-                  aria-label="Open the full Cat page"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Link>
-              }
-            />
-          </aside>
+          {/* A modal panel: focus stays inside while it is open and returns
+              to the launcher (or whatever opened it) when it closes. */}
+          <FocusLock returnFocus>
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label="Cat"
+              className={cn(
+                'fixed inset-y-0 right-0 z-50 flex w-full flex-col bg-surface-page shadow-2xl',
+                'sm:w-[420px] sm:border-l sm:border-default'
+              )}
+            >
+              <ModernChatPanel
+                className="min-h-0 flex-1"
+                conversationId={conversationId}
+                onConversationChange={setConversationId}
+                // The panel is 420px wide whatever the window is: the chat list
+                // is always a drawer here, and a reload starts on a new chat
+                // about the page then on screen.
+                railQuery="not all"
+                rememberKey={null}
+                pageContext={page}
+                footnote={page?.label ? `Looking at ${page.label}` : undefined}
+                headerStart={
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    className="ck-glass ck-app-icon"
+                    aria-label="Close Cat"
+                    title="Close Cat"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                }
+                headerEnd={
+                  <Link
+                    href={ROUTES.DASHBOARD.CAT}
+                    onClick={() => setOpen(false)}
+                    className="ck-glass ck-app-icon"
+                    title="Open the full Cat"
+                    aria-label="Open the full Cat page"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Link>
+                }
+              />
+            </aside>
+          </FocusLock>
         </>
       )}
     </>
