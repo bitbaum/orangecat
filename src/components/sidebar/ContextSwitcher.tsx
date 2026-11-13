@@ -13,8 +13,9 @@
  * Created: 2026-02-25
  */
 
-import { useState, useRef, useEffect, useId } from 'react';
+import { useId } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDismissableMenu } from '@/hooks/useDismissableMenu';
 import Image from 'next/image';
 import Link from 'next/link';
 import { publicProfilePath } from '@/config/public-profile-path';
@@ -46,40 +47,14 @@ export function ContextSwitcher({
   const { context, userGroups, loadingGroups, switchToIndividual, switchToGroup, isGroupContext } =
     useNavigationContext();
 
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const {
+    isOpen,
+    setIsOpen,
+    rootRef: dropdownRef,
+    triggerRef,
+    onBlur: closeOnFocusLeave,
+  } = useDismissableMenu();
   const panelId = useId();
-
-  // Escape closes the menu and gives focus back to its trigger.
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
 
   const handleSwitchToIndividual = () => {
     switchToIndividual();
@@ -133,11 +108,7 @@ export function ContextSwitcher({
     <div
       ref={dropdownRef}
       className={cn('relative px-2 py-3 border-b border-subtle', className)}
-      onBlur={event => {
-        if (!dropdownRef.current?.contains(event.relatedTarget as Node | null)) {
-          setIsOpen(false);
-        }
-      }}
+      onBlur={closeOnFocusLeave}
     >
       {/* Trigger. The avatar + name open what people expect them to: your own
           public profile (or the group's page). The chevron alone opens the
