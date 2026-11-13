@@ -12,6 +12,7 @@
  * the actor, so none can reach anyone else's projects.
  */
 import { askLokiAsPerson } from './ask';
+import { browserAction, browserMessage, browserStepWithLoki } from './browser';
 import {
   fileLokiFinding,
   findingFiledMessage,
@@ -20,6 +21,7 @@ import {
 } from './findings';
 import { projectStatusMessage, readProjectStatus } from './project-status';
 import { readLokiSessions, sessionsMessage } from './sessions';
+import { parseWalkPhrases, parseWalkUrls, siteWalkMessage, walkSiteWithLoki } from './site-walk';
 import { parseProjectList, sendTaskToLoki } from './task-dispatch';
 
 export interface LokiHandOutcome {
@@ -168,6 +170,61 @@ export const LOKI_HANDS: Readonly<Record<string, LokiHand>> = {
         id: outcome.id,
         status: outcome.status,
         displayMessage: findingFiledMessage(outcome),
+      },
+    };
+  },
+
+  /**
+   * A live site walked in Loki's browser at phone size: per page, whether it
+   * loads, shows what it must, scrolls sideways or has a broken picture.
+   * Read-only: it files nothing.
+   */
+  walk_site: async (actorId, params) => {
+    const outcome = await walkSiteWithLoki({
+      actorId,
+      urls: parseWalkUrls(params.urls),
+      mustShow: parseWalkPhrases(params.must_show),
+    });
+    if (!outcome.ok) {
+      return { success: false, error: outcome.reason };
+    }
+    return {
+      success: true,
+      data: {
+        passed: outcome.passed,
+        steps: outcome.steps,
+        displayMessage: siteWalkMessage(outcome),
+      },
+    };
+  },
+
+  /**
+   * One step in the bot's own browser. `bot_id` is set by OrangeCat, never by
+   * the model (companions/hands-server.ts); the Cat itself, which is no bot,
+   * uses the person's own browser. A step Loki stopped (a password, a card)
+   * or that did not work is not a success, and its sentence is the error.
+   */
+  use_browser: async (actorId, params) => {
+    const action = browserAction(params);
+    if (!action.ok) {
+      return { success: false, error: action.error };
+    }
+    const botId =
+      typeof params.bot_id === 'string' && UUID.test(params.bot_id) ? params.bot_id : actorId;
+    const outcome = await browserStepWithLoki({ actorId, botId, action: action.action });
+    if (!outcome.ok) {
+      return { success: false, error: outcome.reason };
+    }
+    const message = browserMessage(outcome);
+    if (!outcome.done) {
+      return { success: false, error: message };
+    }
+    return {
+      success: true,
+      data: {
+        pageUrl: outcome.view?.url,
+        screenshotUrl: outcome.view?.screenshotUrl,
+        displayMessage: message,
       },
     };
   },

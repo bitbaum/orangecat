@@ -85,8 +85,18 @@ export interface EntityDetailConfig {
     entity: EntityData,
     pageUrl: string
   ) => { title?: string; body: string; category: string };
-  /** Extra sidebar cards rendered after EntityShare (e.g., Quick Stats, CTAs) */
-  renderSidebarExtra?: (entity: EntityData) => ReactNode;
+  /**
+   * Extra sidebar cards rendered after EntityShare (e.g., Quick Stats, CTAs).
+   * `contactHref` opens a message to the owner about this listing (the owner
+   * card's "Ask … about this"); null for the owner, or an owner nobody can
+   * message. A loan's visitor action IS that message.
+   */
+  renderSidebarExtra?: (
+    entity: EntityData,
+    isOwner: boolean,
+    isSignedIn: boolean,
+    contactHref: string | null
+  ) => ReactNode;
   /** Select columns for metadata query (defaults to 'title, description, price_btc') */
   metadataSelect?: string;
   /** View route for sign-in redirect */
@@ -123,13 +133,18 @@ export interface EntityDetailConfig {
    * bottom bar so the primary visitor action is one tap from any scroll
    * position. When omitted: defaults to a "Support" button anchored to
    * the payment section (suppressed when showPaymentSection is false).
-   * Pass an entity-aware getter for actions that depend on entity data
-   * (e.g. loans → /auth?from=/loans/:id). Returning null suppresses
-   * the bar entirely.
+   * Pass an entity-aware getter for actions that depend on entity data or
+   * on the visitor (e.g. loans → a message to the lister, through sign-in
+   * when signed out; `contactHref` as for renderSidebarExtra). Returning
+   * null suppresses the bar entirely. Never rendered for the owner.
    */
   mobileStickyCTA?:
     | { label: string; href: string }
-    | ((entity: EntityData) => { label: string; href: string } | null)
+    | ((
+        entity: EntityData,
+        isSignedIn: boolean,
+        contactHref: string | null
+      ) => { label: string; href: string } | null)
     | null;
 }
 

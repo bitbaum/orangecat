@@ -129,7 +129,7 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/accountkit": "^0.29.0",
-    "@bitbaum/ai-kit": "^1.24.0",
+    "@bitbaum/ai-kit": "^1.26.0",
     "@bitbaum/bip-kit": "^0.6.1",
     "@bitbaum/chatkit": "^0.29.0",
     "@bitbaum/collective-kinds": "workspace:*",
@@ -141,7 +141,6 @@
     "@bitbaum/paykit": "^0.3.0",
     "@bitbaum/searchkit": "^0.2.3",
     "@bitbaum/tax-model": "workspace:*",
-    "@bitbaum/threadkit": "^0.1.1",
     "@bitbaum/whenkit": "^0.3.3",
     "@bitbaum/writingkit": "^0.2.0",
     "@hono/node-server": "^2.1.1",

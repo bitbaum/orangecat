@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     'loan',
     id,
     'title, description, original_amount, currency',
-    { column: 'is_public', value: true }
+    loanDetailConfig.visibilityFilter
   );
 
   if (!loan) {

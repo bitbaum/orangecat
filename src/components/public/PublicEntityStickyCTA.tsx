@@ -26,14 +26,16 @@ export function MobileStickyCTA({
   config,
   entity,
   payable,
-  askHref = null,
+  isSignedIn,
+  contactHref,
 }: {
   config: EntityDetailConfig;
   entity: EntityData;
   /** True when the seller has a connected wallet (sellerReceive resolved). */
   payable: boolean;
-  /** A message to the owner about this listing — the action when it can't be paid. */
-  askHref?: string | null;
+  isSignedIn: boolean;
+  /** A message to the owner about this listing; null when there is none to send. */
+  contactHref: string | null;
 }) {
   // Explicit override: entity opted out (null) → no bar.
   if (config.mobileStickyCTA === null) {
@@ -45,7 +47,7 @@ export function MobileStickyCTA({
   // entity-cta.ts) — "Book this service", "Fund this project", etc.
   let cta: { href: string; label: string } | null = null;
   if (typeof config.mobileStickyCTA === 'function') {
-    cta = config.mobileStickyCTA(entity);
+    cta = config.mobileStickyCTA(entity, isSignedIn, contactHref);
   } else if (config.mobileStickyCTA) {
     cta = config.mobileStickyCTA;
   } else if (config.showPaymentSection !== false) {
@@ -59,7 +61,7 @@ export function MobileStickyCTA({
   // owner has NO connected wallet promises an action that can't complete. Replace
   // its action with the one that can: ask the owner how to pay.
   if (cta.href === '#pay' && !payable) {
-    return askHref ? <StickyBar href={askHref} label="Ask how to pay" /> : null;
+    return contactHref ? <StickyBar href={contactHref} label="Ask how to pay" /> : null;
   }
 
   return <StickyBar href={cta.href} label={cta.label} />;

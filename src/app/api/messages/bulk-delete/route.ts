@@ -10,6 +10,8 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { markAttachmentsRemoved } from '@/features/messaging/server/attachments';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const bulkDeleteSchema = z.object({
   conversationId: z.string().min(1),
@@ -70,6 +72,13 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       );
       return handleApiError(updErr);
     }
+
+    // The files of a deleted message are no longer anybody's to read; the
+    // daily cleanup takes them out of storage.
+    await markAttachmentsRemoved(
+      createAdminClient(),
+      (data ?? []).map(row => row.id as string)
+    );
 
     return apiSuccess({ deleted: data?.length || 0 });
   } catch (error) {

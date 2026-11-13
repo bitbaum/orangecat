@@ -70,10 +70,7 @@ const fieldGroups: FieldGroup[] = [
   {
     id: 'pricing',
     title: 'Pricing',
-    description: 'What it costs, in the currency you think in',
-    // One currency control: the selector inside the Price field sets
-    // `currency`. A second "Default Currency" select below it set the same
-    // value and read as a different setting.
+    description: 'Set your product price (enter in your preferred currency)',
     fields: [
       {
         name: 'price',
@@ -82,8 +79,22 @@ const fieldGroups: FieldGroup[] = [
         placeholder: '50.00',
         required: true,
         min: 1,
-        hint: 'Buyers pay in Bitcoin; they see the price in their own currency.',
+        hint: 'Enter in your preferred currency. All payments are in Bitcoin.',
         colSpan: 2,
+      },
+      {
+        // The same value as the switch on Price, and like it, it converts the
+        // price. A field of its own so "Fill with AI" can set a price in BTC.
+        name: 'currency',
+        label: 'Currency',
+        type: 'select',
+        options: [
+          { value: 'CHF', label: 'Swiss Franc (CHF)' },
+          { value: 'USD', label: 'US Dollar (USD)' },
+          { value: 'EUR', label: 'Euro (EUR)' },
+          { value: 'BTC', label: 'Bitcoin (BTC)' },
+        ],
+        hint: "The currency the price is set in. Changing it converts the price at today's rate. Payments settle in Bitcoin.",
       },
     ],
   },
@@ -96,11 +107,9 @@ const fieldGroups: FieldGroup[] = [
         name: 'inventory_count',
         label: 'Inventory Count',
         type: 'number',
-        placeholder: 'Unlimited',
-        min: 0,
-        // Stored as -1 (unlimited); the field shows it as empty.
-        emptyValue: -1,
-        hint: 'Leave empty if you can always make more.',
+        placeholder: '-1 for unlimited',
+        min: -1,
+        hint: 'Use -1 for unlimited stock',
       },
       {
         name: 'fulfillment_type',
@@ -132,7 +141,8 @@ const fieldGroups: FieldGroup[] = [
 const defaultValues: UserProductFormData = {
   title: '',
   description: '',
-  price: 0,
+  // Empty, not 0: a field showing "0.00" took a tap-and-type of 25 as 0.0025.
+  price: undefined as unknown as number,
   currency: undefined, // Will be set from user's profile preference in EntityForm
   product_type: 'physical',
   images: [],

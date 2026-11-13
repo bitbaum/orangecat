@@ -86,6 +86,9 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
     <>
       <div
         data-fc-avoid=""
+        // Named so a chat that owns the phone can ask it to step aside
+        // (globals.css, "A chat that owns the phone").
+        data-app-mobile-nav=""
         className={cn(
           // app-mobile-nav: globals.css keeps keyboard focus scrolled clear of
           // this bar while it is on the page (scroll-padding-bottom).

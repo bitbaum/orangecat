@@ -97,6 +97,10 @@ export const LOKI_ENDPOINTS = {
   sessions: '/api/orangecat/sessions',
   /** File a finding into a project's feedback inbox, or read where one is — signed, per actor. */
   feedback: '/api/orangecat/feedback',
+  /** Walk a live site in Loki's browser: per page, what is wrong — signed, per actor. */
+  siteWalk: '/api/orangecat/site-walk',
+  /** One step in a bot's own browser: open, click, type, look — signed, per actor and bot. */
+  browser: '/api/orangecat/browser',
   /** Every studio project: identity, roadmap, changelog, links — public, cached 5 min. */
   fleetMap: '/api/fleet/map',
 } as const;

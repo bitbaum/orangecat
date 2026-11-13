@@ -205,8 +205,10 @@ export const loanConfig = createEntityConfig<LoanFormData>({
     loan_type: 'new_request',
     title: '',
     description: '',
-    original_amount: 0,
-    remaining_balance: 0,
+    // Empty, not 0: a field showing "0.00" took a tap-and-type of 10000 as
+    // 0.0010000.
+    original_amount: undefined as unknown as number,
+    remaining_balance: undefined as unknown as number,
     interest_rate: undefined,
     bitcoin_address: '',
     lightning_address: '',

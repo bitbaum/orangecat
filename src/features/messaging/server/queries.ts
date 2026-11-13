@@ -3,6 +3,8 @@ import { logger } from '@/utils/logger';
 import type { Conversation, Message, Pagination, Participant } from '../types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
+import { isCatUsername } from '@/config/cat-identity';
+import { attachmentsOfMessages } from './attachments';
 import {
   assertMember,
   getServerUser,
@@ -137,15 +139,23 @@ export async function fetchUserConversations(
         joined_at: p.joined_at,
         last_read_at: p.last_read_at || '',
         is_active: p.is_active,
+        is_agent: isCatUsername(profile?.username),
       });
       participantsByConv.set(p.conversation_id, list);
     }
+
+    const unreadByConv = await countUnread(
+      admin,
+      user.id,
+      conversations as ConversationsRow[],
+      (allParticipants || []) as ConversationParticipantsRow[]
+    );
 
     // Build full conversation objects with all required fields
     return (conversations as ConversationsRow[]).map(c => ({
       ...c,
       participants: participantsByConv.get(c.id) || [],
-      unread_count: 0, // Could calculate but keeping simple for now
+      unread_count: unreadByConv.get(c.id) ?? 0,
       last_message_preview: c.last_message_preview || null,
       last_message_sender_id: c.last_message_sender_id || null,
       last_message_at: c.last_message_at || null,
@@ -203,6 +213,7 @@ export async function fetchConversationSummary(conversationId: string): Promise<
     joined_at: p.joined_at,
     last_read_at: p.last_read_at,
     is_active: p.is_active,
+    is_agent: isCatUsername(p.profiles?.username),
   }));
 
   return {
@@ -273,6 +284,10 @@ export async function fetchMessages(
   });
 
   const userLastReadAt = participantReadTimes.get(user.id) || null;
+  const attachments = await attachmentsOfMessages(
+    admin,
+    (data || []).map(m => m.id)
+  );
 
   // Transform to expected format
   const messages = (data || []).map(m => {
@@ -329,7 +344,11 @@ export async function fetchMessages(
         username: m.profiles?.username || '',
         name: m.profiles?.name || '',
         avatar_url: m.profiles?.avatar_url || null,
+        // An agent's message is never drawn as a person's (the reserved
+        // handle is the mark: config/usernames.ts keeps it from anyone else).
+        is_agent: isCatUsername(m.profiles?.username),
       },
+      attachments: attachments.get(m.id) ?? [],
       is_read: isRead,
       is_delivered: isDelivered,
       status: status,
@@ -341,4 +360,70 @@ export async function fetchMessages(
   const sorted = slice.reverse() as Message[];
   const nextCursor = hasMore && sorted.length > 0 ? sorted[0].created_at : null;
   return { messages: sorted, pagination: { hasMore, nextCursor, count: count || sorted.length } };
+}
+
+/**
+ * Unread messages per conversation, for the list: what somebody else wrote
+ * after the viewer's read mark.
+ *
+ * One query for all of them, and only for conversations whose newest message
+ * is newer than the mark — a list of thirty conversations that are all read
+ * costs nothing. The count is capped by the rows fetched, which is enough for
+ * a badge ("99+").
+ */
+const UNREAD_SCAN_LIMIT = 1000;
+
+async function countUnread(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  conversations: ConversationsRow[],
+  participants: ConversationParticipantsRow[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const marks = new Map<string, string>();
+  for (const p of participants) {
+    if (p.user_id === userId && p.conversation_id) {
+      marks.set(p.conversation_id, p.last_read_at || '');
+    }
+  }
+  const behind = conversations.filter(c => {
+    const mark = marks.get(c.id);
+    return (
+      c.last_message_at &&
+      c.last_message_sender_id !== userId &&
+      (!mark || new Date(c.last_message_at) > new Date(mark))
+    );
+  });
+  if (behind.length === 0) {
+    return counts;
+  }
+  const oldestMark = behind
+    .map(c => marks.get(c.id) || '')
+    .reduce((oldest, mark) => (mark < oldest ? mark : oldest));
+  let query = admin
+    .from(DATABASE_TABLES.MESSAGES)
+    .select('conversation_id, created_at')
+    .in(
+      'conversation_id',
+      behind.map(c => c.id)
+    )
+    .neq('sender_id', userId)
+    .eq('is_deleted', false)
+    .order('created_at', { ascending: false })
+    .limit(UNREAD_SCAN_LIMIT);
+  if (oldestMark) {
+    query = query.gt('created_at', oldestMark);
+  }
+  const { data, error } = await query;
+  if (error) {
+    logger.warn('Could not count unread messages', { error: error.message });
+    return counts;
+  }
+  for (const row of data ?? []) {
+    const mark = marks.get(row.conversation_id);
+    if (!mark || new Date(row.created_at) > new Date(mark)) {
+      counts.set(row.conversation_id, (counts.get(row.conversation_id) ?? 0) + 1);
+    }
+  }
+  return counts;
 }

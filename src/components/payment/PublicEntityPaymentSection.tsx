@@ -29,7 +29,7 @@ import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
-import { buildInquiryHref, withSignIn } from '@/lib/navigation/inquiryHref';
+import { inquiryHref } from '@/features/messaging/lib/draft';
 
 interface PublicEntityPaymentSectionProps {
   entityType: EntityType;
@@ -99,10 +99,8 @@ export function PublicEntityPaymentSection({
         <Button
           variant="primary"
           className="mt-4 w-full min-h-11"
-          href={withSignIn(
-            buildInquiryHref({ to: sellerUserId, about: entityTitle, ref: signInRedirect }),
-            isAuthenticated
-          )}
+          // Signed out, the middleware sends this through sign-in and back.
+          href={inquiryHref(sellerUserId, { title: entityTitle, path: signInRedirect })}
         >
           Ask how to pay
         </Button>

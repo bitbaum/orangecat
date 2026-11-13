@@ -95,7 +95,9 @@ export function FormField({
           <CurrencyInput
             id={name}
             value={(value as number | null) ?? null}
-            currency={currentCurrency}
+            currency={config.storedIn ?? currentCurrency}
+            entryCurrency={currentCurrency}
+            currencyLabel={`${label} currency`}
             onChange={onChange}
             onCurrencyChange={onCurrencyChange}
             onFocus={onFocus}
@@ -104,7 +106,6 @@ export function FormField({
             defaultCurrency={userCurrency}
             userCurrency={userCurrency}
             showBreakdown={false} // Don't show breakdown by default (no sats!)
-            allowCurrencySwitch={true}
             isGoal={config.isGoal}
             min={min}
             max={max}

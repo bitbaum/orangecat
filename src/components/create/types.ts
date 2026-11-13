@@ -21,6 +21,7 @@ import { LucideIcon } from 'lucide-react';
 import { ZodType } from 'zod';
 import type { EntityType } from '@/config/entity-registry';
 import type { AiErrorCode } from '@/config/ai-errors';
+import type { CurrencyCode } from '@/config/currencies';
 
 // ==================== FIELD TYPES ====================
 
@@ -96,6 +97,14 @@ export interface FieldConfig {
    * and amount fields must leave this unset.
    */
   isGoal?: boolean;
+  /**
+   * Currency fields only: the column always holds this currency (an asset's
+   * `*_btc` prices). The amount is still typed and shown in the form's
+   * currency and converted at today's rate; switching the form's currency
+   * changes what it is shown in, never what is stored. Unset: the amount is
+   * stored in the form's own `currency`, and a switch converts it.
+   */
+  storedIn?: CurrencyCode;
   /** Field depends on another field's value */
   dependsOn?:
     | string

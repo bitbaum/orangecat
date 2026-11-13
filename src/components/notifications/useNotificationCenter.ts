@@ -28,7 +28,6 @@ interface UseNotificationCenterParams {
 export function useNotificationCenter({ onClose }: UseNotificationCenterParams) {
   const router = useRouter();
   const [uiFilter, setUIFilter] = useState<UIFilter>('all');
-  const [showMessages, setShowMessages] = useState(false);
 
   const {
     notifications,
@@ -100,7 +99,9 @@ export function useNotificationCenter({ onClose }: UseNotificationCenterParams) 
       await handleMarkAsRead(notification.id);
     }
     if (notification.type === 'message') {
-      setShowMessages(true);
+      // Messages is one screen (ROUTES.MESSAGES), not a second messenger in a
+      // dialog over the bell.
+      router.push(ROUTES.MESSAGES);
       onClose();
       return;
     }
@@ -120,8 +121,6 @@ export function useNotificationCenter({ onClose }: UseNotificationCenterParams) 
     refresh,
     uiFilter,
     setUIFilter,
-    showMessages,
-    setShowMessages,
     handleMarkAsRead,
     handleMarkAllAsRead,
     handleDeleteNotification,

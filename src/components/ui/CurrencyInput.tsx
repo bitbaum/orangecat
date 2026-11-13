@@ -10,12 +10,18 @@ import { useCurrencyInput } from './useCurrencyInput';
 
 interface CurrencyInputProps {
   value: number | null;
+  /** The currency `value` is stored in. */
   currency: Currency;
+  /** The currency the amount is typed and shown in, when not the stored one. */
+  entryCurrency?: Currency;
   onChange: (amount: number | null) => void;
   onCurrencyChange?: (currency: Currency) => void;
   defaultCurrency?: Currency;
   userCurrency?: Currency;
   label?: string;
+  /** The currency switch's accessible name, e.g. "Price currency". Without
+   *  one a screen reader announces only "CHF, combo box". */
+  currencyLabel?: string;
   placeholder?: string;
   error?: string;
   hint?: string;
@@ -40,11 +46,13 @@ interface CurrencyInputProps {
 export function CurrencyInput({
   value,
   currency: propCurrency,
+  entryCurrency,
   onChange,
   onCurrencyChange,
   defaultCurrency = PLATFORM_DEFAULT_CURRENCY,
   userCurrency,
   label,
+  currencyLabel,
   placeholder,
   error,
   hint,
@@ -70,7 +78,8 @@ export function CurrencyInput({
     onCurrencyChange,
     defaultCurrency,
     userCurrency,
-    showBreakdown
+    showBreakdown,
+    entryCurrency
   );
 
   return (
@@ -98,7 +107,7 @@ export function CurrencyInput({
 
           {allowCurrencySwitch ? (
             <select
-              aria-label={label ? `${label} currency` : 'Currency'}
+              aria-label={currencyLabel ?? (label ? `${label} currency` : 'Currency')}
               value={inputCurrency}
               onChange={e => handleCurrencyChange(e.target.value as Currency)}
               disabled={disabled}
