@@ -2,7 +2,6 @@
 
 import { CheckCircle2 } from 'lucide-react';
 import { FieldHelpButton } from '@/components/ui/FieldHelpButton';
-import { GRADIENTS } from '@/config/gradients';
 import { DynamicSidebar } from '@/components/create/DynamicSidebar';
 import {
   profileGuidanceContent,
@@ -36,7 +35,7 @@ export function ProfileMobileSupport({
           </div>
           <div className="w-full bg-surface-raised rounded-full h-2 overflow-hidden">
             <div
-              className={`${GRADIENTS.progressBitcoin} h-2 rounded-full transition-all duration-700 ease-out`}
+              className={`bg-fg-primary h-2 rounded-full transition-all duration-700 ease-out`}
               style={{ width: `${completionPercentage}%` }}
             />
           </div>

@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 /** One colour per level, from the semantic tier — nothing chromatic. */
 const LEVEL_BAR: Record<CivicLevelId, string> = {
-  locality: 'bg-accent-warm',
+  locality: 'bg-fg-primary',
   region: 'bg-fg-secondary',
   nation: 'bg-fg-muted',
 };
@@ -79,7 +79,7 @@ export default function ShareSliders({
               value={shares[level.id]}
               disabled={disabled}
               onChange={e => onChange(rebalanceShares(shares, level.id, Number(e.target.value)))}
-              className="h-2 w-full cursor-pointer accent-accent-warm disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-2 w-full cursor-pointer accent-fg-primary disabled:cursor-not-allowed disabled:opacity-50"
               aria-valuetext={`${shares[level.id]} percent to ${name || level.label}`}
             />
             <p className="text-xs text-fg-tertiary">{level.hint}</p>
