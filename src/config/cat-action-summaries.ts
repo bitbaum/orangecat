@@ -96,6 +96,8 @@ export const CAT_ACTION_SUMMARIES: Record<string, string> = {
   cancel_watch: 'Stop one of the alerts Cat set for you.',
   set_reminder: 'Set a reminder for you.',
   set_civic_split: 'Note how you would split your public money between town, region and country.',
+  walk_site: 'Open up to three live pages on a phone and say what is wrong. Changes nothing.',
+  use_browser: 'Take one step in a browser of its own. Never types passwords or card numbers.',
 };
 
 /** The words a person reads for an action; the model's description only as a last resort. */

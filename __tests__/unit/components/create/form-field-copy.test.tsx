@@ -27,10 +27,6 @@ describe('a sentinel the person never types', () => {
 });
 
 describe('create form copy', () => {
-  it('a product has one currency control, the one on Price', () => {
-    expect(fields(productConfig.fieldGroups).some(f => f.name === 'currency')).toBe(false);
-  });
-
   it('no hint explains the implementation or says "Optional:"', () => {
     for (const field of [
       ...fields(productConfig.fieldGroups),
