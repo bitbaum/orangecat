@@ -31,8 +31,21 @@ function isPlaceholderName(name?: string | null, username?: string | null): bool
   return false;
 }
 
-/** The one line under the greeting: what is waiting on the person, if anything. */
-export function dashboardStatusLine(waiting: number | undefined, drafts: number): string {
+/** What the door does, for an account that has nothing yet to be waiting on. */
+export const DASHBOARD_DOOR_LINE =
+  'Say what you want to do. Your Cat drafts it and asks before anything goes out.';
+
+/**
+ * The one line under the greeting: what is waiting on the person, if anything.
+ * Nothing waiting is an empty line, not "No pending Cat approvals." — jargon
+ * that told a new account about a queue it had never seen. An account that
+ * owns nothing gets the sentence that explains the door instead.
+ */
+export function dashboardStatusLine(
+  waiting: number | undefined,
+  drafts: number,
+  ownsNothing = false
+): string {
   const parts: string[] = [];
   if (waiting === undefined) {
     parts.push('Checking Cat approvals…');
@@ -42,7 +55,10 @@ export function dashboardStatusLine(waiting: number | undefined, drafts: number)
   if (drafts > 0) {
     parts.push(`${drafts} unpublished ${drafts === 1 ? 'draft' : 'drafts'}`);
   }
-  return parts.length > 0 ? parts.join(' · ') : 'No pending Cat approvals.';
+  if (parts.length > 0) {
+    return parts.join(' · ');
+  }
+  return ownsNothing ? DASHBOARD_DOOR_LINE : '';
 }
 
 interface DashboardHeaderProps {
@@ -53,6 +69,8 @@ interface DashboardHeaderProps {
   /** Actions the Cat proposed that wait for a yes or no. */
   waiting: number | undefined;
   totalDrafts: number;
+  /** The account has made nothing yet: the line explains the door. */
+  ownsNothing?: boolean;
 }
 
 /**
@@ -60,13 +78,19 @@ interface DashboardHeaderProps {
  * no icon tile, no project count: the count said nothing a person could act
  * on, and the box around two lines of text cost a third of a phone screen.
  */
-export function DashboardHeader({ profile, waiting, totalDrafts }: DashboardHeaderProps) {
+export function DashboardHeader({
+  profile,
+  waiting,
+  totalDrafts,
+  ownsNothing = false,
+}: DashboardHeaderProps) {
   const name =
     profile &&
     (profile.name || profile.username) &&
     !isPlaceholderName(profile.name, profile.username)
       ? capitalizeName(profile.name || profile.username || '')
       : null;
+  const status = dashboardStatusLine(waiting, totalDrafts, ownsNothing);
   return (
     <header className="min-w-0">
       <h1 className="font-heading text-2xl leading-tight text-fg-primary sm:text-3xl">
@@ -74,7 +98,7 @@ export function DashboardHeader({ profile, waiting, totalDrafts }: DashboardHead
             claim about someone who may have arrived ten seconds ago. */}
         {name ? `Welcome back, ${name}` : 'Welcome'}
       </h1>
-      <p className="mt-1 text-sm text-fg-secondary">{dashboardStatusLine(waiting, totalDrafts)}</p>
+      {status && <p className="mb-0 mt-1 text-sm text-fg-secondary">{status}</p>}
     </header>
   );
 }
