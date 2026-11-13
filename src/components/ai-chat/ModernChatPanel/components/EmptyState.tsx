@@ -23,6 +23,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
+import { ROUTES } from '@/config/routes';
 import { getCreateSuggestionHref } from '@/config/cat-create-suggestions';
 import { useAuth } from '@/hooks/useAuth';
 import { useDisplayDate } from '@/hooks/useDisplayDate';
@@ -96,6 +97,20 @@ export function EmptyState({
           {now ? dateLine(now, locale) : '\u00a0'}
         </p>
       </div>
+
+      {/* A new person: what kind of message this takes, and — because the
+          logo no longer opens it — the one way to the "who are you" form. */}
+      {isNewUser && (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <p className="mb-0 text-sm text-fg-secondary">{CAT_HUB_COPY.newUserHint}</p>
+          <Link
+            href={ROUTES.ONBOARDING.INTELLIGENT}
+            className="inline-flex min-h-11 items-center text-sm font-medium text-fg-primary underline underline-offset-4"
+          >
+            {CAT_HUB_COPY.newUserIntroduce}
+          </Link>
+        </div>
+      )}
 
       {isLoadingSuggestions ? (
         <div className="oc-chat-opener" aria-hidden="true">

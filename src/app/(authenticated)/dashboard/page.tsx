@@ -11,6 +11,7 @@ import {
 } from '@/components/dashboard/sections';
 import { CatNudges } from '@/components/dashboard/CatNudges';
 import { DashboardIntent } from '@/components/dashboard/DashboardIntent';
+import { DOOR_EXAMPLES } from '@/config/cat-door';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
 import { useDashboard } from './useDashboard';
 
@@ -91,7 +92,11 @@ export default function DashboardPage() {
             {/* The door: one sentence in, the right thing out. The Cat answers
                 with a draft card, so this is the fastest route from wanting to
                 having. */}
-            <DashboardIntent />
+            <DashboardIntent
+              // A person with nothing yet has nothing to recognise in an empty
+              // box; the examples say what kind of sentence it takes.
+              examples={safeProjects.length === 0 && totalDrafts === 0 ? DOOR_EXAMPLES : undefined}
+            />
           </div>
 
           {pendingActions.length > 0 && (

@@ -23,12 +23,13 @@
  *             so the same three are not offered every morning.
  *
  * There is deliberately no list of prompt strings here. The single exception is
- * a user the Cat knows nothing about: zero data is zero signal, so the only
- * honest structure is a fork of intent — and even that is DERIVED from
- * ENTITY_REGISTRY, so adding an entity type never means editing prompt copy.
+ * a user the Cat knows nothing about: zero data is zero signal, so they are
+ * offered the door's own examples (DOOR_EXAMPLES) — whole sentences of things
+ * it can do today. They used to be registry nouns ("Help me create my first
+ * product"), which told a new person the names of tables, not what to say.
  */
 
-import { getEntitiesByCategory } from '@/config/entity-registry';
+import { DOOR_EXAMPLES } from '@/config/cat-door';
 
 export interface CatOpener {
   /**
@@ -114,20 +115,17 @@ export interface CatToday {
 const STARTER_COUNT = 3;
 
 /**
- * The intent fork for a user with no data, derived from the entity registry.
- * `business` is the registry's own category for the things a person offers or
- * funds, already sorted by its `createPriority`, so this tracks the registry
- * rather than restating it.
+ * What a user with no data is offered: the first of the door's examples, the
+ * same sentences the "What do you want to do?" box shows, so the two first
+ * screens speak with one voice.
  */
 export function getStarterChips(): string[] {
-  return getEntitiesByCategory()
-    .business.slice(0, STARTER_COUNT)
-    .map(meta => `Help me create my first ${meta.name.toLowerCase()}`);
+  return DOOR_EXAMPLES.slice(0, STARTER_COUNT);
 }
 
 /**
  * What an unknown user sees — and the fallback for anonymous visitors and
- * errors. Safe as a module constant: it derives from a static registry.
+ * errors. Safe as a module constant: it derives from static config.
  */
 export const STARTER_HOME: CatHome = {
   today: null,
