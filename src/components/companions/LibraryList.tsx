@@ -10,15 +10,13 @@ import { FileText, Image as ImageIcon, Link2 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { COMPANION_COPY } from '@/config/companions';
 import type { LibraryItem } from '@/services/companions/library';
+import { formatDate } from '@/utils/dates';
 import { logger } from '@/utils/logger';
 
 interface LibraryListProps {
   companionId: string;
   name: string;
 }
-
-const day = (at: string) =>
-  new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
 export function LibraryList({ companionId, name }: LibraryListProps) {
   const copy = COMPANION_COPY.library;
@@ -70,7 +68,7 @@ export function LibraryList({ companionId, name }: LibraryListProps) {
                   <span className="block truncate text-base text-fg-primary">{item.name}</span>
                   <span className="block text-sm text-fg-secondary">
                     {copy.kinds[item.kind]} · {item.from === 'you' ? copy.fromYou : name} ·{' '}
-                    {day(item.at)}
+                    {formatDate(item.at)}
                   </span>
                 </span>
               </>

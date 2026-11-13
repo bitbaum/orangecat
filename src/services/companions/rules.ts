@@ -15,6 +15,7 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { fromTable } from '@/lib/supabase/untyped';
+import { APP_LOCALE } from '@/utils/locale';
 
 export const MAX_BOT_RULES_LENGTH = 2000;
 export const RULES_SECTION_HEADING = "## Your owner's rules";
@@ -30,7 +31,7 @@ export function knownTimeZone(zone: unknown): string | null {
     return null;
   }
   try {
-    new Intl.DateTimeFormat('en-GB', { timeZone: zone.trim() });
+    new Intl.DateTimeFormat(APP_LOCALE, { timeZone: zone.trim() });
     return zone.trim();
   } catch {
     return null;
@@ -71,7 +72,7 @@ export function rulesSection(settings: BotSettings, now: Date = new Date()): str
     );
   }
   if (settings.timeZone) {
-    const local = new Intl.DateTimeFormat('en-GB', {
+    const local = new Intl.DateTimeFormat(APP_LOCALE, {
       timeZone: settings.timeZone,
       weekday: 'long',
       day: 'numeric',
