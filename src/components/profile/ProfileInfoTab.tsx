@@ -90,14 +90,19 @@ export default function ProfileInfoTab({
             </h3>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-fg-secondary">Email Verified</span>
-              <span
-                className={profile.email ? 'text-status-positive font-medium' : 'text-fg-tertiary'}
-              >
-                {profile.email ? '✓ Verified' : 'Not verified'}
-              </span>
-            </div>
+            {/* No email at all is not "not verified": the row waits until there is one. */}
+            {(profile.email || userEmail) && (
+              <div className="flex items-center justify-between">
+                <span className="text-fg-secondary">Email Verified</span>
+                <span
+                  className={
+                    profile.email ? 'text-status-positive font-medium' : 'text-fg-tertiary'
+                  }
+                >
+                  {profile.email ? '✓ Verified' : 'Not verified'}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-fg-secondary">Profile Complete</span>
               <span

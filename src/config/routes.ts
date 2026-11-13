@@ -642,4 +642,5 @@ export const ROUTES = {
   SETTINGS_NOTIFICATIONS: '/settings/notifications',
   SETTINGS_MEMORY: '/settings/memory',
   SETTINGS_USAGE: '/settings/usage',
+  SETTINGS_PREFERENCES: '/settings/preferences',
 } as const;

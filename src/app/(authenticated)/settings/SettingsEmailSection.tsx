@@ -6,18 +6,29 @@ import { Mail } from 'lucide-react';
 
 interface Props {
   email: string;
+  /** The account has no email yet (anonymous): offer to add one, not to change it. */
+  noEmail?: boolean;
   isSubmitting: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export function SettingsEmailSection({ email, isSubmitting, onChange, onSubmit }: Props) {
+export function SettingsEmailSection({
+  email,
+  noEmail = false,
+  isSubmitting,
+  onChange,
+  onSubmit,
+}: Props) {
   return (
     <div>
-      <h3 className="text-lg font-semibold text-fg-primary mb-4">Email Address</h3>
-      <p className="text-fg-secondary mb-6">
-        This is the email address associated with your account. You&apos;ll receive important
-        notifications here.
+      <h3 className="mb-2 text-lg font-semibold text-fg-primary">
+        {noEmail ? 'Add an email' : 'Email address'}
+      </h3>
+      <p className="mb-4 max-w-prose text-fg-secondary">
+        {noEmail
+          ? 'This account has no email yet, so it only exists in this browser. Add one and you can sign in anywhere.'
+          : 'You sign in with this address, and important notifications go here. Changing it sends a confirmation link to the new address.'}
       </p>
       <form onSubmit={onSubmit} className="space-y-4">
         <Input
@@ -29,17 +40,14 @@ export function SettingsEmailSection({ email, isSubmitting, onChange, onSubmit }
           icon={Mail}
           className="max-w-md"
         />
-        <div className="max-w-md rounded-md border border-subtle bg-surface-raised/30 p-4">
-          <p className="text-base text-fg-secondary">
-            <strong>Note:</strong> When you update your email, we&apos;ll send a confirmation link
-            to your new address.
-          </p>
-        </div>
-        <div className="flex justify-start">
-          <Button type="submit" variant="outline" disabled={isSubmitting} className="px-6 py-2">
-            {isSubmitting ? 'Updating...' : 'Update Email'}
-          </Button>
-        </div>
+        <Button
+          type="submit"
+          variant={noEmail ? 'primary' : 'outline'}
+          disabled={isSubmitting}
+          className="min-h-11"
+        >
+          {isSubmitting ? 'Saving…' : noEmail ? 'Add email' : 'Update email'}
+        </Button>
       </form>
     </div>
   );

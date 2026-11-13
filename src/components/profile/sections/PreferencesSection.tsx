@@ -1,82 +1,32 @@
-/**
- * Preferences Section
- *
- * Form section for user preferences (currency, etc.).
- *
- * Created: 2026-01-05
- * Last Modified: 2026-01-05
- */
-
 'use client';
 
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ProfileFieldType } from '@/lib/profile-guidance';
-import { Control } from 'react-hook-form';
-import { ProfileFormValues } from '../types';
-import { PROFILE_SECTIONS, PROFILE_SECTION_DESCRIPTIONS } from '../constants';
-import { currencySelectOptions, PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
+/**
+ * Preferences — a pointer, not a second copy.
+ *
+ * Currency used to be editable here AND in Settings, two doors to the same
+ * column with different labels ("Default Currency" here, "Display currency"
+ * there). It lives in Settings → Preferences, beside date format and theme,
+ * and saves the moment it changes; the profile editor links to it.
+ */
 
-interface PreferencesSectionProps {
-  control: Control<ProfileFormValues>;
-  onFieldFocus?: (field: ProfileFieldType) => void;
-}
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
+import { PROFILE_SECTIONS } from '../constants';
 
-export function PreferencesSection({ control, onFieldFocus }: PreferencesSectionProps) {
+export function PreferencesSection() {
   return (
-    <div className="oc-surface space-y-4 px-4 py-5 sm:px-5 sm:py-6">
-      <div className="mb-1">
-        <h3 className="text-sm font-semibold text-fg-primary uppercase tracking-wide">
-          {PROFILE_SECTIONS.PREFERENCES}
-        </h3>
-        <p className="mt-1 text-xs text-fg-secondary">{PROFILE_SECTION_DESCRIPTIONS.PREFERENCES}</p>
-      </div>
-
-      {/* Currency Preference */}
-      <FormField
-        control={control}
-        name="currency"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-sm font-medium text-fg-primary">Default Currency</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || PLATFORM_DEFAULT_CURRENCY}>
-              <FormControl>
-                <SelectTrigger
-                  className="w-full"
-                  onFocus={() => onFieldFocus?.('currencyPreference')}
-                >
-                  <SelectValue placeholder="Select your preferred currency" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {currencySelectOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormDescription className="text-xs text-fg-secondary">
-              Prices and amounts will be displayed in this currency. All transactions are settled in
-              Bitcoin.
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+    <div className="oc-surface px-4 py-5 sm:px-5 sm:py-6">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-fg-primary">
+        {PROFILE_SECTIONS.PREFERENCES}
+      </h3>
+      <Link
+        href={ROUTES.SETTINGS_PREFERENCES}
+        className="mt-2 flex min-h-11 items-center justify-between gap-3 text-sm text-fg-secondary hover:text-fg-primary"
+      >
+        <span>Currency, date format and theme are in Settings</span>
+        <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+      </Link>
     </div>
   );
 }

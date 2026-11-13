@@ -107,7 +107,7 @@ function ProfileEditorForm({
           />
 
           {/* Preferences Section */}
-          <PreferencesSection control={form.control} onFieldFocus={onFieldFocus} />
+          <PreferencesSection />
 
           {/* Privacy Section — per-field visibility to visitors */}
           <PrivacySection form={form} />

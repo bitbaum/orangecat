@@ -7,7 +7,7 @@
  * is what makes losing the inbox survivable (ADR-0009, D6).
  */
 import { useEffect, useState } from 'react';
-import { AlertCircle, Loader2, Mail, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Loader2, Mail, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 import { OAUTH_PROVIDERS } from '@/app/auth/OAuthIcons';
@@ -150,6 +150,11 @@ export function SignInMethodsCard() {
             </li>
           );
         })}
+        {methods.length === 0 && passkeyCount === 0 && (
+          <li className="p-3 text-sm text-fg-secondary">
+            This browser only — no email, Google or GitHub linked yet
+          </li>
+        )}
         {passkeyCount > 0 && (
           <li className="p-3 text-sm text-fg-secondary">
             {passkeyCount === 1 ? '1 passkey' : `${passkeyCount} passkeys`} (managed above)
@@ -158,8 +163,11 @@ export function SignInMethodsCard() {
       </ul>
 
       {onlyOneWayIn && (
-        <p className="text-sm text-status-warning">
-          Only one way in. If you lose it, only support can get you back. Add a second one.
+        <p className="mb-0 flex gap-2 rounded-md bg-status-warning-subtle px-4 py-3 text-sm text-fg-primary">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
+          {methods.length + passkeyCount === 0
+            ? 'Nothing signs you back in from another browser yet. Add an email or link Google or GitHub.'
+            : 'Only one way in. If you lose it, only support can get you back. Add a second one.'}
         </p>
       )}
 
