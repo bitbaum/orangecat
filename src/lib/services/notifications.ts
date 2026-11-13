@@ -27,27 +27,9 @@ interface CreateNotificationOptions {
   metadata?: Record<string, unknown>;
 }
 
-interface BroadcastNotificationOptions {
-  excludeUserId?: string;
-  type: NotificationType;
-  title: string;
-  message?: string | null;
-  actionUrl?: string | null;
-  sourceActorId?: string | null;
-  sourceEntityType?: string | null;
-  sourceEntityId?: string | null;
-  metadata?: Record<string, unknown>;
-}
-
 interface NotificationResult {
   success: boolean;
   notificationId?: string;
-  error?: string;
-}
-
-interface BroadcastResult {
-  success: boolean;
-  count?: number;
   error?: string;
 }
 
@@ -106,67 +88,6 @@ export class NotificationService {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       logger.error(
         'Exception creating notification',
-        { error: err, options },
-        'NotificationService'
-      );
-      return { success: false, error: errorMessage };
-    }
-  }
-
-  /**
-   * Create notifications for all users (broadcast)
-   * Useful for task requests to "anyone"
-   *
-   * @param options - Broadcast options including optional user to exclude (usually the sender)
-   */
-  async createBroadcastNotification(
-    options: BroadcastNotificationOptions
-  ): Promise<BroadcastResult> {
-    try {
-      // Get all user IDs except the excluded one
-      // Note: In production, filter by team membership or staff status
-      let query = this.supabase.from(DATABASE_TABLES.PROFILES).select('id');
-
-      if (options.excludeUserId) {
-        query = query.neq('id', options.excludeUserId);
-      }
-
-      const { data: users, error: usersError } = await query;
-
-      if (usersError) {
-        logger.error(
-          'Failed to fetch users for broadcast',
-          { error: usersError },
-          'NotificationService'
-        );
-        return { success: false, error: usersError.message };
-      }
-
-      if (!users || users.length === 0) {
-        return { success: true, count: 0 };
-      }
-
-      // Batch insert notifications
-      const notifications = users.map(user => buildNotificationRow(user.id, options));
-
-      const { error: insertError } = await this.supabase
-        .from(DATABASE_TABLES.NOTIFICATIONS)
-        .insert(notifications);
-
-      if (insertError) {
-        logger.error(
-          'Failed to create broadcast notifications',
-          { error: insertError },
-          'NotificationService'
-        );
-        return { success: false, error: insertError.message };
-      }
-
-      return { success: true, count: notifications.length };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      logger.error(
-        'Exception creating broadcast notification',
         { error: err, options },
         'NotificationService'
       );

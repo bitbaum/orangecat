@@ -97,7 +97,7 @@ export const loanDetailConfig: EntityDetailConfig = {
                   )}
                 </span>
               </div>
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} aria-label="Funding progress" className="h-2" />
               <div className="flex flex-col gap-1 text-xs text-fg-secondary sm:flex-row sm:justify-between">
                 <span>{progress.toFixed(1)}% funded</span>
                 <span className="break-words sm:text-right">

@@ -5,7 +5,9 @@
  * looking before deciding, spends nothing. Only the form's submit accepts.
  */
 import type { Metadata } from 'next';
+import Button from '@/components/ui/Button';
 import { IDENTITIES_COPY } from '@/config/identities';
+import { ROUTES } from '@/config/routes';
 import { previewHandover } from '@/domain/identities/handover';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { createServerClient } from '@/lib/supabase/server';
@@ -28,10 +30,13 @@ export default async function AcceptHandoverPage({ params }: PageProps) {
 
   if (!offer) {
     return (
-      <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-12">
+      <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-12">
         <h1 className="text-xl font-semibold text-fg-primary">{IDENTITIES_COPY.acceptGoneTitle}</h1>
         <p className="mt-3 text-fg-secondary">{IDENTITIES_COPY.acceptGone}</p>
-      </main>
+        <Button href={ROUTES.HOME} variant="outline" className="mt-6 min-h-11 w-full">
+          {IDENTITIES_COPY.acceptGoneHome}
+        </Button>
+      </div>
     );
   }
 
@@ -41,13 +46,13 @@ export default async function AcceptHandoverPage({ params }: PageProps) {
   const name = offer.name || (offer.username ? `@${offer.username}` : 'this identity');
 
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-12">
+    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-12">
       <h1 className="text-xl font-semibold text-fg-primary">{IDENTITIES_COPY.acceptTitle(name)}</h1>
       {offer.name && offer.username && (
         <p className="mb-0 mt-1 text-sm text-fg-secondary">@{offer.username}</p>
       )}
       <p className="mt-4 text-fg-secondary">{IDENTITIES_COPY.acceptIntro}</p>
       <AcceptHandoverForm token={token} signedInElsewhere={Boolean(user)} />
-    </main>
+    </div>
   );
 }

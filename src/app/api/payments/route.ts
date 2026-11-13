@@ -55,7 +55,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     logger.error('Payment initiation failed', { error });
 
     // Return safe, user-friendly errors for known domain error patterns
-    const safeMessage = mapKnownPaymentError(message);
+    const safeMessage = mapKnownPaymentError(message, error);
     if (safeMessage) {
       return apiBadRequest(safeMessage);
     }

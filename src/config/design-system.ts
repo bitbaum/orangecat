@@ -27,7 +27,7 @@ export const UI_TOKENS = {
     raised: 'shadow-none',
   },
   focus:
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+    'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   transition: 'transition-colors duration-150',
 } as const;
 
@@ -65,7 +65,7 @@ export const COMPONENT_STYLES = {
   },
   iconButton: {
     base: [
-      'inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center',
+      'inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:min-h-11 pointer-coarse:min-w-11',
       UI_TOKENS.radius.control,
       UI_TOKENS.transition,
       UI_TOKENS.focus,
@@ -101,7 +101,7 @@ export const COMPONENT_STYLES = {
       UI_TOKENS.radius.control,
       'placeholder:text-fg-tertiary',
       UI_TOKENS.transition,
-      'focus:border-interactive focus:outline-none focus:ring-2 focus:ring-ring/20',
+      'focus:border-interactive focus:outline-hidden focus:ring-2 focus:ring-ring/20',
       'disabled:cursor-not-allowed disabled:opacity-50',
     ].join(' '),
     errorControl:
@@ -119,5 +119,13 @@ export const COMPONENT_STYLES = {
     text: 'text-fg-primary',
     surface: 'bg-fg-primary text-fg-inverted',
     hairline: 'bg-fg-primary/60',
+  },
+  /**
+   * A text link: the words in the text colour, the orange only in the
+   * underline. Orange as a text colour is 2.1:1 on the light surfaces, far
+   * under the 4.5:1 small text needs; the underline carries the colour instead.
+   */
+  link: {
+    text: 'text-fg-primary underline decoration-accent-warm/60 decoration-2 underline-offset-2 hover:decoration-accent-warm',
   },
 } as const;

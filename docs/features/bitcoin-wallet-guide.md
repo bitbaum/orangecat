@@ -47,7 +47,6 @@ The page follows OrangeCat's design system:
 
 - Uses **Bitcoin Orange** (#F7931A) for all Bitcoin-related elements
 - Implements the centralized theme system from `src/config/theme.ts`
-- Uses `BitcoinBadge` component for consistent Bitcoin branding
 - Follows responsive design patterns with mobile-first approach
 
 ## Features
@@ -121,7 +120,6 @@ The guide includes curated wallet options:
 
 ### Components Used
 
-- `BitcoinBadge` - For consistent Bitcoin branding
 - `Card` components - For wallet option layouts
 - `Button` - For CTAs and navigation
 - `motion` from Framer Motion - For smooth animations

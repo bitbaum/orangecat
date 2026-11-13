@@ -36,7 +36,12 @@ export function WizardProgressBar({
           )}
         </div>
       </div>
-      <Progress value={progress} className="h-2 bg-surface-raised" />
+      <Progress
+        value={progress}
+        aria-label="Progress"
+        getValueLabel={() => `Step ${currentStep + 1} of ${wizardSteps.length}`}
+        className="h-2 bg-surface-raised"
+      />
 
       <div className="flex justify-between mt-3">
         {wizardSteps.map((step, index) => {
@@ -49,23 +54,24 @@ export function WizardProgressBar({
               key={step.id}
               onClick={() => onStepClick(index)}
               disabled={!isAccessible}
+              aria-current={isCurrent ? 'step' : undefined}
               className={`flex flex-col items-center gap-2 transition-all ${
-                isAccessible ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                isAccessible ? 'cursor-pointer' : 'cursor-not-allowed'
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${
                   isCompleted
-                    ? 'bg-status-positive text-white'
+                    ? 'bg-status-positive text-fg-inverted'
                     : isCurrent
-                      ? 'bg-accent-warm text-on-accent ring-4 ring-accent-warm/20'
+                      ? 'bg-fg-primary text-fg-inverted'
                       : 'bg-surface-raised text-fg-secondary'
                 }`}
               >
                 {isCompleted ? <Check className="w-4 h-4" /> : index + 1}
               </div>
               <span
-                className={`max-w-[64px] text-center text-2xs font-medium leading-tight sm:max-w-[80px] sm:text-xs ${
+                className={`max-w-[64px] text-center text-xs font-medium leading-tight sm:max-w-[80px] ${
                   isCurrent ? 'text-fg-primary' : 'text-fg-secondary'
                 }`}
               >

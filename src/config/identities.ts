@@ -109,6 +109,7 @@ export const IDENTITIES_COPY = {
     'You are signed in to another account in this browser. Accepting signs you in to this one here instead.',
   acceptGoneTitle: 'This link no longer works',
   acceptGone: 'It was used, withdrawn or has expired. Ask the person who sent it for a new one.',
+  acceptGoneHome: 'Go to OrangeCat',
   acceptDoneTitle: 'It is yours',
   acceptDoneSignIn: (email: string) =>
     `This identity is now an account of its own on ${email}. Sign in with that address to open it.`,

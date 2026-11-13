@@ -74,15 +74,35 @@ describe('ProfileWalletSection with a visitor-shaped payload', () => {
   });
 
   it('shows the owner a balance that WAS fetched', () => {
+    // A chain lookup records when it happened; that is what makes it a reading.
     render(
       <ProfileWalletSection
-        wallets={[{ ...publicWallet, balance_btc: 0.5 } as never]}
+        wallets={
+          [
+            { ...publicWallet, balance_btc: 0.5, balance_updated_at: '2026-11-12T07:00:00Z' },
+          ] as never
+        }
         loading={false}
         isOwnProfile
       />
     );
     expect(screen.getByText('Current Balance')).toBeInTheDocument();
     expect(screen.getByText('₿0.5')).toBeInTheDocument();
+  });
+
+  it("says the owner's balance is not checked yet, not 0, before any lookup", () => {
+    // The column defaults to 0; the owner's payload carries it before anyone
+    // has read the address (production, 2026-11-12: "Current Balance CHF 0.00").
+    render(
+      <ProfileWalletSection
+        wallets={[{ ...publicWallet, balance_btc: 0, balance_updated_at: null }] as never}
+        loading={false}
+        isOwnProfile
+      />
+    );
+    expect(screen.getByText('Current Balance')).toBeInTheDocument();
+    expect(screen.getByText(/Not checked yet/)).toBeInTheDocument();
+    expect(screen.queryByText(/0\.00|₿0(?!\.)/)).not.toBeInTheDocument();
   });
 
   it('shows no goal block when the goal was not fetched either', () => {

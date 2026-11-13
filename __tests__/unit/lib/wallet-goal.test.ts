@@ -13,7 +13,7 @@
  * Gated by scripts/check-currency-units.mjs; this is the instance.
  */
 
-import { computeWalletGoalProgress } from '@/lib/wallet-goal';
+import { computeWalletGoalProgress, measuredBalanceBtc } from '@/lib/wallet-goal';
 
 /** Stand-in for the rate cache: CHF only, at a round 100 000 CHF/BTC. */
 const convert = (btc: number, currency: string) => (currency === 'CHF' ? btc * 100_000 : 0);
@@ -119,5 +119,40 @@ describe('computeWalletGoalProgress', () => {
       convert
     );
     expect(goal?.percent).toBe(0);
+  });
+});
+
+describe('measuredBalanceBtc — a balance nobody read is unknown, not zero', () => {
+  // The column defaults to 0, so the owner's own wallets showed "Current
+  // Balance CHF 0.00" and "0.0% funded" beside "Not checked yet" before any
+  // chain lookup had happened (production, 2026-11-12).
+  it('is null for the default 0 when no lookup has happened', () => {
+    expect(measuredBalanceBtc({ balance_btc: 0, balance_updated_at: null })).toBeNull();
+  });
+
+  it('is the balance once a lookup is recorded, zero included', () => {
+    expect(measuredBalanceBtc({ balance_btc: 0, balance_updated_at: '2026-11-12T07:00:00Z' })).toBe(
+      0
+    );
+    expect(
+      measuredBalanceBtc({ balance_btc: 0.0123, balance_updated_at: '2026-11-12T07:00:00Z' })
+    ).toBe(0.0123);
+  });
+
+  it("is null for a visitor's payload, which carries neither field", () => {
+    expect(measuredBalanceBtc({})).toBeNull();
+  });
+
+  it('gives no percentage for a goal on an unread wallet', () => {
+    const goal = computeWalletGoalProgress(
+      {
+        balanceBtc: measuredBalanceBtc({ balance_btc: 0, balance_updated_at: null }),
+        goalAmount: 2500,
+        goalCurrency: 'CHF',
+      },
+      () => 0
+    );
+    expect(goal?.percent).toBeNull();
+    expect(goal?.balanceInGoalCurrency).toBeNull();
   });
 });

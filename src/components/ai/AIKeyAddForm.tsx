@@ -241,7 +241,7 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
         {error && (
           <div className="oc-error-surface flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-status-negative mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-status-negative/80">{error}</p>
+            <p className="text-sm text-status-negative">{error}</p>
           </div>
         )}
 

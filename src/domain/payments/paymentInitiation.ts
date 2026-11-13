@@ -14,6 +14,7 @@ import { getEntityMetadata } from '@/config/entity-registry';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { resolveSellerWallet, getSellerUserId } from './walletResolutionService';
 import { generateInvoice } from './invoiceGenerationService';
+import { assertWithinContributionTerms } from './contributionTerms';
 import { resolveIntentExpiry, expiresInSecondsFrom } from './intentExpiry';
 import type {
   InitiatePaymentInput,
@@ -80,6 +81,7 @@ export async function initiatePayment(
 
   // 3. Determine amount
   const amountBtc = await resolveAmount(supabase, entity_type, entity_id, input.amount_btc);
+  await assertWithinContributionTerms(entity_type, entity_id, amountBtc);
 
   // 4. Determine entity title (snapshot for order)
   const entityTitle = await getEntityTitle(supabase, entity_type, entity_id);
@@ -212,6 +214,9 @@ export async function initiatePublicSupport(
   if (!visibleEntity) {
     throw new Error('Entity is not publicly available');
   }
+
+  // An investment's stated minimum and maximum hold here, before any invoice.
+  await assertWithinContributionTerms(entityType, entityId, amountBtc);
 
   const sellerId = await getSellerUserId(publicSupabase, entityType, entityId);
   if (!sellerId) {

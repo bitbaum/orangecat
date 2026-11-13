@@ -20,8 +20,10 @@ import PublicEntityHero from '@/components/public/PublicEntityHero';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import { resolveSellerReceiveInfo, type SellerReceiveInfo } from '@/domain/payments';
 import { getSharedWalletUsage, type SharedWalletUsage } from '@/domain/wallets/walletUsage';
+import { resolveContributionBoundsBtc } from '@/domain/payments/contributionTerms';
 import { convertToBtcOrNull } from '@/services/currency/rates.server';
 import { type CurrencyCode } from '@/config/currencies';
+import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { fetchEntityOwner } from '@/lib/entities/fetchEntityOwner';
 import { inquiryHref } from '@/features/messaging/lib/draft';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
@@ -148,6 +150,7 @@ export default async function PublicEntityDetailPage({
   let sellerReceive: SellerReceiveInfo | null = null;
   let sharedWalletUsage: SharedWalletUsage | null = null;
   let priceAmountBtc: number | undefined;
+  let contributionBounds: ContributionBoundsBtc | null = null;
   const hasPaymentSurface =
     (config.showPaymentSection !== false || meta.canReceiveSupport) &&
     config.paymentSectionFor?.(entity) !== false;
@@ -167,6 +170,11 @@ export default async function PublicEntityDetailPage({
           ? priceAmount
           : ((await convertToBtcOrNull(priceAmount, price.currency as CurrencyCode)) ?? undefined);
     }
+    // An investment's stated minimum and maximum bound what its card takes.
+    // No rate → no bounds here; the server still refuses rather than guess.
+    contributionBounds = await resolveContributionBoundsBtc(config.entityType, entity).catch(
+      () => null
+    );
   }
 
   const jsonLd = generateEntityJsonLd({
@@ -322,6 +330,7 @@ export default async function PublicEntityDetailPage({
                     sellerReceive={sellerReceive}
                     sharedWalletUsage={sharedWalletUsage}
                     priceAmountBtc={priceAmountBtc}
+                    contributionBounds={contributionBounds}
                     signInRedirect={viewRoute}
                   />
                 </div>

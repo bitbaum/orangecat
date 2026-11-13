@@ -27,6 +27,11 @@ function fakeAdmin(
     emailErrorButApplied?: boolean;
     stripFails?: boolean;
     relinkFails?: boolean;
+    /** The address lookup itself fails. */
+    lookupFails?: boolean;
+    /** Someone takes the address between the check and the update, and the
+     *  auth server's refusal says nothing about why. */
+    takenDuringUpdate?: boolean;
   } = {}
 ) {
   const tables: Record<string, Row[]> = {
@@ -88,8 +93,16 @@ function fakeAdmin(
 
   const admin = {
     from,
-    rpc: vi.fn(async (fn: string) => {
+    rpc: vi.fn(async (fn: string, params?: { p_email?: string }) => {
       log.push(`rpc ${fn}`);
+      if (fn === 'auth_user_id_for_email') {
+        if (opts.lookupFails) {
+          return { data: null, error: { message: 'boom' } };
+        }
+        const wanted = params?.p_email?.toLowerCase();
+        const owner = Object.entries(users).find(([, u]) => u.email.toLowerCase() === wanted);
+        return { data: owner?.[0] ?? null, error: null };
+      }
       return opts.stripFails && fn === 'identity_strip_ways_in'
         ? { data: null, error: { message: 'boom' } }
         : { data: 1, error: null };
@@ -109,6 +122,12 @@ function fakeAdmin(
           if (opts.emailErrorButApplied) {
             users[id] = { email: attrs.email! };
             return { error: { message: 'upstream timeout' } };
+          }
+          if (opts.takenDuringUpdate) {
+            users.latecomer = { email: attrs.email! };
+            return {
+              error: { message: 'Database error updating user', code: 'unexpected_failure' },
+            };
           }
           if (opts.emailError) {
             return { error: opts.emailError };
@@ -224,6 +243,7 @@ describe('accepting an offer', () => {
     expect(result).toEqual({ ok: true, identityId: 'alberto', email: 'new.owner@example.com' });
     expect(f.log).toEqual([
       'delete identity_handovers x1',
+      'rpc auth_user_id_for_email',
       'delete identity_links x1',
       'rpc identity_strip_ways_in',
       'revokeApps alberto',
@@ -310,6 +330,43 @@ describe('accepting an offer', () => {
     ]);
     expect(f.users.alberto!.email).toBe('identity-aa@orangecat.invalid');
     // The same link still works, so the person can try another address.
+    expect(await previewHandover(f.admin, token)).not.toBeNull();
+  });
+
+  it('refuses an address that already has an account before cutting anything', async () => {
+    const { f, token, deps } = await offered();
+    // Any letter case: the address is the stranger's.
+    expect(await acceptHandover(f.admin, token, 'S@Example.com', deps)).toEqual({
+      ok: false,
+      reason: 'email_taken',
+    });
+    expect(f.log).not.toContain('delete identity_links x1');
+    expect(f.log).not.toContain('rpc identity_strip_ways_in');
+    expect(f.log).not.toContain('setPassword');
+    expect(deps.revokeApps).not.toHaveBeenCalled();
+    expect(f.tables.identity_links).toHaveLength(1);
+    expect(f.users.alberto!.email).toBe('identity-aa@orangecat.invalid');
+    expect(await previewHandover(f.admin, token)).not.toBeNull();
+  });
+
+  it('changes nothing and keeps the link when the address cannot be checked', async () => {
+    const { f, token, deps } = await offered({ lookupFails: true });
+    expect(await acceptHandover(f.admin, token, 'new@example.com', deps)).toEqual({
+      ok: false,
+      reason: 'failed',
+    });
+    expect(f.log).not.toContain('delete identity_links x1');
+    expect(f.tables.identity_links).toHaveLength(1);
+    expect(await previewHandover(f.admin, token)).not.toBeNull();
+  });
+
+  it('calls an address taken in the moment before the update "taken", whatever the refusal says', async () => {
+    const { f, token, deps } = await offered({ takenDuringUpdate: true });
+    expect(await acceptHandover(f.admin, token, 'new@example.com', deps)).toEqual({
+      ok: false,
+      reason: 'email_taken',
+    });
+    expect(f.tables.identity_links).toHaveLength(1);
     expect(await previewHandover(f.admin, token)).not.toBeNull();
   });
 

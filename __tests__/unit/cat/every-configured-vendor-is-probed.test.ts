@@ -28,6 +28,12 @@
  * the report the app would actually produce.
  */
 import { runCatHealthProbes } from '@/services/cat/health-probes';
+
+// A probe on the platform's paid key is counted against the vendor's daily
+// cap (vendor-spend-cap), and with no database here the count would refuse
+// every probe. This file is about which vendors reach the report; the cap has
+// its own tests (__tests__/unit/ai/vendor-spend-cap.test.ts).
+vi.mock('@/services/ai/vendor-spend-cap', () => ({ reservePlatformCall: async () => {} }));
 import { classifyHealth } from '@/services/cat/health-alert';
 
 const ORIGINAL_ENV = { ...process.env };

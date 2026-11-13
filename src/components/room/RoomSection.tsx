@@ -16,7 +16,7 @@ export function RoomSection({
       <h2 className="font-heading text-xl font-semibold tracking-display text-fg-primary">
         {title}
       </h2>
-      {note && <p className="mt-1 text-xs text-fg-muted">{note}</p>}
+      {note && <p className="mt-1 text-xs text-fg-tertiary">{note}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );

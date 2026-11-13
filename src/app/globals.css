@@ -11,7 +11,6 @@
 
 @layer base {
   html {
-    @apply scroll-smooth;
     font-size: 16px;
     /* Prevent zoom on iOS when focusing inputs */
     -webkit-text-size-adjust: 100%;
@@ -21,9 +20,21 @@
        fallback for browsers without clip.) */
     overflow-x: hidden;
     overflow-x: clip;
-    /* Support for iOS safe areas */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-      env(safe-area-inset-left);
+    /* iOS safe areas: only the side insets (a landscape notch) are taken
+       here, for in-flow content; no fixed surface pads those. The top and
+       bottom insets belong to the surface at that edge, which pads its own
+       ("Safe areas" further down). Padding html as well applied each of
+       them twice: content 47px lower under a header already 47px taller,
+       full-height chat frames 47px past the bottom of the screen. */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Anchor jumps glide only for people who have not asked for less motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   body {
@@ -77,9 +88,58 @@
     border-radius: var(--radius-control);
   }
 
+  /* Time and date fields: same 16px floor so iOS does not zoom on focus
+     (AvailabilityEditor's text-sm time inputs did), without the appearance
+     reset above, which would strip the native picker. */
+  input[type='time'],
+  input[type='date'],
+  input[type='datetime-local'] {
+    font-size: 16px !important;
+  }
+
   /* Improve focus visibility for better accessibility */
   *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    @apply outline-hidden ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* The ring above is a box-shadow, and forced colours (Windows High
+     Contrast) remove every box-shadow: 67 of 67 tab stops showed no focus at
+     all. A real outline survives. Important, and in the base layer, so it
+     outranks every `focus-visible:outline-none` a component writes. */
+  @media (forced-colors: active) {
+    *:focus-visible {
+      outline: 2px solid Highlight !important;
+      outline-offset: 2px;
+    }
+  }
+
+  /* Keyboard focus is never hidden under the fixed bars (WCAG 2.4.11). The
+     browser scrolls a focused control only as far as the viewport's edge, and
+     both edges are covered: on a phone, Reply / Like / Share on /timeline took
+     focus at y=609, under a tab bar spanning 583-664, and tabbing back up put
+     them at y=0, under the header. Scroll padding moves each edge in to its
+     bar, keyed on the bar being on the page (.app-mobile-nav is the tab bar,
+     MobileBottomNav; .app-header the header). The header's height includes
+     the status-bar inset it pads itself, and the email banner inside it.
+     The top only while focus is keyboard-visible: in-page anchors (#pay, the
+     settings sections) already clear the header with their own scroll-margin,
+     and a tap that jumps to one should land where it always has. */
+  @media (max-width: 767px) {
+    html:has(.app-mobile-nav) {
+      scroll-padding-bottom: var(--mobile-nav-clearance);
+    }
+  }
+  html:has(.app-header):has(:focus-visible) {
+    scroll-padding-top: calc(
+      3.5rem + env(safe-area-inset-top, 0px) + var(--header-banner-height, 0px)
+    );
+  }
+  @media (min-width: 640px) {
+    html:has(.app-header):has(:focus-visible) {
+      scroll-padding-top: calc(
+        4rem + env(safe-area-inset-top, 0px) + var(--header-banner-height, 0px)
+      );
+    }
   }
 
   /* Better typography scaling for mobile */
@@ -89,10 +149,12 @@
   h4,
   h5,
   h6 {
-    /* Better text wrapping on mobile */
+    /* A long word moves to the next line whole; it is cut only when it is
+       wider than the screen. `hyphens: auto` cut ordinary words instead
+       ("permission-less", "al-ready"). */
     overflow-wrap: break-word;
     word-wrap: break-word;
-    hyphens: auto;
+    hyphens: manual;
   }
 
   h1 {
@@ -225,12 +287,16 @@
        single warm accent. Existing tokens above stay live; components
        adopt this tier incrementally. See docs/architecture/CAT_AND_DESIGN_SSOT.
        ────────────────────────────────────────────────────────────────────── */
-    /* Text */
+    /* Text. Primary, secondary and tertiary are all copy, so each clears
+       4.5:1 on every surface below; tertiary sits at the floor on purpose
+       (42% reads 4.66:1 on surface-overlay, 43% misses). @bitbaum/design-tokens#62
+       sets tertiary to 44% and 55%, which holds on page, base and raised;
+       these go two to three points further so it holds on overlay too, and
+       secondary moves with it to keep the step. check:token-contrast holds
+       this in both themes. Muted is for dots and hairlines, not copy. */
     --text-primary: 0 0% 10%;
-    --text-secondary: 0 0% 40%;
-    /* AA (4.5:1) on page, base and raised — @bitbaum/design-tokens#62. Was
-       58%: 2.8:1 on the page. */
-    --text-tertiary: 0 0% 44%;
+    --text-secondary: 0 0% 30%;
+    --text-tertiary: 0 0% 42%;
     --text-muted: 0 0% 72%;
     --text-inverted: 0 0% 98%;
     /* Surfaces — page < base < raised < overlay < modal < drawer */
@@ -242,6 +308,10 @@
     --surface-drawer: 0 0% 98%;
     /* Marketing band — always near-black so CTAs read regardless of app theme */
     --surface-public: 0 0% 4%;
+    /* The ink for text ON --surface-public. Like --on-accent, it is the same
+       in both theme blocks because the band is: --text-inverted flips to
+       near-black in dark and vanished on it (1.1:1). */
+    --on-public: 0 0% 98%;
     /* Border tier */
     --border-default: 0 0% 82%;
     /* The account menu (@bitbaum/accountkit) draws its dividers in
@@ -254,14 +324,24 @@
     --accent-hover: var(--bitcoin-orange-dark);
     --accent-muted: 0 0% 10%;
     --accent-text: 0 0% 10%;
-    /* Status — only chromatic colors permitted outside accent */
-    --status-positive: 145 60% 35%;
+    /* Status — only chromatic colors permitted outside accent. These are the
+       colours as TEXT: dark enough to read at 4.5:1 on every surface and on
+       their own -subtle tint. Fills are the -fill tokens below. */
+    --status-positive: 145 60% 29%;
     --status-positive-subtle: 145 60% 35% / 0.08;
-    --status-warning: 38 92% 50%;
+    --status-warning: 38 92% 29%;
     --status-warning-subtle: 38 92% 50% / 0.08;
-    --status-negative: 0 65% 50%;
+    --status-negative: 0 65% 47%;
     --status-negative-subtle: 0 65% 50% / 0.08;
-    --status-neutral: 0 0% 58%;
+    /* Fills. `bg-status-*` paints these (tailwind.config.ts → backgroundColor),
+       so a dot, a bar, a danger button and every /NN tint keep their hue while
+       the colours above stay dark or light enough to be read as words. Ink on
+       a fill: text-fg-inverted on positive and negative, and
+       text-warning-foreground on warning, which is amber in both themes. */
+    --status-positive-fill: var(--status-positive);
+    --status-warning-fill: 38 92% 50%;
+    --status-negative-fill: var(--status-negative);
+    --status-neutral: 0 0% 42%;
     /* Typography tracking */
     --tracking-display: -0.03em;
     --tracking-label: 0.1em;
@@ -304,15 +384,15 @@
     --secondary: var(--surface-raised);
     --secondary-foreground: var(--text-primary);
     --muted: var(--surface-raised);
-    /* Dark muted-foreground bumped 53% → 60% to clear WCAG AA contrast
-       against bg-surface-raised (#1C1C1C). Was ~4.1:1 (fails AA), now ~4.6:1. */
     --muted-foreground: var(--text-secondary);
     --accent: var(--surface-overlay);
     --accent-foreground: var(--text-primary);
     --destructive: var(--status-negative);
     --destructive-foreground: var(--text-inverted);
     --success: var(--status-positive);
-    --success-foreground: 0 0% 98%;
+    /* The dark status fills are light, so their ink is dark (white on the
+       dark green is 2.1:1). */
+    --success-foreground: 0 0% 9%;
     --warning: var(--status-warning);
     --warning-foreground: 0 0% 9%;
     --border: var(--border-default);
@@ -331,8 +411,8 @@
 
     /* ─── Loki-aligned semantic tier (dark) ────────────────────────── */
     --text-primary: 0 0% 92%;
-    --text-secondary: 0 0% 65%;
-    --text-tertiary: 0 0% 55%; /* was 48%: 3.6:1 on raised */
+    --text-secondary: 0 0% 72%;
+    --text-tertiary: 0 0% 58%;
     --text-muted: 0 0% 32%;
     --text-inverted: 0 0% 10%;
     --surface-page: 0 0% 7%;
@@ -342,6 +422,7 @@
     --surface-modal: 0 0% 11%;
     --surface-drawer: 0 0% 9%;
     --surface-public: 0 0% 4%;
+    --on-public: 0 0% 98%;
     --border-default: 0 0% 20%;
     --border-interactive: 0 0% 60%;
     --accent-primary: var(--public-accent);
@@ -352,9 +433,14 @@
     --status-positive-subtle: 145 55% 50% / 0.12;
     --status-warning: 38 92% 60%;
     --status-warning-subtle: 38 92% 60% / 0.12;
-    --status-negative: 0 75% 60%;
+    --status-negative: 0 90% 68%;
     --status-negative-subtle: 0 75% 60% / 0.12;
-    --status-neutral: 0 0% 48%;
+    --status-positive-fill: var(--status-positive);
+    --status-warning-fill: var(--status-warning);
+    /* Deeper than the text red above: a danger button has to read as red,
+       and this is the darkest that still carries the dark ink at 4.5:1. */
+    --status-negative-fill: 0 90% 60%;
+    --status-neutral: 0 0% 58%;
   }
 }
 
@@ -507,7 +593,7 @@
     @apply h-10 w-10 sm:h-11 sm:w-11;
   }
   .ui-kicker {
-    @apply text-[10px] font-medium uppercase tracking-[0.14em] text-fg-secondary sm:text-xs;
+    @apply text-xs font-medium uppercase tracking-[0.14em] text-fg-secondary;
   }
   /* Any mark from the registry (<Mark>, src/config/marks/). Painted with
      currentColor so it inherits text colour and theme. A surface that asks
@@ -643,7 +729,7 @@
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .oc-public-hero-badge {
-    @apply mb-5 inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-border-subtle bg-surface-raised/40 px-3.5 py-1.5 text-2xs font-medium uppercase tracking-caps text-fg-secondary sm:mb-7 sm:gap-2.5 sm:px-4 sm:text-xs;
+    @apply mb-5 inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-border-subtle bg-surface-raised/40 px-3.5 py-1.5 text-xs font-medium uppercase tracking-caps text-fg-secondary sm:mb-7 sm:gap-2.5 sm:px-4;
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
   }
   /* The live dot leading the badge — the warm accent with a soft halo. */
@@ -663,8 +749,10 @@
     text-wrap: balance;
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
   }
+  /* Tertiary, not secondary: the second tone has to stand apart from the
+     first at display size, and the secondary step now sits closer to primary. */
   .oc-public-hero-title-dim {
-    @apply text-fg-secondary;
+    @apply text-fg-tertiary;
   }
   .oc-public-hero-lede {
     @apply mx-auto mt-5 max-w-2xl text-lg leading-snug tracking-tight text-fg-secondary sm:mt-7 sm:text-2xl sm:leading-tight;
@@ -686,8 +774,10 @@
     backdrop-filter: blur(8px);
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
   }
+  /* Tighter tracking below sm: at 12px with tracking-caps the title is 6px
+     too wide for a 320px phone and drops its last word to a second line. */
   .oc-public-pulse-head {
-    @apply mb-4 flex items-center justify-between gap-3 border-b border-border-subtle pb-3 font-mono text-2xs uppercase tracking-caps text-fg-tertiary sm:text-xs;
+    @apply mb-4 flex items-center justify-between gap-3 border-b border-border-subtle pb-3 font-mono text-xs uppercase tracking-label text-fg-tertiary sm:tracking-caps;
   }
   .oc-public-pulse-live {
     @apply inline-flex items-center gap-1.5;
@@ -786,7 +876,7 @@
     overflow: hidden;
   }
   .oc-studio-moved {
-    @apply mt-auto pt-3 font-mono text-2xs uppercase tracking-caps text-fg-tertiary;
+    @apply mt-auto pt-3 font-mono text-xs uppercase tracking-caps text-fg-tertiary;
   }
   /* ── Discover (/discover) ──────────────────────────────────────────────
      One search field, one row of kinds, then rails of equal cards that end.
@@ -808,7 +898,7 @@
     @apply mt-6 flex min-h-14 w-full max-w-2xl items-center gap-3 rounded-md border border-default bg-surface-base pl-4 pr-1 transition-colors focus-within:border-fg-primary;
   }
   .oc-discover-search-input {
-    @apply min-w-0 flex-1 border-0 bg-transparent py-3 text-base text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-lg;
+    @apply min-w-0 flex-1 border-0 bg-transparent py-3 text-base text-fg-primary placeholder:text-fg-tertiary focus:outline-hidden focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-lg;
   }
   .oc-discover-search-input::-webkit-search-cancel-button {
     display: none;
@@ -823,7 +913,7 @@
     @apply border-fg-primary bg-fg-primary text-fg-inverted hover:text-fg-inverted;
   }
   .oc-discover-chip-count {
-    @apply font-mono text-xs tabular-nums opacity-60;
+    @apply font-mono text-xs tabular-nums;
   }
   .oc-discover-rail {
     @apply mt-10 first:mt-0 sm:mt-14;
@@ -865,7 +955,7 @@
     @apply flex flex-1 flex-col p-4;
   }
   .oc-discover-kind {
-    @apply font-mono text-2xs uppercase tracking-caps text-fg-tertiary;
+    @apply mb-0 font-mono text-xs uppercase tracking-caps text-fg-secondary;
   }
   .oc-discover-title {
     @apply mt-1.5 text-base font-semibold leading-snug text-fg-primary;
@@ -924,7 +1014,7 @@
   /* Professional Form Elements - fast, subtle transitions */
   .input {
     @apply w-full px-3 sm:px-4 py-3 border border-input rounded-md bg-surface-base text-fg-primary;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring;
+    @apply focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring;
     @apply text-base; /* Prevents zoom on iOS */
     @apply min-h-[44px];
     /* iOS-specific styling */
@@ -936,7 +1026,7 @@
   /* Professional mobile input - subtle feedback */
   .input-mobile {
     @apply w-full px-3 sm:px-4 py-3 border border-input rounded-md bg-surface-base text-fg-primary;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring;
+    @apply focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring;
     @apply text-base min-h-[44px];
     -webkit-appearance: none;
     -webkit-text-size-adjust: 100%;
@@ -950,7 +1040,7 @@
   /* Textarea styling */
   .textarea {
     @apply w-full px-3 sm:px-4 py-3 border border-input rounded-md bg-surface-base text-fg-primary;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring;
+    @apply focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring;
     @apply text-base resize-y min-h-[100px];
     /* Mobile-specific */
     -webkit-appearance: none;
@@ -959,7 +1049,7 @@
   /* Select styling */
   .select {
     @apply w-full px-3 sm:px-4 py-3 border border-input rounded-md bg-surface-base text-fg-primary;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring;
+    @apply focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-ring;
     @apply text-base min-h-[44px] appearance-none;
     /* iOS-specific */
     -webkit-appearance: none;
@@ -1170,16 +1260,6 @@
     display: none; /* Chrome, Safari and Opera */
   }
 
-  /* Professional PWA Install Banner - faster transitions */
-  .pwa-install-banner {
-    @apply fixed top-16 left-4 right-4 z-50;
-    @apply bg-foreground;
-    @apply text-white rounded-lg shadow-sm p-4;
-    @apply transform transition-all duration-200;
-    /* Mobile-first positioning */
-    @apply md:max-w-md md:left-auto md:right-4;
-  }
-
   /* Mobile-first modal */
   .modal-mobile {
     @apply fixed inset-0 z-50 flex items-end justify-center p-0;
@@ -1383,17 +1463,32 @@
   padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 768px) {
+  /* No bar from md; the home indicator (an iPad's) is still there. */
   .app-bottom-nav-clearance {
-    padding-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
 /* Fixed-height messaging reserves the same bottom bar inside its frame.
    A second clearance in AppShell or the composer would create a blank band. */
+.app-chat-nav-clearance {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 @media (max-width: 767px) {
   .app-chat-nav-clearance {
     padding-bottom: var(--mobile-nav-clearance);
   }
+}
+
+/* The foot of a page with no tab bar (public pages, the article editor, the
+   sign-in screen): the shell's last edge clears the home indicator, below the
+   footer when there is one. Not under a full-height frame: a chat's composer
+   pads its own inset, and room below the frame would push it off the screen. */
+.app-page-foot {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.app-page-foot:has(.app-content-height) {
+  padding-bottom: 0;
 }
 
 /*
@@ -1417,32 +1512,54 @@ html[data-mobile-action-bar] .app-fab-anchor {
   }
 }
 
+/* Safe areas (viewportFit: 'cover'): each inset is applied once, by the
+   surface at that edge. The header pads the status-bar inset itself
+   (Header.tsx), so its height — and everything measured from it — includes
+   that inset. Without it here, content and the drawer started 47px under the
+   header of an iPhone home-screen app, and full-height frames ran 47px past
+   the bottom of the screen. */
+:root {
+  --app-header-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+}
+@media (min-width: 640px) {
+  :root {
+    --app-header-height: calc(4rem + env(safe-area-inset-top, 0px));
+  }
+}
+
 /* Pinned just below the app header — and at the very top once the header
    hides on scroll-down (Header sets html[data-header-hidden]). Pinning at the
    header's height alone left an empty band where the header had been. */
 .sticky-below-header {
   position: sticky;
-  top: calc(3.5rem + var(--header-banner-height, 0px));
+  top: calc(var(--app-header-height) + var(--header-banner-height, 0px));
   transition: top 200ms ease;
-}
-@media (min-width: 640px) {
-  .sticky-below-header {
-    top: calc(4rem + var(--header-banner-height, 0px));
-  }
 }
 
 /* Room under the fixed header for page content: the header row plus the
    email banner it may carry (EmailConfirmationBanner sets the variable). */
 .app-header-offset {
-  padding-top: calc(3.5rem + var(--header-banner-height, 0px));
-}
-@media (min-width: 640px) {
-  .app-header-offset {
-    padding-top: calc(4rem + var(--header-banner-height, 0px));
-  }
+  padding-top: calc(var(--app-header-height) + var(--header-banner-height, 0px));
 }
 html[data-header-hidden='true'] .sticky-below-header {
-  top: 0;
+  top: env(safe-area-inset-top, 0px);
+}
+
+/* The app sidebar: from under the header to the bottom edge, clear of the
+   home indicator. On a phone, over the tab bar, the drawer stops on top of
+   the bar instead (the bar already clears the indicator): it ran under the
+   bar, which is drawn above it, and its "Close menu" could not be tapped. */
+.app-sidebar {
+  top: var(--app-header-height);
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+@media (max-width: 767px) {
+  .app-sidebar[data-above-mobile-nav] {
+    bottom: var(--mobile-nav-clearance);
+    padding-bottom: 0;
+  }
 }
 /* A chat that owns the phone: no header above it, so nothing to clear, and
    the content region is the viewport. Two ways in, one rule set:
@@ -1477,12 +1594,9 @@ html[data-header-hidden='true'] .sticky-below-header {
      shrinks when the soft keyboard opens; 100dvh does not, and sizing against
      it left the composer behind the keyboard. The fallback keeps first paint
      correct, before the effect has run. */
-  height: calc(var(--app-viewport-height, 100dvh) - 3.5rem - var(--header-banner-height, 0px));
-}
-@media (min-width: 640px) {
-  .app-content-height {
-    height: calc(var(--app-viewport-height, 100dvh) - 4rem - var(--header-banner-height, 0px));
-  }
+  height: calc(
+    var(--app-viewport-height, 100dvh) - var(--app-header-height) - var(--header-banner-height, 0px)
+  );
 }
 
 /*
@@ -1609,7 +1723,7 @@ html[data-header-hidden='true'] .sticky-below-header {
 }
 .oc-journey-ring-text {
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   fill: hsl(var(--text-secondary));
 }
@@ -1697,7 +1811,7 @@ html[data-header-hidden='true'] .sticky-below-header {
   transition: color 0.3s ease;
 }
 .oc-raise-think[data-state='next'] {
-  color: hsl(var(--text-muted));
+  color: hsl(var(--text-tertiary));
 }
 .oc-raise-think[data-state='now'] {
   color: hsl(var(--text-primary));

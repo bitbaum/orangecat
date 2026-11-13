@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { ACCOUNT_DELETION_COPY } from '@/config/account-deletion';
 import { IDENTITIES_COPY } from '@/config/identities';
 import { fetchIdentityCircle } from '@/lib/identities/client';
 import { MFASetup } from '@/components/auth/MFASetup';
@@ -53,7 +54,7 @@ export function SettingsModals({
   );
 }
 
-const DELETE_DEFAULT = 'This action cannot be undone. All your data will be permanently deleted.';
+const DELETE_DEFAULT = ACCOUNT_DELETION_COPY.whatHappens;
 
 /**
  * What deleting this account takes with it, said before it happens: a main

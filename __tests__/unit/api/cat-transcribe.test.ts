@@ -7,7 +7,7 @@
  * "busy" for a rate limit and "try again" for anything else.
  */
 import { POST } from '@/app/api/cat/transcribe/route';
-import { speechChain, speechConfigured } from '@/services/ai/speech';
+import { speechChain, speechConfigured } from '@bitbaum/ai-kit';
 
 vi.mock('@/utils/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
@@ -79,6 +79,16 @@ describe('POST /api/cat/transcribe', () => {
     expect(reply.status).toBe(200);
     expect(reply.data?.text).toBe('Hello there.');
   });
+
+  it.each(['Thank you.', 'Untertitelung des ZDF, 2020'])(
+    "returns nothing for a silent take, not Whisper's filler (%s)",
+    async filler => {
+      global.fetch = vi.fn(async () => vendor(200, { text: filler })) as never;
+      const reply = (await POST(request() as never)) as unknown as Reply;
+      expect(reply.status).toBe(200);
+      expect(reply.data?.text).toBe('');
+    }
+  );
 
   it('falls to the second model when the first fails', async () => {
     const calls: string[] = [];

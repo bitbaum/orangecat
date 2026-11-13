@@ -2303,6 +2303,7 @@ export type Database = {
       };
       group_wallets: {
         Row: {
+          balance_updated_at: string | null;
           bitcoin_address: string | null;
           created_at: string | null;
           created_by: string | null;
@@ -2318,6 +2319,7 @@ export type Database = {
           updated_at: string | null;
         };
         Insert: {
+          balance_updated_at?: string | null;
           bitcoin_address?: string | null;
           created_at?: string | null;
           created_by?: string | null;
@@ -2333,6 +2335,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          balance_updated_at?: string | null;
           bitcoin_address?: string | null;
           created_at?: string | null;
           created_by?: string | null;

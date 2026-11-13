@@ -32,7 +32,7 @@ export function MessagesEmptyPane({ onNewChat }: { onNewChat: () => void }) {
           </Button>
           <Link
             href={ROUTES.DASHBOARD.CAT}
-            className="ml-2 inline-flex min-h-10 items-center rounded-md border border-default px-4 text-sm font-medium text-fg-primary hover:bg-surface-raised"
+            className="ml-2 inline-flex min-h-10 pointer-coarse:min-h-11 items-center rounded-md border border-default px-4 text-sm font-medium text-fg-primary hover:bg-surface-raised"
           >
             Talk to Cat
           </Link>
