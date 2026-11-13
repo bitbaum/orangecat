@@ -135,7 +135,10 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
             // Profile collapsed /profile + /profiles; nothing in the bar needs
             // that special case now, so every slot uses the shared active test.
             const isActive = isActiveHref(item.href);
-            const label = item.opensCreate ? createAction.label : item.name;
+            // The slot keeps its name wherever you are; only where Create
+            // leads is contextual. It read "Post" on Messages, a second name
+            // for the same button.
+            const label = item.name;
             const count = item.counter === 'messages' ? unreadMessages : 0;
             // Worded like the header's Messages button, so a screen reader
             // hears the count from either.

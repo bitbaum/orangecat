@@ -14,12 +14,13 @@ import '@bitbaum/accountkit/styles.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { BarChart3, Handshake, Settings, UserRound } from 'lucide-react';
 import { AccountMenu, type AccountGroup } from '@bitbaum/accountkit';
 import { IDENTITIES_COPY, isUnreachableEmail } from '@/config/identities';
+import { getAccountMenuPlaces } from '@/config/navigation';
 import { ROUTES } from '@/config/routes';
 import { getThemeModeOption } from '@/config/theme';
 import { useAuth } from '@/hooks/useAuth';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useOtherIdentities } from '@/hooks/useOtherIdentities';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { switchToIdentity } from '@/lib/identities/client';
@@ -35,6 +36,8 @@ export default function AccountMenuControl() {
   const { mode, cycle, mounted } = useThemeMode();
   const signedIn = Boolean(user || session);
   const others = useOtherIdentities(signedIn);
+  // From md up the header carries its own theme toggle (ThemeToggle).
+  const headerHasThemeToggle = useMediaQuery('(min-width: 768px)');
 
   useEffect(() => {
     if (signedIn && !profile) {
@@ -54,46 +57,27 @@ export default function AccountMenuControl() {
   const groups: AccountGroup[] = [
     {
       id: 'places',
-      items: [
-        {
-          id: 'dashboard',
-          label: 'Dashboard',
-          href: ROUTES.DASHBOARD.HOME,
-          icon: <BarChart3 className={ICON} />,
-        },
-        {
-          id: 'projects',
-          label: 'My projects',
-          href: ROUTES.DASHBOARD.PROJECTS,
-          icon: <Handshake className={ICON} />,
-        },
-        {
-          id: 'page',
-          label: 'Your page',
-          href: ROUTES.PROFILE.SELF,
-          icon: <UserRound className={ICON} />,
-        },
-        {
-          id: 'profile',
-          label: 'Edit profile',
-          href: ROUTES.DASHBOARD.INFO_EDIT,
-          icon: <Settings className={ICON} />,
-        },
-      ],
+      items: getAccountMenuPlaces().map(place => ({
+        id: place.href,
+        label: place.name,
+        href: place.href,
+        icon: <place.icon className={ICON} />,
+      })),
     },
     {
-      // Here so a phone can reach it: the header's own toggle is desktop-only.
+      // Here so a phone can reach it: the header's own toggle is md and up.
       id: 'appearance',
-      items: mounted
-        ? [
-            {
-              id: 'theme',
-              label: `Appearance: ${theme.label}`,
-              onSelect: cycle,
-              icon: <ThemeIcon className={ICON} />,
-            },
-          ]
-        : [],
+      items:
+        mounted && !headerHasThemeToggle
+          ? [
+              {
+                id: 'theme',
+                label: `Appearance: ${theme.label}`,
+                onSelect: cycle,
+                icon: <ThemeIcon className={ICON} />,
+              },
+            ]
+          : [],
     },
   ];
 

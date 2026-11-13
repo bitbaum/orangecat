@@ -510,7 +510,8 @@ export interface MobileTabItem {
 export const mobileTabBar: MobileTabItem[] = [
   { name: 'Cat', href: ROUTES.DASHBOARD.CAT, icon: BrandMarkIcon },
   { name: 'Home', href: ROUTES.DASHBOARD.HOME, icon: Home },
-  { name: 'Receive', href: ROUTES.RECEIVE, icon: QrCode, primary: true },
+  // Same name as the sidebar's entry: one destination, one word.
+  { name: 'Money', href: ROUTES.RECEIVE, icon: QrCode, primary: true },
   { name: 'Create', href: ROUTES.CREATE, icon: Plus, opensCreate: true },
   { name: 'Messages', href: ROUTES.MESSAGES, icon: MessageSquare, counter: 'messages' },
 ];
@@ -526,6 +527,32 @@ export const mobileTabBarAnonymous: MobileTabItem[] = [
   { name: PUBLIC_PAGES[ROUTES.HOW_IT_WORKS].name, href: ROUTES.HOW_IT_WORKS, icon: Info },
   { name: 'Sign in', href: ROUTES.AUTH, icon: UserIcon },
 ];
+
+/**
+ * The places under the header's avatar menu, taken from the sidebar so each
+ * has the same name and icon there. The menu used to hard-code its own
+ * ("Dashboard", "My projects", "Your page", "Edit profile") for destinations
+ * the sidebar calls Home, My things and Profile.
+ */
+const ACCOUNT_MENU_HREFS = [
+  ROUTES.DASHBOARD.HOME,
+  ROUTES.DASHBOARD.THINGS,
+  ROUTES.PROFILES.ME,
+  ROUTES.SETTINGS,
+] as const;
+
+export function getAccountMenuPlaces(): Array<
+  NavigationItem & { href: string; icon: ComponentType<SVGProps<SVGSVGElement>> }
+> {
+  const all = sidebarSections.flatMap(section => section.items);
+  return ACCOUNT_MENU_HREFS.map(href => {
+    const item = all.find(entry => entry.href === href);
+    if (!item?.icon) {
+      throw new Error(`Account menu place ${href} is not in the sidebar`);
+    }
+    return { ...item, href, icon: item.icon };
+  });
+}
 
 /**
  * Bottom navigation items for account management
