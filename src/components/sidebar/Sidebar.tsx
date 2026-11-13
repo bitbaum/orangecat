@@ -183,10 +183,10 @@ export function Sidebar({
               <div className={`border-t border-subtle ${SIDEBAR_SPACING.PADDING_X} py-2 mt-auto`}>
                 <button
                   onClick={toggleSidebar}
+                  type="button"
                   className="flex min-h-11 w-full items-center gap-3 rounded-md p-2 text-fg-secondary transition-colors duration-200 hover:bg-surface-raised hover:text-fg-primary"
-                  aria-label={navigationLabels.SIDEBAR_COLLAPSE}
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-5 w-5" aria-hidden />
                   <span>Close menu</span>
                 </button>
               </div>
