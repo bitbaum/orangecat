@@ -10,6 +10,7 @@ import { timelineService } from '@/services/timeline';
 import { usePostInteractions } from '@/hooks/usePostInteractions';
 import { submitReplyAction } from './postCardReplyAction';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { ROUTES } from '@/config/routes';
 
 interface UsePostCardActionsParams {
   event: TimelineDisplayEvent;
@@ -157,7 +158,7 @@ export function usePostCardActions({
       if (target.closest('a, button, textarea, input, [role="button"]')) {
         return;
       }
-      router.push(`/post/${event.id}`);
+      router.push(ROUTES.POST(event.id));
     },
     [router, event.id, isSelectionMode, onToggleSelect]
   );

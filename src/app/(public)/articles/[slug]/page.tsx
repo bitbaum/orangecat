@@ -12,7 +12,8 @@ import '@bitbaum/bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import { parseLongform } from '@/lib/longform/parse';
 import LongformBody from '@/lib/longform/LongformBody';
-import ShareButton from './ShareButton';
+import { PostShareRow } from '@/components/sharing/PostShareRow';
+import { shareIntentUrl } from '@/config/share';
 import { getTipReceiveInfo } from '@/domain/tips/tip-service';
 import { createServerClient } from '@/lib/supabase/server';
 import TipButton from '@/components/tips/TipButton';
@@ -41,36 +42,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const isIndexable = article.visibility === 'public';
-  // Author-supplied cover wins; otherwise the generated share card. Non-public
-  // articles get no image URL at all — the OG route 404s for them anyway, and
-  // metadata for a private draft should leak nothing.
+  const canonical = `${SITE_URL}/articles/${article.slug}`;
+  if (!isIndexable) {
+    // A followers-only or private article: its words never go into a tag that
+    // travels with the link. An unfurler fetches signed out and gets a 404
+    // anyway; this keeps the author's own session from leaking them either.
+    return {
+      title: `Article on ${APP_NAME}`,
+      robots: { index: false, follow: false },
+    };
+  }
+
+  // Author-supplied cover wins; otherwise the generated share card.
   const ogImage = article.coverImage
     ? article.coverImage
-    : isIndexable
-      ? `${SITE_URL}/api/og/article/${encodeURIComponent(article.slug)}`
-      : undefined;
+    : `${SITE_URL}/api/og/article/${encodeURIComponent(article.slug)}`;
 
   return {
     title: article.title,
     description: article.excerpt,
-    robots: isIndexable ? undefined : { index: false, follow: false },
     // Slugs are user-authored (title + random suffix) and duplicate-prone —
     // pin the canonical URL so near-duplicate titles don't split ranking.
-    alternates: { canonical: `${SITE_URL}/articles/${article.slug}` },
+    alternates: { canonical },
     openGraph: {
       title: article.title,
       description: article.excerpt,
       type: 'article',
+      siteName: APP_NAME,
       publishedTime: article.publishedAt,
       authors: [article.author.name],
-      images: ogImage ? [ogImage] : undefined,
-      url: `${SITE_URL}/articles/${article.slug}`,
+      images: [ogImage],
+      url: canonical,
     },
     twitter: {
-      card: ogImage ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: article.title,
       description: article.excerpt,
-      images: ogImage ? [ogImage] : undefined,
+      images: [ogImage],
     },
   };
 }
@@ -238,9 +246,21 @@ export default async function ArticlePage({ params }: PageProps) {
                   />
                 )}
                 {isOwner && <ArticleOwnerActions articleId={article.id} slug={article.slug} />}
-                <ShareButton title={article.title} url={shareUrl} />
               </div>
             </div>
+
+            <PostShareRow
+              className="mt-6"
+              landmark="Share this article"
+              url={shareUrl}
+              title={article.title}
+              summary={article.excerpt}
+              isPublic={article.visibility === 'public'}
+              crossPost={{
+                label: `Post on ${APP_NAME}`,
+                href: shareIntentUrl(SITE_URL, { url: shareUrl, title: article.title }),
+              }}
+            />
 
             <div className="mt-8 flex flex-col items-start gap-3 rounded-md border border-subtle bg-surface-raised/25 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-fg-secondary">
