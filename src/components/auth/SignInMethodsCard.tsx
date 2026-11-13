@@ -16,6 +16,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import {
   linkableProviders,
   methodLabel,
+  NO_WAY_IN,
   unlinkBlocker,
   type SignInMethod,
 } from '@/lib/auth/sign-in-methods';
@@ -29,11 +30,19 @@ import {
 const PROVIDER_NAMES = Object.fromEntries(OAUTH_PROVIDERS.map(p => [p.id, p.name]));
 const PROVIDER_ICONS = Object.fromEntries(OAUTH_PROVIDERS.map(p => [p.id, p.icon]));
 
-export function SignInMethodsCard() {
+interface Props {
+  /** Leads to the field that adds an email; offered when there is no way in at all. */
+  onAddEmail?: () => void;
+  /** How many ways back in there are, once known; null when they could not be read. */
+  onWaysInChange?: (count: number | null) => void;
+}
+
+export function SignInMethodsCard({ onAddEmail, onWaysInChange }: Props = {}) {
   const [methods, setMethods] = useState<SignInMethod[]>([]);
   const [passkeyCount, setPasskeyCount] = useState(0);
   const [available, setAvailable] = useState<OAuthProvider[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +60,7 @@ export function SignInMethodsCard() {
         return;
       }
       if (listError) {
+        setLoadFailed(true);
         setError('Could not load your sign-in methods. Reload to try again.');
       }
       setMethods(rows);
@@ -78,6 +88,15 @@ export function SignInMethodsCard() {
     // On success the browser has navigated to the provider.
   }
 
+  // Unknown while loading or when the list could not be read: an empty list
+  // then is a failure, not an account with no way in.
+  const waysIn = loading || loadFailed ? null : methods.length + passkeyCount;
+  useEffect(() => {
+    if (!loading) {
+      onWaysInChange?.(waysIn);
+    }
+  }, [loading, waysIn, onWaysInChange]);
+
   async function handleUnlink(method: SignInMethod) {
     const label = methodLabel(method, PROVIDER_NAMES);
     if (!window.confirm(`Remove ${label} as a way to sign in?`)) {
@@ -102,62 +121,75 @@ export function SignInMethodsCard() {
     );
   }
 
-  const onlyOneWayIn = methods.length + passkeyCount < 2;
   const linkable = linkableProviders(methods, available);
 
   return (
     <div className="space-y-4">
-      <ul className="divide-y divide-subtle rounded-lg border border-subtle">
-        {methods.map(method => {
-          const Icon = method.oauthProvider ? PROVIDER_ICONS[method.oauthProvider] : Mail;
-          const blocker = unlinkBlocker(method, methods, passkeyCount);
-          return (
-            <li key={method.id} className="flex items-center justify-between gap-3 p-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <Icon className="h-4 w-4 shrink-0 text-fg-secondary" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-fg-primary">
-                    {methodLabel(method, PROVIDER_NAMES)}
-                    {method.handle && (
-                      <span className="ml-2 font-normal text-fg-secondary">{method.handle}</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-fg-secondary">
-                    {method.lastSignInAt ? (
-                      <>
-                        Last used <FormattedDate value={method.lastSignInAt} mode="date" />
-                      </>
-                    ) : (
-                      'Never used to sign in'
-                    )}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleUnlink(method)}
-                disabled={busy === method.id || blocker !== null}
-                title={blocker ?? `Remove ${methodLabel(method, PROVIDER_NAMES)}`}
-                aria-label={`Remove ${methodLabel(method, PROVIDER_NAMES)}`}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-fg-secondary hover:text-status-negative disabled:opacity-40"
-              >
-                {busy === method.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-              </button>
-            </li>
-          );
-        })}
-        {passkeyCount > 0 && (
-          <li className="p-3 text-sm text-fg-secondary">
-            {passkeyCount === 1 ? '1 passkey' : `${passkeyCount} passkeys`} (managed above)
-          </li>
-        )}
-      </ul>
+      {waysIn === 0 && (
+        <div className="space-y-3">
+          <p className="mb-0 text-sm text-status-warning">{NO_WAY_IN.warning}</p>
+          {onAddEmail && (
+            <Button variant="outline" size="sm" onClick={onAddEmail}>
+              <Mail className="mr-2 h-4 w-4" />
+              {NO_WAY_IN.addEmail}
+            </Button>
+          )}
+        </div>
+      )}
 
-      {onlyOneWayIn && (
+      {methods.length + passkeyCount > 0 && (
+        <ul className="divide-y divide-subtle rounded-lg border border-subtle">
+          {methods.map(method => {
+            const Icon = method.oauthProvider ? PROVIDER_ICONS[method.oauthProvider] : Mail;
+            const blocker = unlinkBlocker(method, methods, passkeyCount);
+            return (
+              <li key={method.id} className="flex items-center justify-between gap-3 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <Icon className="h-4 w-4 shrink-0 text-fg-secondary" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-fg-primary">
+                      {methodLabel(method, PROVIDER_NAMES)}
+                      {method.handle && (
+                        <span className="ml-2 font-normal text-fg-secondary">{method.handle}</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-fg-secondary">
+                      {method.lastSignInAt ? (
+                        <>
+                          Last used <FormattedDate value={method.lastSignInAt} mode="date" />
+                        </>
+                      ) : (
+                        'Never used to sign in'
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUnlink(method)}
+                  disabled={busy === method.id || blocker !== null}
+                  title={blocker ?? `Remove ${methodLabel(method, PROVIDER_NAMES)}`}
+                  aria-label={`Remove ${methodLabel(method, PROVIDER_NAMES)}`}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-fg-secondary hover:text-status-negative disabled:opacity-40"
+                >
+                  {busy === method.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+          {passkeyCount > 0 && (
+            <li className="p-3 text-sm text-fg-secondary">
+              {passkeyCount === 1 ? '1 passkey' : `${passkeyCount} passkeys`} (managed above)
+            </li>
+          )}
+        </ul>
+      )}
+
+      {waysIn === 1 && (
         <p className="text-sm text-status-warning">
           Only one way in. If you lose it, only support can get you back. Add a second one.
         </p>
