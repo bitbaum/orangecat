@@ -4,27 +4,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { matchesNotificationFilter, type InAppNotificationType } from '@/config/notification-types';
 import { useNotificationsMutations } from './useNotificationsMutations';
 import { useNotificationsRealtime } from './useNotificationsRealtime';
 
 export interface Notification {
   id: string;
-  type:
-    | 'follow'
-    | 'payment'
-    | 'project_funded'
-    | 'message'
-    | 'comment'
-    | 'like'
-    | 'mention'
-    | 'system'
-    | 'task_attention'
-    | 'task_request'
-    | 'task_completed'
-    | 'task_broadcast'
-    | 'booking_request'
-    | 'booking_update'
-    | 'tip_dead_end';
+  type: InAppNotificationType;
   message: string;
   action_url: string | null;
   is_read: boolean;
@@ -132,11 +118,18 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     }
   }, [user, filter, fetchNotifications, fetchUnreadCount]);
 
-  const handleInsert = useCallback((notification: Notification) => {
-    setNotifications(prev => [notification, ...prev]);
-    setUnreadCount(prev => prev + 1);
-    setTotal(prev => prev + 1);
-  }, []);
+  const handleInsert = useCallback(
+    (notification: Notification) => {
+      setUnreadCount(prev => prev + 1);
+      // A live arrival joins the list only if the open filter would have
+      // fetched it: a message does not belong under Payments.
+      if (matchesNotificationFilter(notification, filter)) {
+        setNotifications(prev => [notification, ...prev]);
+        setTotal(prev => prev + 1);
+      }
+    },
+    [filter]
+  );
 
   const handleUpdate = useCallback(
     (updated: Record<string, unknown>) => {
