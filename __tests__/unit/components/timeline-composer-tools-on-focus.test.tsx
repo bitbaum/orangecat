@@ -136,3 +136,11 @@ describe('composer tools appear on focus', () => {
     expect(screen.getByLabelText(AI_BUTTON)).toBeInTheDocument();
   });
 });
+
+describe('the composer under a post or article', () => {
+  it('is announced as a reply to its author, not as a new post', () => {
+    render(<TimelineComposer parentEventId="article-1" parentAuthorName="Cato" />);
+    expect(screen.getByLabelText('Reply to Cato')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Compose new post')).not.toBeInTheDocument();
+  });
+});

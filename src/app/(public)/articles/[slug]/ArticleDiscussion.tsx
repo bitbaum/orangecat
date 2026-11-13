@@ -19,9 +19,12 @@ import type { TimelineDisplayEvent } from '@/types/timeline';
 export default function ArticleDiscussion({
   articleId,
   authorName,
+  articlePath,
 }: {
   articleId: string;
   authorName: string;
+  /** Where sign-in returns the reader: this article's comments, not the index. */
+  articlePath: string;
 }) {
   const { user } = useAuth();
   const {
@@ -79,8 +82,8 @@ export default function ArticleDiscussion({
       ) : (
         <p className="mt-4 text-sm text-fg-secondary">
           <Link
-            href={`${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(`/articles`)}`}
-            className="font-semibold text-fg-primary underline underline-offset-4"
+            href={`${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(`${articlePath}#discussion-heading`)}`}
+            className="inline-flex min-h-11 items-center font-semibold text-fg-primary underline underline-offset-4"
           >
             Sign in
           </Link>{' '}

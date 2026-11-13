@@ -110,17 +110,24 @@ async function notifyTipDeadEnd(userId: string): Promise<void> {
   }
 }
 
-/** Public, secret-free: can this person receive tips, and via what rail. */
+/**
+ * Public, secret-free: can this person receive tips, and via what rail.
+ *
+ * `notifyDeadEnd` (default on) tells a recipient with no wallet that someone
+ * tried to tip them. Only the tip dialog asking is that; a page deciding
+ * whether to show a Tip button at all passes false.
+ */
 export async function getTipReceiveInfo(
   supabase: AnySupabaseClient,
-  username: string
+  username: string,
+  { notifyDeadEnd = true }: { notifyDeadEnd?: boolean } = {}
 ): Promise<TipReceiveInfo | null> {
   const recipient = await resolveRecipient(supabase, username);
   if (!recipient) {
     return null;
   }
   const wallet = await resolveRecipientWallet(recipient.userId);
-  if (!wallet) {
+  if (!wallet && notifyDeadEnd) {
     // Someone is looking at this person's tip dialog and hitting a dead end —
     // notify them (deduped) so a lost tip becomes an activation nudge.
     void notifyTipDeadEnd(recipient.userId);

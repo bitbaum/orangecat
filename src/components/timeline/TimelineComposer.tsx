@@ -232,7 +232,9 @@ const TimelineComposer = React.memo(function TimelineComposer({
               onPaste={handlePaste}
               {...editorProps}
               data-placeholder={placeholder || defaultPlaceholder}
-              aria-label="Compose new post"
+              aria-label={
+                parentEventId ? `Reply to ${parentAuthorName ?? 'this post'}` : 'Compose new post'
+              }
               className={cn(
                 'w-full leading-6',
                 simpleMode ? 'min-h-[3.25rem] text-base' : 'min-h-[6rem] text-base',
