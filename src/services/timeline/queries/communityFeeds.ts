@@ -17,6 +17,7 @@ import { EXCLUDE_AUTOMATED_PUBLISH_OR_FILTER } from '@/config/external-publish';
 import type { TimelineFeedResponse, TimelineFilters, TimelinePagination } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
 import { displayEventsFromView } from './helpers';
+import { NOT_A_FIXTURE_AUTHOR } from '@/domain/people/publicPeopleFilter';
 
 /**
  * Get public community timeline (posts from all users and projects)
@@ -43,6 +44,8 @@ export async function getCommunityFeed(
           // Automated build updates stay on the project's own wall; the public
           // feed is for what people post (config/external-publish.ts).
           .or(EXCLUDE_AUTOMATED_PUBLISH_OR_FILTER)
+          // A QA run's account posts nothing a visitor came for.
+          .or(NOT_A_FIXTURE_AUTHOR)
           .order('event_timestamp', { ascending: false })
           .range(offset, offset + limit - 1);
 

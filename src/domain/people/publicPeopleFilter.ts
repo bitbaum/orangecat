@@ -23,6 +23,13 @@ const quoted = (value: string) => `"${value.replace(/["\\]/g, '\\$&')}"`;
 /** The `.or()` filter that keeps everyone but a nameless shell. */
 export const NOT_A_NAMELESS_SHELL = `username.not.imatch.${quoted(MINTED_HANDLE_RE.source)},name.imatch.${quoted('\\S')}`;
 
+/**
+ * The same rule for a feed row's author, read from the view's `actor_data`
+ * JSON: a QA run's posts ("QA test post from A", by "QA Grok A") led the
+ * public community feed (full-path review, 2026-11-13). A null name passes.
+ */
+export const NOT_A_FIXTURE_AUTHOR = `actor_data->>display_name.is.null,actor_data->>display_name.not.imatch.${quoted(FIXTURE_DISPLAY_NAME_PATTERN)}`;
+
 /** The `.or()` filter that keeps everyone but a fixture's display name (a null name passes). */
 export const NOT_A_FIXTURE_NAME = `name.is.null,name.not.imatch.${quoted(FIXTURE_DISPLAY_NAME_PATTERN)}`;
 

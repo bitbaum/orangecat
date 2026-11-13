@@ -72,3 +72,15 @@ describe('withoutOthersAutomatedPublishes', () => {
     expect(withoutOthersAutomatedPublishes(same, 'me')).toBe(same);
   });
 });
+
+describe('a QA run’s posts stay off the community feed', () => {
+  it('drops authors whose display name is a fixture name, keeps unnamed ones', async () => {
+    const { NOT_A_FIXTURE_AUTHOR } = await import('@/domain/people/publicPeopleFilter');
+    expect(NOT_A_FIXTURE_AUTHOR.startsWith('actor_data->>display_name.is.null,')).toBe(true);
+    expect(NOT_A_FIXTURE_AUTHOR).toContain('actor_data->>display_name.not.imatch.');
+    const { FIXTURE_DISPLAY_NAME_PATTERN } = await import('@/config/public-directory');
+    const fixture = new RegExp(FIXTURE_DISPLAY_NAME_PATTERN, 'i');
+    expect(fixture.test('QA Grok A')).toBe(true);
+    expect(fixture.test('Penguin')).toBe(false);
+  });
+});
