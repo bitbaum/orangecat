@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { parseFaq, parseFrontmatter, type FaqSection } from '@bitbaum/bip-kit';
 import { CAT_CREDITS_MARKUP_LABEL, CAT_FREE_DAILY_LIMIT } from '@/config/cat-plans';
+import { ENTITY_VISIBILITY_SUMMARY } from '@/config/public-visibility';
 
 const FAQ_PATH = path.join(process.cwd(), 'content/faq.md');
 
@@ -9,6 +10,7 @@ const FAQ_PATH = path.join(process.cwd(), 'content/faq.md');
 const FAQ_VALUES: Record<string, string> = {
   CAT_FREE_DAILY_LIMIT: String(CAT_FREE_DAILY_LIMIT),
   CAT_CREDITS_MARKUP_LABEL,
+  ENTITY_VISIBILITY_SUMMARY,
 };
 
 /** Fills `{{NAME}}` from FAQ_VALUES; an unknown name throws, so a typo fails the build. */
