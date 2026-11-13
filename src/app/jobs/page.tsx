@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { formatRelativeTime } from '@/utils/dates';
 import { API_ROUTES } from '@/config/api-routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { ROUTES } from '@/config/routes';
 import EntityListShell from '@/components/entity/EntityListShell';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
@@ -106,11 +107,20 @@ export default function JobsPage() {
       {jobs.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Briefcase className="h-12 w-12 text-fg-tertiary/50 mx-auto mb-4" />
-            <p className="text-fg-secondary mb-2">No job postings available</p>
-            <p className="text-base text-fg-tertiary">
-              Check back later or create a group to post jobs
+            <Briefcase className="h-12 w-12 text-fg-tertiary mx-auto mb-4" aria-hidden="true" />
+            <p className="mb-2 font-medium text-fg-primary">No job postings yet</p>
+            {/* Jobs are posted by groups: the way on is a group, to join or to start. */}
+            <p className="mb-0 text-base text-fg-secondary">
+              Groups post jobs here. Find one to follow, or start your own and post the first.
             </p>
+            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button href={ENTITY_REGISTRY.group.createPath} variant="primary">
+                Start a group
+              </Button>
+              <Button href={ROUTES.DISCOVER_TYPE('groups')} variant="outline">
+                See {ENTITY_REGISTRY.group.namePlural.toLowerCase()}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

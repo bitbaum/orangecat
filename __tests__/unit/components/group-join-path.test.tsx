@@ -19,6 +19,8 @@ vi.mock('@/components/groups/InviteMemberDialog', () => ({ InviteMemberDialog: (
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { GroupMembers } from '@/components/groups/GroupMembers';
+import { GroupJoinButton } from '@/components/groups/GroupJoinButton';
+import { GroupDetailSidebar } from '@/components/groups/GroupDetailSidebar';
 import type { GroupMember } from '@/types/group';
 
 const founder = {
@@ -77,5 +79,57 @@ describe('the way into a group', () => {
 
     expect(screen.queryByRole('link', { name: /sign in to join/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /join group/i })).toBeNull();
+  });
+
+  it('is offered in the page header too, where a visitor lands (the Overview tab)', () => {
+    auth.value = { user: null, hydrated: true };
+    render(<GroupJoinButton groupId="g1" groupSlug="bike-club" openToJoin isMember={false} />);
+    expect(screen.getByRole('link', { name: /sign in to join/i }).getAttribute('href')).toBe(
+      '/auth?mode=login&from=%2Fgroups%2Fbike-club'
+    );
+  });
+});
+
+describe('the group sidebar a visitor reads', () => {
+  const group = {
+    id: 'g1',
+    slug: 'bike-club',
+    name: 'Bike club',
+    label: 'club',
+    visibility: 'public',
+    is_public: true,
+    governance_preset: 'consensus',
+  } as never;
+
+  it('leaves the owner’s settings (label, visibility, listed) to the owner', () => {
+    const { unmount } = render(
+      <GroupDetailSidebar
+        group={group}
+        members={[founder]}
+        wallets={null}
+        labelConfig={null}
+        governanceConfig={null}
+        LabelIcon={() => null}
+      />
+    );
+    expect(screen.queryByText('Visibility')).toBeNull();
+    expect(screen.queryByText('Listed')).toBeNull();
+    // One member is a member, not "1 Members".
+    expect(screen.getByText('Member')).toBeTruthy();
+    unmount();
+
+    render(
+      <GroupDetailSidebar
+        group={group}
+        members={[founder]}
+        wallets={null}
+        labelConfig={null}
+        governanceConfig={null}
+        LabelIcon={() => null}
+        isOwner
+      />
+    );
+    expect(screen.getByText('Visibility')).toBeTruthy();
+    expect(screen.getByText('Listed')).toBeTruthy();
   });
 });

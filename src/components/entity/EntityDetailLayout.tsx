@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/components/ui/Breadcrumb';
+import type { BreadcrumbItem, BreadcrumbRoot } from '@/components/ui/Breadcrumb';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 interface EntityDetailLayoutProps {
@@ -13,6 +13,7 @@ interface EntityDetailLayoutProps {
   right?: ReactNode;
   className?: string;
   breadcrumbItems?: BreadcrumbItem[];
+  breadcrumbRoot?: BreadcrumbRoot;
 }
 
 export default function EntityDetailLayout({
@@ -23,6 +24,7 @@ export default function EntityDetailLayout({
   right,
   className,
   breadcrumbItems,
+  breadcrumbRoot,
 }: EntityDetailLayoutProps) {
   return (
     <div className={cn('oc-page', className)}>
@@ -31,6 +33,7 @@ export default function EntityDetailLayout({
           title={title}
           subtitle={subtitle}
           breadcrumbs={breadcrumbItems}
+          breadcrumbRoot={breadcrumbRoot}
           actions={headerActions}
         />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

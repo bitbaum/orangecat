@@ -7,8 +7,9 @@
  * page (e.g. /services/[id]) can drop a "Book this" CTA without itself
  * becoming a client component.
  *
- * Signed out, the button is variant="accent": it is the sign-up action.
- * Signed in, booking is an in-app action and takes variant="primary".
+ * The button is variant="primary": booking is an in-app action, and the warm
+ * accent belongs to the one top-of-funnel action (the header's Get started).
+ * It also matches the monochrome mobile sticky bar that leads to it.
  */
 
 import { useState } from 'react';
@@ -45,7 +46,7 @@ export function BookEntityButton({
   if (!isSignedIn) {
     return (
       <Button
-        variant="accent"
+        variant="primary"
         href={`/auth?from=${encodeURIComponent(pathname || '/')}`}
         className={className}
         aria-label={`Sign in to book ${dialogProps.bookableTitle}`}

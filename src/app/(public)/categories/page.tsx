@@ -8,6 +8,7 @@ import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicP
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
+import { discoverHref } from '@/services/discover/params';
 
 const iconMap = {
   Palette,
@@ -59,7 +60,7 @@ export default function CategoriesPage() {
                   {category.groups.map(group => (
                     <Link
                       key={group.id}
-                      href={`${ROUTES.DISCOVER}?q=${encodeURIComponent(group.name)}`}
+                      href={discoverHref({ q: group.searchTerm })}
                       className="block p-6 bg-surface-raised rounded-lg hover:bg-surface-raised/80 dark:hover:bg-surface-raised/80 transition-colors group"
                     >
                       <div className="flex items-center justify-between">

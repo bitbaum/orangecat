@@ -28,7 +28,6 @@ const isNumber = (value: unknown): value is number =>
 export const loanDetailConfig: EntityDetailConfig = {
   entityType: 'loan',
   ownerLabel: 'Listed By',
-  descriptionTitle: 'About this Loan',
   visibilityFilter: PUBLIC_VISIBILITY.loan,
   getViewRoute: id => ROUTES.LOANS.VIEW(id),
   showPaymentSection: false,

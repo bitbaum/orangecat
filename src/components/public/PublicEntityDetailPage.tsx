@@ -30,7 +30,8 @@ import { type WalletVisibility } from '@/config/wallet-visibility';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
 import { SITE_URL } from '@/config/brand';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { Breadcrumb, PUBLIC_BREADCRUMB_ROOT } from '@/components/ui/Breadcrumb';
+import { buildInquiryHref, withSignIn } from '@/lib/navigation/inquiryHref';
 import { PublicEntityOwnerBar } from './PublicEntityOwnerBar';
 import {
   THEME_CLASSES,
@@ -205,6 +206,7 @@ export default async function PublicEntityDetailPage({
         <div className="bg-surface-base border-b border-default">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <Breadcrumb
+              root={PUBLIC_BREADCRUMB_ROOT}
               items={[{ label: meta.namePlural, href: meta.publicBasePath || ROUTES.DISCOVER }]}
               className="mb-4"
             />
@@ -258,7 +260,7 @@ export default async function PublicEntityDetailPage({
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">
-                      {config.descriptionTitle || 'Description'}
+                      {config.descriptionTitle || `About this ${meta.name.toLowerCase()}`}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -335,7 +337,21 @@ export default async function PublicEntityDetailPage({
         {/* Mobile sticky bottom CTA — keeps the primary action one tap
             away from any scroll position. Hidden on >=md where the
             sidebar payment section is naturally visible. */}
-        {!isOwner && <MobileStickyCTA config={config} entity={entity} payable={!!sellerReceive} />}
+        {!isOwner && (
+          <MobileStickyCTA
+            config={config}
+            entity={entity}
+            payable={!!sellerReceive}
+            askHref={
+              owner?.user_id
+                ? withSignIn(
+                    buildInquiryHref({ to: owner.user_id, about: entity.title, ref: viewRoute }),
+                    !!user
+                  )
+                : null
+            }
+          />
+        )}
       </div>
     </>
   );

@@ -37,7 +37,7 @@ export default function InviteBanner({
             </p>
           </div>
           <div className="flex items-center gap-2 relative">
-            <Button href={`${ROUTES.DISCOVER}?section=people`} variant="outline">
+            <Button href={ROUTES.DISCOVER_TYPE('people')} variant="outline">
               <Search className="w-4 h-4 mr-2" /> Discover People
             </Button>
             <div className="flex items-center gap-2 relative">

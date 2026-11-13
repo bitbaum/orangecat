@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Highlight } from '@/components/search/Highlight';
 import { DiscoverCardMedia } from './DiscoverCardMedia';
-import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
+import { MoneyFigure } from '@/components/money/MoneyFigure';
+import { formatCurrency } from '@/services/currency';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import type { Range } from '@bitbaum/searchkit';
@@ -25,10 +26,13 @@ function Fact({ hit }: { hit: PublicHit }) {
   if (hit.amount && hit.amount > 0 && hit.currency) {
     const lead =
       hit.type === 'project' || hit.type === 'cause' ? 'Goal ' : hit.type === 'loan' ? 'Asks ' : '';
+    // Set the way the detail page sets it (the listing's own currency, as
+    // formatCurrency spells it) and as a figure, so the price is the strongest
+    // thing on the card after the title — not a grey mono line under it.
     return (
-      <span>
+      <span className="inline-flex items-baseline gap-1.5">
         {lead}
-        <CurrencyDisplay amount={hit.amount} currency={hit.currency} size="sm" />
+        <MoneyFigure size="md" label={formatCurrency(hit.amount, hit.currency)} />
       </span>
     );
   }

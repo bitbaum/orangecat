@@ -21,6 +21,7 @@ import { SellerWalletBanner } from './SellerWalletBanner';
 import { OwnerCollectPanel } from './OwnerCollectPanel';
 import { PublicPayPanel } from './PublicPayPanel';
 import { PublicSupportPanel } from './PublicSupportPanel';
+import { OptionalSupportPanel } from './OptionalSupportPanel';
 import { NoWalletYetNotice } from './NoWalletYetNotice';
 import { SharedWalletNotice } from './SharedWalletNotice';
 import GuestTicketPurchase from '@/components/events/GuestTicketPurchase';
@@ -28,6 +29,7 @@ import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
+import { buildInquiryHref, withSignIn } from '@/lib/navigation/inquiryHref';
 
 interface PublicEntityPaymentSectionProps {
   entityType: EntityType;
@@ -87,6 +89,27 @@ export function PublicEntityPaymentSection({
   // settlement issues the ticket); signed in, the ticket lands in the account.
   const isTicket = entityType === 'event' && !!priceAmount;
 
+  // No wallet a payment can reach: say so, and give the visitor the one thing
+  // that still moves them forward — a message to the owner about this listing,
+  // through sign-in when needed. A bare sentence here was a dead end under a
+  // price and a stock count.
+  const noWalletNotice = (
+    <NoWalletYetNotice payee={recipientName || undefined}>
+      {sellerUserId && (
+        <Button
+          variant="primary"
+          className="mt-4 w-full min-h-11"
+          href={withSignIn(
+            buildInquiryHref({ to: sellerUserId, about: entityTitle, ref: signInRedirect }),
+            isAuthenticated
+          )}
+        >
+          Ask how to pay
+        </Button>
+      )}
+    </NoWalletYetNotice>
+  );
+
   // Auth still hydrating — show skeleton to avoid flash
   if (authLoading) {
     return (
@@ -113,7 +136,7 @@ export function PublicEntityPaymentSection({
           bounds={contributionBounds}
         />
       ) : (
-        <NoWalletYetNotice />
+        noWalletNotice
       );
     }
 
@@ -136,7 +159,7 @@ export function PublicEntityPaymentSection({
           />
           <SharedWalletNotice usage={sharedWalletUsage} method={sellerReceive.method} />
           {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
-            <PublicSupportPanel
+            <OptionalSupportPanel
               entityType={entityType}
               entityId={entityId}
               entityTitle={entityTitle}
@@ -152,7 +175,7 @@ export function PublicEntityPaymentSection({
         <div className="space-y-4">
           <GuestTicketPurchase eventId={entityId} eventPath={ROUTES.EVENTS.VIEW(entityId)} />
           {meta.canReceiveSupport && (
-            <PublicSupportPanel
+            <OptionalSupportPanel
               entityType={entityType}
               entityId={entityId}
               entityTitle={entityTitle}
@@ -164,7 +187,7 @@ export function PublicEntityPaymentSection({
     }
 
     const purchaseFallback = !sellerReceive ? (
-      <NoWalletYetNotice />
+      noWalletNotice
     ) : (
       <Card>
         <CardContent className="pt-6 space-y-3">
@@ -189,7 +212,7 @@ export function PublicEntityPaymentSection({
     return sellerReceive && meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' ? (
       <div className="space-y-4">
         {purchaseFallback}
-        <PublicSupportPanel
+        <OptionalSupportPanel
           entityType={entityType}
           entityId={entityId}
           entityTitle={entityTitle}
@@ -235,7 +258,7 @@ export function PublicEntityPaymentSection({
   // "No wallet connected" button promised an action that could never complete;
   // say the true thing instead.
   if (!hasWallet) {
-    return <NoWalletYetNotice />;
+    return noWalletNotice;
   }
 
   if (meta.paymentPattern === 'none') {
@@ -269,7 +292,7 @@ export function PublicEntityPaymentSection({
         </CardContent>
       </Card>
       {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
-        <PublicSupportPanel
+        <OptionalSupportPanel
           entityType={entityType}
           entityId={entityId}
           entityTitle={entityTitle}

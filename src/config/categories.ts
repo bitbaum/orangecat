@@ -7,6 +7,11 @@ interface Category {
     id: string;
     name: string;
     description: string;
+    /**
+     * A word that occurs in listings, for the tile's Discover search. The
+     * display name searched as a phrase ("Medical Expenses") matched nothing.
+     */
+    searchTerm: string;
   }[];
 }
 
@@ -28,16 +33,19 @@ export const categories: Category[] = [
         id: 'medical',
         name: 'Medical Expenses',
         description: 'Medical treatments, procedures, and healthcare costs',
+        searchTerm: 'medical',
       },
       {
         id: 'life-events',
         name: 'Life Events',
         description: 'Birth of a child, weddings, funerals, and other significant life moments',
+        searchTerm: 'wedding',
       },
       {
         id: 'personal',
         name: 'Personal Needs',
         description: 'Personal emergencies, family support, and individual assistance',
+        searchTerm: 'family',
       },
     ],
   },
@@ -51,16 +59,19 @@ export const categories: Category[] = [
         id: 'content-creators',
         name: 'Content Creators',
         description: 'Bloggers, YouTubers, podcasters, and social media creators',
+        searchTerm: 'podcast',
       },
       {
         id: 'artists',
         name: 'Artists',
         description: 'Visual artists, musicians, DJs, and digital artists',
+        searchTerm: 'art',
       },
       {
         id: 'writers',
         name: 'Writers',
         description: 'Authors, journalists, and independent writers',
+        searchTerm: 'book',
       },
     ],
   },
@@ -74,16 +85,19 @@ export const categories: Category[] = [
         id: 'open-source',
         name: 'Open Source Developers',
         description: 'Maintainers and contributors to open source projects',
+        searchTerm: 'open source',
       },
       {
         id: 'founders',
         name: 'Solo Founders',
         description: 'Independent entrepreneurs and startup founders',
+        searchTerm: 'startup',
       },
       {
         id: 'vibe-coders',
         name: 'Vibe Coders',
         description: 'Creative developers and experimental projects',
+        searchTerm: 'app',
       },
     ],
   },
@@ -97,16 +111,19 @@ export const categories: Category[] = [
         id: 'students',
         name: 'Students',
         description: 'Individual students and student projects',
+        searchTerm: 'student',
       },
       {
         id: 'classes',
         name: 'Classes & Courses',
         description: 'Educational programs and course creators',
+        searchTerm: 'course',
       },
       {
         id: 'educational-research',
         name: 'Educational Research',
         description: 'Academic research and educational initiatives',
+        searchTerm: 'education',
       },
     ],
   },
@@ -120,16 +137,19 @@ export const categories: Category[] = [
         id: 'desci',
         name: 'Decentralized Science',
         description: 'DeSci projects and blockchain-based research initiatives',
+        searchTerm: 'science',
       },
       {
         id: 'independent-research',
         name: 'Independent Researchers',
         description: 'Individual researchers and scientific investigations',
+        searchTerm: 'research',
       },
       {
         id: 'scientific-studies',
         name: 'Scientific Studies',
         description: 'Research projects, experiments, and academic studies',
+        searchTerm: 'study',
       },
     ],
   },
@@ -143,16 +163,19 @@ export const categories: Category[] = [
         id: 'public-works',
         name: 'Public Works',
         description: 'Parks, bike lanes, roads, and public facilities',
+        searchTerm: 'park',
       },
       {
         id: 'community-facilities',
         name: 'Community Facilities',
         description: 'Playgrounds, community centers, and shared spaces',
+        searchTerm: 'community',
       },
       {
         id: 'urban-improvement',
         name: 'Urban Improvement',
         description: 'Pothole repairs, lighting, and city infrastructure upgrades',
+        searchTerm: 'city',
       },
     ],
   },
@@ -166,16 +189,19 @@ export const categories: Category[] = [
         id: 'cleanup-efforts',
         name: 'Cleanup Efforts',
         description: 'Beach cleanups, waste removal, and environmental restoration',
+        searchTerm: 'cleanup',
       },
       {
         id: 'conservation',
         name: 'Conservation',
         description: 'Wildlife protection, habitat preservation, and biodiversity projects',
+        searchTerm: 'wildlife',
       },
       {
         id: 'sustainability',
         name: 'Sustainability',
         description: 'Renewable energy, green technologies, and sustainable practices',
+        searchTerm: 'energy',
       },
     ],
   },
@@ -189,16 +215,19 @@ export const categories: Category[] = [
         id: 'non-profits',
         name: 'Non-Profits',
         description: 'Registered non-profit organizations',
+        searchTerm: 'nonprofit',
       },
       {
         id: 'charities',
         name: 'Charities',
         description: 'Charitable organizations and initiatives',
+        searchTerm: 'charity',
       },
       {
         id: 'communities',
         name: 'Communities',
         description: 'Community projects and initiatives',
+        searchTerm: 'local',
       },
     ],
   },

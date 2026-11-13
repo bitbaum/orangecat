@@ -14,13 +14,15 @@
 
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb';
+import { Breadcrumb, type BreadcrumbItem, type BreadcrumbRoot } from '@/components/ui/Breadcrumb';
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
   /** Breadcrumb trail (excluding Home, which the component always prepends). */
   breadcrumbs?: BreadcrumbItem[];
+  /** Where the trail starts; the dashboard unless a public page says Discover. */
+  breadcrumbRoot?: BreadcrumbRoot;
   /**
    * Force-hide the breadcrumb. By default the breadcrumb shows only when there's
    * an explicit multi-segment trail — a single auto-crumb just repeats the title.
@@ -39,6 +41,7 @@ export function PageHeader({
   title,
   subtitle,
   breadcrumbs,
+  breadcrumbRoot,
   hideBreadcrumb = false,
   icon,
   badges,
@@ -52,7 +55,7 @@ export function PageHeader({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {showBreadcrumb && <Breadcrumb items={crumbs} />}
+      {showBreadcrumb && <Breadcrumb items={crumbs} root={breadcrumbRoot} />}
       <div className="oc-page-header">
         <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
           {icon}
