@@ -36,8 +36,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(zod@4.6.7)
       '@bitbaum/accountkit':
-        specifier: ^0.29.0
-        version: 0.29.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+        specifier: ^0.30.0
+        version: 0.30.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       '@bitbaum/ai-kit':
         specifier: ^1.26.0
         version: 1.26.0(react@19.3.1)
@@ -45,8 +45,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
       '@bitbaum/chatkit':
-        specifier: ^0.31.2
-        version: 0.31.2(react@19.3.1)
+        specifier: ^0.31.3
+        version: 0.31.3(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -79,7 +79,7 @@ importers:
         version: 0.3.3(react@19.3.1)
       '@bitbaum/writingkit':
         specifier: ^0.2.0
-        version: 0.2.0(@bitbaum/chatkit@0.31.2(react@19.3.1))(react@19.3.1)
+        version: 0.2.0(@bitbaum/chatkit@0.31.3(react@19.3.1))(react@19.3.1)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.13)
@@ -564,8 +564,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitbaum/accountkit@0.29.0':
-    resolution: {integrity: sha512-LsOdoinEo5wO/I5jzgNCgqPXKXWFGeqrdF48zgI0cZiYaMqtOea11pRbquYWCpSgT6/lqmhO5B6OaHiqU0sqcw==}
+  '@bitbaum/accountkit@0.30.0':
+    resolution: {integrity: sha512-SawXRyluBDhOomI0Z0AQFyeZK4ZGyfUmGstkfS3iciRa2OAPNpwukV7If7H2ftNkkG0PsuTC/weY54BtCkf9NQ==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -612,8 +612,8 @@ packages:
       shiki:
         optional: true
 
-  '@bitbaum/chatkit@0.31.2':
-    resolution: {integrity: sha512-2uJAg+6VM86aXADwqHkgdVAjr4/uv8FEt5L/xbYs18o4RRlRvrVMnQOOGLwdUsIAU62aMkqxQ7bcpNebw6wFsw==}
+  '@bitbaum/chatkit@0.31.3':
+    resolution: {integrity: sha512-WfYzac8+uqPUpgKsaoYUOJFoUvgXRJaCdwX5YVuwZuhh+1cF9IPg1tMtw2l/SDG8V9IeLo6QiEJGuqw0cpkszw==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -660,8 +660,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/threadkit@0.1.1':
-    resolution: {integrity: sha512-tNsM2bVHBzmXaNzrsMeDipjNUssTwgeRIUVLA+SzzPOUSa21wgzX5Majo9HfEtTR4gxyHCrIFYzUWsvbdAkrRw==}
+  '@bitbaum/threadkit@0.1.2':
+    resolution: {integrity: sha512-DzM0A/xlOfJStLpoiqleJUEbLSatxAUpUXihvgz5U+ZABLnQ7nCdMT32dz0C6nyKXEXfrnnEakbsChluTFXwSA==}
     engines: {node: '>=20'}
 
   '@bitbaum/whenkit@0.3.3':
@@ -7003,7 +7003,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitbaum/accountkit@0.29.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/accountkit@0.30.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@noble/curves': 2.4.0
       '@scure/base': 2.4.0
@@ -7033,9 +7033,9 @@ snapshots:
       mermaid: 11.17.2
       shiki: 4.4.3
 
-  '@bitbaum/chatkit@0.31.2(react@19.3.1)':
+  '@bitbaum/chatkit@0.31.3(react@19.3.1)':
     dependencies:
-      '@bitbaum/threadkit': 0.1.1
+      '@bitbaum/threadkit': 0.1.2
       pdfjs-dist: 6.4.299
       react: 19.3.1
 
@@ -7057,15 +7057,15 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  '@bitbaum/threadkit@0.1.1': {}
+  '@bitbaum/threadkit@0.1.2': {}
 
   '@bitbaum/whenkit@0.3.3(react@19.3.1)':
     dependencies:
       react: 19.3.1
 
-  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.31.2(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.31.3(react@19.3.1))(react@19.3.1)':
     optionalDependencies:
-      '@bitbaum/chatkit': 0.31.2(react@19.3.1)
+      '@bitbaum/chatkit': 0.31.3(react@19.3.1)
       react: 19.3.1
 
   '@braintree/sanitize-url@7.1.2': {}

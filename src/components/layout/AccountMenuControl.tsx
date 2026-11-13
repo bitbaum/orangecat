@@ -20,7 +20,6 @@ import { accountNavItems } from '@/config/navigation';
 import { ROUTES } from '@/config/routes';
 import { getThemeModeOption } from '@/config/theme';
 import { useAuth } from '@/hooks/useAuth';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useOtherIdentities } from '@/hooks/useOtherIdentities';
 import { useThemeMode } from '@/hooks/useThemeMode';
 import { switchToIdentity } from '@/lib/identities/client';
@@ -36,8 +35,6 @@ export default function AccountMenuControl() {
   const { mode, cycle, mounted } = useThemeMode();
   const signedIn = Boolean(user || session);
   const others = useOtherIdentities(signedIn);
-  // From md up the header carries its own theme toggle (ThemeToggle).
-  const headerHasThemeToggle = useMediaQuery('(min-width: 768px)');
 
   useEffect(() => {
     if (signedIn && !profile) {
@@ -77,19 +74,21 @@ export default function AccountMenuControl() {
       ],
     },
     {
-      // Here so a phone can reach it: the header's own toggle is md and up.
+      // Here so a phone can reach it. From md up the header carries its own
+      // theme toggle, so the package hides this row there in CSS: right on
+      // the server render, no flash (accountkit `shown: 'narrow'`).
       id: 'appearance',
-      items:
-        mounted && !headerHasThemeToggle
-          ? [
-              {
-                id: 'theme',
-                label: `Appearance: ${theme.label}`,
-                onSelect: cycle,
-                icon: <ThemeIcon className={ICON} />,
-              },
-            ]
-          : [],
+      shown: 'narrow',
+      items: mounted
+        ? [
+            {
+              id: 'theme',
+              label: `Appearance: ${theme.label}`,
+              onSelect: cycle,
+              icon: <ThemeIcon className={ICON} />,
+            },
+          ]
+        : [],
     },
   ];
 
