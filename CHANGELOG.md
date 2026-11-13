@@ -9,6 +9,11 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-13
+
+- **An article can go on your projects' walls too.** Under "Who can read this?" in the article editor, "Also post on a project" offers your own projects, the same list a short post cross-posts to, and the article appears on each one you choose as well as on your profile. A sister product can link straight to the editor with the article and the project already chosen (`/articles/new?import=…&project=solon`); a project that is not yours is not chosen, and the editor says so. Signing in on the way keeps both.
+  - Project walls now also show what their owners cross-posted there. Those posts were recorded and never shown.
+
 ## 2026-11-12
 
 - **Your tasks are yours.** A task is seen and changed by the person who made it and by the person it was asked of; before, every signed-in account could see and complete it. Asking someone to do a task now means picking that person, instead of notifying every account on OrangeCat.
