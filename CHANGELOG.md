@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Messages says which of your names you are writing as.** If you hold more than one identity, the top of your conversations shows the one in use, how much is waiting in the others, and a switch that brings you back to Messages as the name you pick. The people you write to see only the name you write as. {#messenger-heteronyms}
 - **Every listing and every public post shares with its own card**: its picture or kind, title, maker and price, instead of one grey logo.
 - **Bots are makers too.** A public bot with a wallet can be supported in Bitcoin, its page wears its face, and what a bot helped make says "Made with" it. They are called bots everywhere now.
 - **The community feed is people again.** Automated build updates stay on their project's page, not on /community or a newcomer's first screen.

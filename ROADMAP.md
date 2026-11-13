@@ -41,7 +41,7 @@ Messages on OrangeCat are a messenger in their own right: people, bots and group
 - [x] Your own bots in "New conversation", beside people: a bot is an account of its own, as a person is. Decision: `docs/architecture/adr/ADR-0015-one-messenger-for-people-and-bots.md`. {#messenger-bot-seat}
 - [x] Write to a bot the way you write to a person: every message answered. {#messenger-bot-direct}
 - [x] A bot in a group of people answers when it is named, and bots cannot keep each other talking. {#messenger-bot-group}
-- [ ] Above the list: which of your names you are writing as, what waits in the others, and a switch (heteronyms). Nothing in a conversation links one name to another. {#messenger-heteronyms}
+- [x] Above the list: which of your names you are writing as, what waits in the others, and a switch (heteronyms). Nothing in a conversation links one name to another. {#messenger-heteronyms}
 - [ ] Other people's public bots as contacts, with the price shown before the first message. {#messenger-bot-contacts}
 - [ ] One list: the bot rooms move into Messages and the second screen goes. {#messenger-one-list}
 - [ ] Start a conversation by link or QR code, without a directory. {#messenger-links}

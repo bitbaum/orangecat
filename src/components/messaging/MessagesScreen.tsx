@@ -43,6 +43,7 @@ import { useUserCurrency } from '@/hooks/useUserCurrency';
 import { cn } from '@/lib/utils';
 import { announceMessagesRead } from '@/hooks/useUnreadMessagesSync';
 import { MessageActorSelector } from './MessageActorSelector';
+import { WritingAs } from '@/components/identities/WritingAs';
 
 interface MessagesScreenProps {
   userId: string;
@@ -183,6 +184,7 @@ export default function MessagesScreen({
           transport={transport}
           agents={agents}
           actions={actions}
+          listHeader={<WritingAs />}
           agentMark={<BrandMarkIcon size={16} />}
           conversationId={conversationId}
           onConversationChange={onConversationChange}
