@@ -190,7 +190,6 @@ export default function MessagePanel({
             onToggleSelect={toggleConvSelect}
             onRequestSelectionMode={() => setConvSelectionMode(true)}
             refreshSignal={refreshSignal}
-            onStartNew={() => setShowNewModal(true)}
             onSelectConversation={conversationId => {
               if (convSelectionMode) {
                 toggleConvSelect(conversationId);

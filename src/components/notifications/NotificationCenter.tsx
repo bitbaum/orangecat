@@ -68,19 +68,22 @@ export default function NotificationCenter({
             {error && (
               <div className="mb-4 flex items-center gap-2 rounded-md border border-status-negative/20 bg-status-negative/10 p-3 text-status-negative">
                 <AlertCircle className="w-4 h-4" />
-                <span className="text-sm">{error.message}</span>
+                <span className="text-sm">Notifications could not be loaded.</span>
                 <Button variant="ghost" size="sm" onClick={refresh} className="ml-auto">
                   Retry
                 </Button>
               </div>
             )}
 
-            <div className="mb-4 flex gap-1 rounded-md bg-surface-raised p-1">
+            {/* Five equal cells that fit a 390px phone, each a 44px target. */}
+            <div className="mb-4 grid grid-cols-5 gap-1 rounded-md bg-surface-raised p-1">
               {FILTER_TABS.map(tab => (
                 <button
                   key={tab.key}
+                  type="button"
+                  aria-pressed={uiFilter === tab.key}
                   onClick={() => setUIFilter(tab.key)}
-                  className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  className={`min-h-11 min-w-0 truncate rounded-md px-1 text-xs transition-colors sm:text-sm ${
                     uiFilter === tab.key
                       ? 'bg-surface-page text-fg-primary'
                       : 'text-fg-secondary hover:text-fg-primary'
@@ -104,7 +107,8 @@ export default function NotificationCenter({
             )}
 
             <div className="flex-1 overflow-y-auto space-y-2">
-              {isLoading && notifications.length === 0 ? (
+              {error && notifications.length === 0 ? null : isLoading &&
+                notifications.length === 0 ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="animate-pulse">

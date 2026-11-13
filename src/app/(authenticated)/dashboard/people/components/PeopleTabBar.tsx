@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 type TabType = 'following' | 'followers' | 'all';
 
@@ -22,30 +23,32 @@ export default function PeopleTabBar({
   searchTerm,
   onSearchChange,
 }: PeopleTabBarProps) {
-  const tabs: { id: TabType; label: string; count: number }[] = [
-    { id: 'followers', label: 'Followers', count: followersCount },
-    { id: 'following', label: 'Following', count: followingCount },
-    { id: 'all', label: 'All Users', count: allUsersCount },
-  ];
+  // Three equal cells of the shared control: the hand-rolled tabs, with the
+  // count inside each label, wrapped to two lines at 390px. The count of the
+  // chosen list moves under the row.
+  const counts: Record<TabType, number> = {
+    followers: followersCount,
+    following: followingCount,
+    all: allUsersCount,
+  };
+  const count = counts[activeTab];
 
   return (
     <>
-      {/* Tabs */}
-      <div className="mb-6 flex gap-4 border-b border-default">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'text-fg-primary border-b-2 border-fg-primary'
-                : 'text-fg-secondary hover:text-fg-primary dark:text-fg-secondary dark:hover:text-fg-primary'
-            }`}
-          >
-            {tab.label} ({tab.count})
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        label="People"
+        className="mb-2"
+        items={[
+          { value: 'followers', label: 'Followers' },
+          { value: 'following', label: 'Following' },
+          { value: 'all', label: 'Everyone' },
+        ]}
+        value={activeTab}
+        onChange={onTabChange}
+      />
+      <p className="mb-4 text-xs text-fg-secondary">
+        {count} {count === 1 ? 'person' : 'people'}
+      </p>
 
       {/* Search */}
       <div className="mb-6">

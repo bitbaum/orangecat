@@ -19,12 +19,6 @@ interface ConversationListProps {
   onToggleSelect?: (id: string) => void;
   onRequestSelectionMode?: () => void;
   refreshSignal?: number;
-  /**
-   * Trigger to open the new-conversation modal. Wired to the empty
-   * state so users with zero conversations have an in-place CTA
-   * instead of being told to find a button in the page header.
-   */
-  onStartNew?: () => void;
 }
 
 export default function ConversationList({
@@ -37,7 +31,6 @@ export default function ConversationList({
   onToggleSelect,
   onRequestSelectionMode,
   refreshSignal,
-  onStartNew,
 }: ConversationListProps) {
   const { user } = useAuth();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -198,21 +191,10 @@ export default function ConversationList({
                   ? 'No unread conversations'
                   : 'No conversations yet'}
             </p>
+            {/* The header's New is the one way to start: a second filled
+                button here made two primaries for one action. */}
             {!searchQuery && filterTab !== 'unread' && (
-              <>
-                <p className="mt-1 text-xs text-fg-tertiary">
-                  Start a new conversation to get started.
-                </p>
-                {onStartNew && (
-                  <button
-                    type="button"
-                    onClick={onStartNew}
-                    className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-md bg-fg-primary px-4 py-2 text-sm font-medium text-fg-inverted transition-colors hover:bg-fg-primary/90"
-                  >
-                    Start New Conversation
-                  </button>
-                )}
-              </>
+              <p className="mb-0 mt-1 text-xs text-fg-secondary">Use New to start one.</p>
             )}
           </div>
         ) : (

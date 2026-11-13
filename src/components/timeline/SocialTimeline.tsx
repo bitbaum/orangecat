@@ -10,7 +10,9 @@ import { TimelineSkeleton } from './TimelineSkeleton';
 import { useSocialTimeline } from './useSocialTimeline';
 import { TimelineSortingControls } from './TimelineSortingControls';
 import { TimelineSearchControls } from './TimelineSearchControls';
-import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { FEED_TITLE, FEED_VIEWS, TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { TimelineEmptyFeed } from './TimelineEmptyFeed';
 import { scrollBehavior } from '@/lib/scroll-behavior';
 
 export interface SocialTimelineProps {
@@ -228,16 +230,15 @@ export default function SocialTimeline({
       </Button>
     </div>
   ) : timelineFeed?.events.length === 0 ? (
-    <div className="text-center py-16">
-      <Icon className="w-20 h-20 text-fg-tertiary dark:text-fg-secondary mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-fg-primary mb-2">No posts yet</h3>
-      <p className="text-fg-secondary max-w-md mx-auto">
-        {mode === 'timeline'
-          ? "Share your first update about what you're working on!"
-          : 'Be the first to share something productive with the community!'}
-      </p>
-    </div>
+    <TimelineEmptyFeed mode={mode} icon={Icon} />
   ) : null;
+
+  // Signed in, the three feeds are one page with one pick-one row; a visitor
+  // reading Community sees only that feed, under its own name.
+  const viewSwitch =
+    user && !timelineOwnerId ? (
+      <SegmentedControl label="Feed" items={FEED_VIEWS} value={mode} />
+    ) : undefined;
 
   const headerTabs = showSortingControls ? (
     <TimelineSortingControls sortBy={sortBy} onSortChange={handleSortChange} />
@@ -264,7 +265,8 @@ export default function SocialTimeline({
 
   return (
     <TimelineLayout
-      title={title}
+      title={viewSwitch ? FEED_TITLE : title}
+      viewSwitch={viewSwitch}
       feed={activeFeed}
       onEventUpdate={handleEventUpdate}
       onLoadMore={handleLoadMore}

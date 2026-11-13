@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import type { Profile } from '@/types/profile';
 import { followUser, unfollowUser } from './peopleConnectionActions';
-import { fetchFollowList, type FollowListProfile } from '@/services/social/followList';
+import { fetchFollowListOrNull, type FollowListProfile } from '@/services/social/followList';
 
 export interface Connection {
   profile: Profile;
@@ -66,6 +65,9 @@ export function usePeopleConnections(userId: string | undefined, hydrated: boole
   const [followers, setFollowers] = useState<Connection[]>([]);
   const [allUsers, setAllUsers] = useState<Connection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // A failed load is not an empty network: the page shows "could not be
+  // loaded" with a retry instead of "No connections yet".
+  const [loadError, setLoadError] = useState(false);
   const [followingLoading, setFollowingLoading] = useState<string | null>(null);
 
   const loadConnections = useCallback(async () => {
@@ -74,21 +76,24 @@ export function usePeopleConnections(userId: string | undefined, hydrated: boole
     }
 
     setIsLoading(true);
+    setLoadError(false);
+    let failed = false;
     try {
-      // fetchFollowList owns the envelope unwrap — see services/social/followList.ts.
+      // fetchFollowListOrNull owns the envelope unwrap — see services/social/followList.ts.
       const [followingRows, followerRows, allRes] = await Promise.all([
-        fetchFollowList('following', userId),
-        fetchFollowList('followers', userId),
+        fetchFollowListOrNull('following', userId),
+        fetchFollowListOrNull('followers', userId),
         fetch(`${API_ROUTES.PROFILES.BASE}?limit=100`, { credentials: 'same-origin' }),
       ]);
+      failed = followingRows === null || followerRows === null || !allRes.ok;
 
       setFollowing(
-        followingRows
+        (followingRows ?? [])
           .map(item => transformConnectionItem(item, 'following_id', 'following'))
           .filter(Boolean) as Connection[]
       );
       setFollowers(
-        followerRows
+        (followerRows ?? [])
           .map(item => transformConnectionItem(item, 'follower_id', 'followers'))
           .filter(Boolean) as Connection[]
       );
@@ -113,12 +118,15 @@ export function usePeopleConnections(userId: string | undefined, hydrated: boole
             created_at: p.created_at,
           }));
           setAllUsers(transformed);
+        } else {
+          failed = true;
         }
       }
     } catch (error) {
       logger.error('Failed to load connections', { error }, 'PeoplePage');
-      toast.error('Failed to load connections');
+      failed = true;
     } finally {
+      setLoadError(failed);
       setIsLoading(false);
     }
   }, [userId]);
@@ -152,6 +160,8 @@ export function usePeopleConnections(userId: string | undefined, hydrated: boole
     followers,
     allUsers,
     isLoading,
+    loadError,
+    reload: loadConnections,
     followingLoading,
     handleFollow,
     handleUnfollow,

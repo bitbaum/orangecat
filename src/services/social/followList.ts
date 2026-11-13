@@ -75,6 +75,17 @@ export async function fetchFollowList(
   direction: FollowDirection,
   userId: string
 ): Promise<FollowListRow[]> {
+  return (await fetchFollowListOrNull(direction, userId)) ?? [];
+}
+
+/**
+ * The same, but `null` when the list could not be loaded — for a screen that
+ * must not show a failed load as "nobody yet".
+ */
+export async function fetchFollowListOrNull(
+  direction: FollowDirection,
+  userId: string
+): Promise<FollowListRow[] | null> {
   const url =
     direction === 'following'
       ? API_ROUTES.SOCIAL.FOLLOWING(userId)
@@ -83,12 +94,12 @@ export async function fetchFollowList(
     const response = await fetch(url, { credentials: 'same-origin' });
     if (!response.ok) {
       logger.error('Follow list request failed', { direction, userId, status: response.status });
-      return [];
+      return null;
     }
     return parseFollowListResponse(await response.json());
   } catch (error) {
     logger.error('Failed to fetch follow list', { direction, userId, error });
-    return [];
+    return null;
   }
 }
 

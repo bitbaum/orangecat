@@ -95,12 +95,15 @@ export function GroupsDashboard() {
   const filteredAvailable = availableGroups.filter(matches);
   const hasAnyGroups = myGroups.length + availableGroups.length > 0;
 
-  const headerActions = (
-    <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="accent" className="gap-2">
-      <Plus className="h-4 w-4" />
-      Create Group
-    </Button>
-  );
+  // In-app actions are primary, not the warm accent; and while the list is
+  // empty its empty state owns the one button, so the header carries none.
+  const headerActions =
+    myGroups.length > 0 ? (
+      <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="primary" className="gap-2">
+        <Plus className="h-4 w-4" />
+        Create a group
+      </Button>
+    ) : undefined;
 
   return (
     <EntityListShell
@@ -168,9 +171,9 @@ export function GroupsDashboard() {
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
               <h3 className="text-lg font-semibold mb-2">No groups available</h3>
               <p className="text-fg-secondary mb-6">Be the first to create a group!</p>
-              <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
+              <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="outline" className="gap-2">
                 <Plus className="h-4 w-4" />
-                Create Group
+                Create a group
               </Button>
             </div>
           ) : filteredAvailable.length === 0 ? (
