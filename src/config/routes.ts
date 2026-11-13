@@ -194,6 +194,25 @@ export function getRouteSurface(pathname: string): RouteSurface {
   return 'public';
 }
 
+/**
+ * Public pages that the app's own navigation also lists (src/config/navigation.ts):
+ * signed in, they open inside the app shell, so the sidebar and tab bar do not
+ * vanish on the way there and back.
+ */
+const SIGNED_IN_APP_PAGES: readonly string[] = ['/what-you-can-do'];
+
+/**
+ * getRouteSurface, given who is looking. Shell chrome (AppShell, the tab bar)
+ * reads this; everything that only needs the route's own class keeps
+ * getRouteSurface.
+ */
+export function getShellSurface(pathname: string, signedIn: boolean): RouteSurface {
+  const surface = getRouteSurface(pathname);
+  return surface === 'public' && signedIn && SIGNED_IN_APP_PAGES.includes(pathname)
+    ? 'app'
+    : surface;
+}
+
 /** Shell chrome overrides for routes that need a focused, low-distraction layout. */
 export interface RouteChrome {
   hideMobileBottomNav: boolean;

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { CapabilityMap } from '@/components/map/CapabilityMap';
-import { TheDoor } from '@/components/map/TheDoor';
+import { WhatYouCanDoDoor } from '@/components/map/WhatYouCanDoDoor';
 import { CAPABILITY_MAP_PAGE } from '@/config/capability-map';
 import { DOOR_EXAMPLES } from '@/config/cat-door';
 import { INTENT_LIST } from '@/config/intents';
@@ -28,24 +28,26 @@ export default function WhatYouCanDoPage() {
           title={CAPABILITY_MAP_PAGE.title}
           lede={CAPABILITY_MAP_PAGE.lede}
         >
-          <TheDoor className="max-w-2xl" examples={DOOR_EXAMPLES} />
+          <WhatYouCanDoDoor examples={DOOR_EXAMPLES} />
           <nav aria-label="On this page" className="mt-8">
-            <ul className="flex flex-wrap gap-2">
+            {/* One row that scrolls sideways, like the door's examples: a
+                wrapping box of pills read as a second menu. */}
+            <ul className="no-scrollbar flex gap-2 overflow-x-auto">
               {INTENT_LIST.map(intent => (
-                <li key={intent.id}>
+                <li key={intent.id} className="shrink-0">
                   <a
                     href={`#do-${intent.id}`}
-                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    className="inline-flex min-h-11 items-center rounded-full border border-default bg-surface-base px-3 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
                   >
                     {intent.title}
                   </a>
                 </li>
               ))}
               {decide && (
-                <li>
+                <li className="shrink-0">
                   <a
                     href="#do-decide"
-                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    className="inline-flex min-h-11 items-center rounded-full border border-default bg-surface-base px-3 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
                   >
                     Decide
                   </a>

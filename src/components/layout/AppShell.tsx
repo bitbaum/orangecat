@@ -8,7 +8,7 @@ import {
   useRootShellPathname,
   useShellPathname,
 } from '@/hooks/useShellPathname';
-import { getRouteChrome, getRouteSurface } from '@/config/routes';
+import { getRouteChrome, getShellSurface } from '@/config/routes';
 import GlobalCatLauncher from '@/components/ai-chat/GlobalCatLauncher';
 import { STORAGE_KEYS } from '@/config/storage-keys';
 import { Header } from './Header';
@@ -56,8 +56,8 @@ function AppShellChrome({ children }: AppShellProps) {
   const visitedPathname = usePathname();
   const { user, profile, hydrated, isLoading } = useAuth();
   // SSOT: every shell-related visibility decision derives from
-  // getRouteSurface (src/config/routes.ts). Do not branch on pathname here.
-  const surface = getRouteSurface(pathname ?? '/');
+  // getShellSurface (src/config/routes.ts). Do not branch on pathname here.
+  const surface = getShellSurface(pathname ?? '/', !!user);
   const isAppSurface = surface === 'app';
   // Auth pages render their own minimal chrome — global header + nav +
   // search are noise on a sign-in screen and dilute the focus from the
