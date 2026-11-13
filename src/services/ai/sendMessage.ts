@@ -204,6 +204,20 @@ export async function sendAiMessage(
     hands: hands?.section,
     rules: botSettings ? rulesSection(botSettings) : undefined,
   });
+  // The same prompt for a model that is given the hands as functions; which
+  // one a turn uses is the model's profile (sendMessage-internals.ts).
+  const native = hands?.allowed.length
+    ? {
+        actions: hands.allowed.map(a => a.action),
+        systemPrompt:
+          buildCompanionSystemPrompt({
+            definition: assistant.system_prompt,
+            memories: recalled.map(m => m.content),
+            hands: hands.nativeSection,
+            rules: botSettings ? rulesSection(botSettings) : undefined,
+          }) ?? null,
+      }
+    : undefined;
   const aiResult = await generateReply({
     hasByok,
     userKey: userOpenRouterKey,
@@ -211,6 +225,7 @@ export async function sendAiMessage(
     requestedModel,
     assistant,
     systemPrompt: systemPrompt ?? null,
+    native,
     history,
     content,
     images,
@@ -310,6 +325,7 @@ export async function sendAiMessage(
         requestedModel,
         assistant,
         systemPrompt: systemPrompt ?? null,
+        native,
         history: loopHistory,
         content: resultMessage,
         ownerTurn: true,

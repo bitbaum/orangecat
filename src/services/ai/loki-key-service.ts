@@ -21,6 +21,7 @@ interface DoorAnswer {
   content?: unknown;
   model?: unknown;
   finishReason?: unknown;
+  toolCalls?: unknown;
   usage?: { promptTokens?: unknown; completionTokens?: unknown; totalTokens?: unknown };
 }
 
@@ -55,6 +56,7 @@ export function lokiKeyService(
     messages,
     temperature,
     maxTokens,
+    tools,
   }) => {
     const res = await askLokiModelDoor(
       actorId,
@@ -66,6 +68,7 @@ export function lokiKeyService(
         messages,
         temperature,
         ...(maxTokens ? { maxTokens: Math.min(maxTokens, 8192) } : {}),
+        ...(tools?.length ? { tools, toolChoice: 'auto' } : {}),
       },
       { timeoutMs: TURN_TIMEOUT_MS, ...opts }
     );
@@ -85,6 +88,12 @@ export function lokiKeyService(
         status
       );
     }
+    const toolCalls = (Array.isArray(answer.toolCalls) ? answer.toolCalls : []).flatMap(raw => {
+      const c = (raw ?? {}) as Record<string, unknown>;
+      return typeof c.id === 'string' && typeof c.name === 'string'
+        ? [{ id: c.id, name: c.name, arguments: text(c.arguments) || '{}' }]
+        : [];
+    });
     return {
       content: text(answer.content),
       model: text(answer.model) || model,
@@ -95,6 +104,7 @@ export function lokiKeyService(
       usedByok: true,
       costBtc: 0,
       finishReason: text(answer.finishReason) || undefined,
+      ...(toolCalls.length ? { toolCalls } : {}),
     };
   };
 

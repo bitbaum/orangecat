@@ -21,6 +21,12 @@ export interface AiService {
     temperature: number;
     /** Every implementation (groq, openrouter, openai-compat) already honours it. */
     maxTokens?: number;
+    /**
+     * Function definitions in the OpenAI-style native format. Only a client
+     * for a model that takes them is handed any (config/model-profiles.ts);
+     * the platform chain's clients ignore the field.
+     */
+    tools?: unknown[];
   }): Promise<{
     content: string;
     model: string;
@@ -32,5 +38,7 @@ export interface AiService {
     costBtc?: number;
     /** Why the model stopped: "stop", or "length" when the output cap cut it. */
     finishReason?: string;
+    /** Functions the model asked for, when `tools` were given. */
+    toolCalls?: Array<{ id: string; name: string; arguments: string }>;
   }>;
 }

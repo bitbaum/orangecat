@@ -22,10 +22,13 @@ import { CatPermissionService } from '@/services/cat/permission-service';
 import { logger } from '@/utils/logger';
 import { canRunOnItsOwn, getHandGrants, handMode } from './hand-grants';
 import { extractProposal, handsActions, handsSection, type Proposal } from './hands';
+import { nativeHandsSection } from './native-tools';
 
 export interface Hands {
   /** The prompt section, or undefined when the person has no hands. */
   section: string | undefined;
+  /** The same, for a model that is given the hands as functions (native-tools.ts). */
+  nativeSection?: string | undefined;
   /**
    * Actions the person may be offered, with whether a tap also grants them,
    * and whether the owner let THIS bot run it without a tap (hand-grants.ts).
@@ -88,11 +91,11 @@ export async function handsFor(
   );
   // Promise.all keeps the order of handsActions(), which is the listed order.
   const allowed = checked.filter((a): a is Hands['allowed'][number] => a !== null);
+  const actions = allowed.map(a => a.action);
+  const autoIds = allowed.filter(a => a.auto).map(a => a.action.id);
   return {
-    section: handsSection(
-      allowed.map(a => a.action),
-      allowed.filter(a => a.auto).map(a => a.action.id)
-    ),
+    section: handsSection(actions, autoIds),
+    nativeSection: nativeHandsSection(actions, autoIds),
     allowed,
   };
 }

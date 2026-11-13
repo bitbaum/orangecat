@@ -23,6 +23,8 @@ import {
   chainFailureSummary,
 } from '@/services/ai/chain-failure-summary';
 import { directKeyService } from './own-key-service';
+import type { CatAction } from '@/config/cat-actions';
+import { replyOnOwnKey } from './direct-reply';
 import { chosenModel } from './own-models';
 import type { OwnKey } from './own-key';
 import type { AiService } from './types';
@@ -209,6 +211,12 @@ export async function generateReply(params: {
   ownerTurn?: boolean;
   /** The person's own key from a provider other than OpenRouter (own-key.ts). */
   directKey?: OwnKey | null;
+  /**
+   * The hands as functions, and the prompt written for a model that is given
+   * them that way. Used only on the person's own key, for a model whose
+   * profile takes native tools (config/model-profiles.ts).
+   */
+  native?: { actions: readonly CatAction[]; systemPrompt: string | null };
 }): Promise<GeneratedReply | { error: SendMessageError }> {
   const { assistant, systemPrompt, history, content } = params;
   const messages = withImages(buildMessageHistory(history, content), params.images);
@@ -253,36 +261,23 @@ export async function generateReply(params: {
 
   const direct = params.directKey ? directKeyService(params.directKey) : null;
   if (direct) {
-    // Their own key at their own provider. The system prompt travels as the
-    // first message, as on the platform chain: every OpenAI-compatible vendor
-    // accepts that, and not every client takes a separate field.
-    const withSystem = systemPrompt
-      ? [{ role: 'system' as const, content: systemPrompt }, ...messages]
-      : messages;
-    // The model the person chose for this chat, on their own key; else the
-    // provider's default (own-models.ts). A name the provider does not know
-    // is the provider's error, said as one.
-    const directModel = chosenModel(params.requestedModel, direct.model);
-    const ask = (turns: typeof withSystem) =>
-      direct.service.chatCompletion({
-        model: directModel,
-        messages: turns,
+    try {
+      const { whole, model } = await replyOnOwnKey({
+        service: direct.service,
+        provider: params.directKey?.provider ?? '',
+        model: chosenModel(params.requestedModel, direct.model),
+        systemPrompt,
+        messages,
         temperature,
         maxTokens,
+        native: params.native,
+        finish: finishCutOffReply,
       });
-    try {
-      const first = await ask(withSystem);
-      const whole = await finishCutOffReply(
-        first,
-        more =>
-          ask(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }, ...more] : more),
-        messages
-      );
       return {
         response: { ...whole, costBtc: whole.costBtc ?? 0 },
         chatService: direct.service,
         // A key on Loki with nothing chosen here: the name is the one Loki answered on.
-        modelLabel: getModelMetadata(directModel)?.name || directModel || whole.model,
+        modelLabel: getModelMetadata(model)?.name || model || whole.model,
       };
     } catch (aiError: unknown) {
       logger.error('AI API error (own key)', aiError, 'AIMessagesService');
