@@ -11,6 +11,7 @@ interface WalletPasteFieldProps {
   /** Parent already showed the question, so the form's own heading would repeat it. */
   hideIntro?: boolean;
   submitLabel?: string;
+  submitVariant?: 'primary' | 'outline';
   cancelLabel?: string;
   onCancel?: () => void;
   onSaved: (wallet: Wallet) => void;
@@ -25,6 +26,7 @@ export function WalletPasteField({
   defaultLabel,
   hideIntro = false,
   submitLabel = 'Save',
+  submitVariant,
   cancelLabel,
   onCancel,
   onSaved,
@@ -44,6 +46,7 @@ export function WalletPasteField({
         hideIntro={hideIntro}
         defaultLabel={defaultLabel}
         submitLabel={submitLabel}
+        submitVariant={submitVariant}
         cancelLabel={cancelLabel}
         onCancel={onCancel}
         onSubmit={async data => {

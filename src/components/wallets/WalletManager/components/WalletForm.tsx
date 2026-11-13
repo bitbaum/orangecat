@@ -49,6 +49,8 @@ export function WalletForm({
   onCancel,
   cancelLabel = 'Cancel',
   submitLabel = 'Save',
+  submitVariant = 'primary',
+  title = 'Get paid in Bitcoin',
   defaultLabel = 'My wallet',
   hideIntro = false,
   onFieldFocus,
@@ -185,9 +187,7 @@ export function WalletForm({
     <div className="rounded-lg border border-default bg-surface-raised p-4">
       {!hideIntro && (
         <>
-          <h4 className="mb-1 font-semibold text-fg-primary">
-            {submitLabel === 'Save' ? 'Get paid in Bitcoin' : submitLabel}
-          </h4>
+          <h4 className="mb-1 font-semibold text-fg-primary">{title}</h4>
           <p className="mb-4 text-sm text-fg-secondary">
             Add where you want the money to land. You can change this anytime.
           </p>
@@ -495,12 +495,18 @@ export function WalletForm({
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="w-full sm:flex-1"
+          variant={submitVariant}
+          className="min-h-11 w-full sm:flex-1"
         >
           {isSubmitting ? 'Saving…' : submitLabel}
         </Button>
         {onCancel && (
-          <Button type="button" onClick={onCancel} variant="outline" className="w-full sm:w-auto">
+          <Button
+            type="button"
+            onClick={onCancel}
+            variant="outline"
+            className="min-h-11 w-full sm:w-auto"
+          >
             {cancelLabel}
           </Button>
         )}

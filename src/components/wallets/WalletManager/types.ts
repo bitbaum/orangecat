@@ -45,6 +45,13 @@ export interface WalletFormProps {
   onCancel?: () => void;
   cancelLabel?: string;
   submitLabel?: string;
+  /**
+   * The save button's look. Inside an entity form it is `outline`, so the
+   * form keeps one filled button (its own Create).
+   */
+  submitVariant?: 'primary' | 'outline';
+  /** The box heading. It used to be derived from submitLabel. */
+  title?: string;
   /** Used when the name field is left blank. */
   defaultLabel?: string;
   /** Parent already asked the question, so the form heading would repeat it. */

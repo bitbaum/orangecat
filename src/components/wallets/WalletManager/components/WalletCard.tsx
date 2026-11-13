@@ -55,6 +55,7 @@ export function WalletCard({
         onSubmit={onUpdate}
         onCancel={onCancelEdit}
         submitLabel="Save Changes"
+        title="Edit wallet"
         // The stored connection is a secret we never send to the browser, so it
         // cannot be prefilled: tell the form it exists instead, so editing a
         // label doesn't demand the URI again (or silently drop it).
