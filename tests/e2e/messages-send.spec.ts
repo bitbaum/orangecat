@@ -16,7 +16,7 @@ test.describe('Messages: login and send', () => {
     // 2) Fill login form and submit
     await page.locator('input[type="email"]').fill(TEST_EMAIL);
     await page.locator('input[type="password"]').fill(TEST_PASSWORD);
-    await page.locator('button:has-text("Sign in")').click();
+    await page.locator('form:has(input[type="password"]) button[type="submit"]').click();
 
     // 3) Wait for redirect to dashboard
     await page.waitForURL(/\/dashboard(\/.*)?$/, { timeout: 15000 });

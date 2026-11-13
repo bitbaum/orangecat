@@ -28,10 +28,7 @@ async function login(page: Page) {
   await page.waitForSelector('#email', { timeout: 10000 });
   await page.locator('#email').fill(TEST_EMAIL);
   await page.locator('#password').fill(TEST_PASSWORD);
-  await page
-    .locator('button:has-text("Sign in")')
-    .or(page.locator('button[type="submit"]'))
-    .click();
+  await page.locator('form:has(#password) button[type="submit"]').click();
   await page.waitForURL(/\/dashboard(\/.*)?$/, { timeout: 15000 });
 }
 
