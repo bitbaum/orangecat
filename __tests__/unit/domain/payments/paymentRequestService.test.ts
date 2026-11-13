@@ -29,6 +29,12 @@ vi.mock('@/services/notifications/dispatcher', () => ({
   NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 
+// The requester has somewhere to be paid unless a test says otherwise.
+const requesterWalletMock = vi.fn(async (): Promise<unknown> => ({ id: 'w-1' }));
+vi.mock('@/domain/payments/walletResolutionService', () => ({
+  resolveUserWallet: () => requesterWalletMock(),
+}));
+
 // 1 CHF = 0.00001 BTC; a test can say there is no rate.
 const priceMock = vi.fn(async (amount: number): Promise<number | null> => amount * 0.00001);
 vi.mock('@/services/currency/rates.server', () => ({
@@ -78,6 +84,22 @@ function makeCallerClient(inserted: Record<string, unknown>[]) {
 beforeEach(() => {
   vi.clearAllMocks();
   priceMock.mockImplementation(async (amount: number) => amount * 0.00001);
+  requesterWalletMock.mockImplementation(async () => ({ id: 'w-1' }));
+});
+
+describe('createPaymentRequest — a requester with nowhere to be paid', () => {
+  it('is refused before anyone is asked or notified', async () => {
+    mockAdmin({ id: PAYER, username: 'marco' });
+    requesterWalletMock.mockResolvedValue(null);
+    const inserted: Record<string, unknown>[] = [];
+    const result = await createPaymentRequest(makeCallerClient(inserted), REQUESTER, {
+      payerUsername: 'marco',
+      amountBtc: 0.0005,
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'requester_cannot_receive' });
+    expect(inserted).toHaveLength(0);
+    expect(dispatchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('createPaymentRequest — asked for in a currency', () => {
