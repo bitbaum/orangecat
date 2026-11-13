@@ -60,6 +60,30 @@ function transformConnectionItem(
   };
 }
 
+/** The /api/profiles list (bare or wrapped) as connections. */
+export function profileListToConnections(raw: unknown): Connection[] {
+  const wrapped = raw as { data?: unknown } | null;
+  const arr: ConnectionResponseItem[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(wrapped?.data)
+      ? (wrapped.data as ConnectionResponseItem[])
+      : [];
+  return arr.map(p => ({
+    profile: {
+      id: p.id as string,
+      username: p.username,
+      name: p.name,
+      avatar_url: p.avatar_url,
+      bio: p.bio,
+      bitcoin_address: p.bitcoin_address,
+      lightning_address: p.lightning_address,
+      created_at: p.created_at || '',
+      updated_at: p.updated_at || p.created_at || '',
+    },
+    created_at: p.created_at,
+  })) as Connection[];
+}
+
 export function usePeopleConnections(userId: string | undefined, hydrated: boolean) {
   const [following, setFollowing] = useState<Connection[]>([]);
   const [followers, setFollowers] = useState<Connection[]>([]);
@@ -101,23 +125,7 @@ export function usePeopleConnections(userId: string | undefined, hydrated: boole
       if (allRes.ok) {
         const allData = await allRes.json();
         if (allData.success) {
-          const raw = allData.data;
-          const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
-          const transformed: Connection[] = arr.map((p: ConnectionResponseItem) => ({
-            profile: {
-              id: p.id,
-              username: p.username,
-              name: p.name,
-              avatar_url: p.avatar_url,
-              bio: p.bio,
-              bitcoin_address: p.bitcoin_address,
-              lightning_address: p.lightning_address,
-              created_at: p.created_at || '',
-              updated_at: p.updated_at || p.created_at || '',
-            },
-            created_at: p.created_at,
-          }));
-          setAllUsers(transformed);
+          setAllUsers(profileListToConnections(allData.data));
         } else {
           failed = true;
         }

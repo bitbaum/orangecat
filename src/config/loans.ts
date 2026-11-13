@@ -37,12 +37,13 @@ export type LoanFulfillmentType = (typeof LOAN_FULFILLMENT_TYPES)[number]['value
 export const LOAN_TYPES = [
   {
     value: 'new_request',
-    label: 'Request New Loan',
+    // A kind, not a button: it is shown as "Loan Type: New loan" on the page.
+    label: 'New loan',
     description: 'I need funding and want to find lenders',
   },
   {
     value: 'existing_refinance',
-    label: 'Refinance Existing Loan',
+    label: 'Refinance a loan',
     description: 'I have an existing loan and want better terms',
   },
 ] as const;

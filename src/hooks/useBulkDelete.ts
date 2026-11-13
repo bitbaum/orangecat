@@ -61,7 +61,13 @@ export function useBulkDelete({
       await refresh();
     } catch (error) {
       logger.error(`Failed to delete ${entityNamePlural}`, { error }, 'useBulkDelete');
-      toast.error(`Failed to delete some ${entityNamePlural.toLowerCase()}. Please try again.`);
+      // The server says why (e.g. a published event must be taken offline
+      // first); "try again" would fail the same way.
+      toast.error(`Couldn't delete some ${entityNamePlural.toLowerCase()}`, {
+        description: error instanceof Error ? error.message : undefined,
+      });
+      // Some may have gone through before one was refused; show the list as it is.
+      await refresh();
     } finally {
       setIsDeleting(false);
     }

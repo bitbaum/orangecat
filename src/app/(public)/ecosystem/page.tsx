@@ -24,7 +24,7 @@ import {
 import { ROUTES } from '@/config/routes';
 import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
 import { pageMetadata } from '@/lib/seo/metadata';
-import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
+import { fetchStudioMapForPublicPage } from '@/services/loki/studio-fleet-map';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { cn } from '@/lib/utils';
 
@@ -70,7 +70,7 @@ const SEAMS = [
 export default async function EcosystemPage() {
   // The live projects in the studio, grouped by layer, from Loki's fleet map —
   // the one list, never a copy kept here. Absent when the map is unreachable.
-  const fleet = groupFleetByLayer(await fetchStudioMapForCat());
+  const fleet = groupFleetByLayer(await fetchStudioMapForPublicPage());
 
   return (
     <div className="min-h-screen bg-surface-page">

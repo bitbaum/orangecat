@@ -23,7 +23,7 @@ interface RouteContext {
 
 export const POST = withAuth(async (request: AuthenticatedRequest, context: RouteContext) => {
   const { id } = await context.params;
-  const idError = getValidationError(validateUUID(id, 'companion ID'));
+  const idError = getValidationError(validateUUID(id, 'bot ID'));
   if (idError) {
     return idError;
   }
@@ -38,10 +38,10 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       return apiCreated(result.data);
     }
     if ('notFound' in result) {
-      return apiNotFound('Companion not found');
+      return apiNotFound('Bot not found');
     }
     logger.error('Clone companion failed', result.dbError, 'CompanionCloneAPI');
-    return apiInternalError('Could not clone this companion right now.');
+    return apiInternalError('Could not clone this bot right now.');
   } catch (error) {
     logger.error('Clone companion error', error, 'CompanionCloneAPI');
     return apiInternalError();

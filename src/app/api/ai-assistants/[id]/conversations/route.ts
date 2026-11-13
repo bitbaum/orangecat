@@ -97,8 +97,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     const access = decideConversationAccess(assistant, user.id);
     if (!access.allowed) {
       return access.reason === 'not_found'
-        ? apiNotFound('Companion not found')
-        : apiBadRequest('This companion is not active');
+        ? apiNotFound('Bot not found')
+        : apiBadRequest('This bot is not active');
     }
 
     // Create new conversation

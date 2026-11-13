@@ -1,5 +1,6 @@
 'use client';
 
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import EntityDashboardPage from '@/components/entity/EntityDashboardPage';
 import { documentEntityConfig, type DocumentListItem } from '@/config/entities/documents';
@@ -38,9 +39,9 @@ export default function DocumentsPage() {
   return (
     <EntityDashboardPage<DocumentListItem>
       config={documentEntityConfig}
-      title="Cat Context"
+      title={ENTITY_REGISTRY.document.namePlural}
       description="Add documents to help your Cat understand your goals, skills, and situation"
-      createButtonLabel="Add Context"
+      createButtonLabel={`Add ${ENTITY_REGISTRY.document.name.toLowerCase()}`}
       headerContent={<CatInfoBanner />}
     />
   );

@@ -9,6 +9,7 @@
  * Last Modified Summary: Initial document form configuration
  */
 
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { FileText } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { documentSchema, type DocumentFormData } from '@/lib/validation';
@@ -106,7 +107,7 @@ export const documentFormConfig = createEntityConfig<DocumentFormData>({
   colorTheme: 'tiffany',
   backUrl: `${ROUTES.DASHBOARD.CAT}?tab=context`,
   successUrl: `${ROUTES.DASHBOARD.CAT}?tab=context`,
-  pageTitle: 'Add Context',
+  pageTitle: `Add a ${ENTITY_REGISTRY.document.name.toLowerCase()}`,
   pageDescription: 'Add a document to help your Cat understand your goals, skills, and situation.',
   formTitle: 'Document Details',
   formDescription: 'Provide context that your Cat can use to give you personalized advice',

@@ -134,3 +134,35 @@ export function getExternalAttribution(
   const url = typeof rawUrl === 'string' ? rawUrl : undefined;
   return { sourceLabel, url };
 }
+
+/**
+ * Sources whose posts are machine-generated status updates (build runs, test
+ * results, PR lists, changelog syndication) rather than words a person chose
+ * to post. They belong on the project's own wall; on the public /community
+ * feed and a newcomer's "From people on OrangeCat" preview they read as a CI
+ * log. `ai_app` is not here: an AI app posts because a person asked it to.
+ */
+export const AUTOMATED_PUBLISH_SOURCES = [
+  'loki',
+] as const satisfies readonly ExternalPublishSource[];
+
+/** True if a timeline event was written by an automated publishing client. */
+export function isAutomatedPublish(metadata: Record<string, unknown> | null | undefined): boolean {
+  if (!metadata || metadata[EXTERNAL_PUBLISH_META.isExternal] !== true) {
+    return false;
+  }
+  const source = metadata[EXTERNAL_PUBLISH_META.source];
+  return (
+    typeof source === 'string' && (AUTOMATED_PUBLISH_SOURCES as readonly string[]).includes(source)
+  );
+}
+
+/**
+ * PostgREST `.or()` filter that keeps everything except automated publishes.
+ * `NOT IN` alone would also drop every ordinary post, whose `metadata.source`
+ * is NULL, so the NULL case is spelled out.
+ */
+export const EXCLUDE_AUTOMATED_PUBLISH_OR_FILTER = [
+  `metadata->>${EXTERNAL_PUBLISH_META.source}.is.null`,
+  `metadata->>${EXTERNAL_PUBLISH_META.source}.not.in.(${AUTOMATED_PUBLISH_SOURCES.join(',')})`,
+].join(',');

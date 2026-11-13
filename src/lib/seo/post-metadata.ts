@@ -14,6 +14,7 @@
 import type { Metadata } from 'next';
 import { APP_NAME } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
+import { OG_SIZE } from '@/lib/og/branding';
 import type { TimelineVisibility } from '@/types/timeline';
 
 /** The fields of a post that its page, its metadata and its share row read. */
@@ -35,6 +36,14 @@ export function isPublicPost(visibility: string | null | undefined): boolean {
 /** The post's one public URL. */
 export function postUrl(siteUrl: string, id: string): string {
   return `${siteUrl.replace(/\/+$/, '')}${ROUTES.POST(id)}`;
+}
+
+/**
+ * The post's share card (src/app/api/og/post/[id]): who wrote it and its first
+ * words. It draws only a public post; any other id gets the brand card.
+ */
+export function postCardUrl(siteUrl: string, id: string): string {
+  return `${siteUrl.replace(/\/+$/, '')}/api/og/post/${encodeURIComponent(id)}`;
 }
 
 const TITLE_LINE_MAX = 70;
@@ -94,6 +103,7 @@ export function buildPostMetadata(post: PostPreviewSource | null, siteUrl: strin
   const url = postUrl(siteUrl, post.id);
   const { title, description } = postPreview(post);
   const author = post.authorName.trim() || post.authorUsername || undefined;
+  const images = [{ url: postCardUrl(siteUrl, post.id), ...OG_SIZE, alt: title }];
 
   return {
     title,
@@ -105,13 +115,15 @@ export function buildPostMetadata(post: PostPreviewSource | null, siteUrl: strin
       siteName: APP_NAME,
       title,
       description,
+      images,
       ...(post.publishedAt ? { publishedTime: post.publishedAt } : {}),
       ...(author ? { authors: [author] } : {}),
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
+      images,
     },
   };
 }

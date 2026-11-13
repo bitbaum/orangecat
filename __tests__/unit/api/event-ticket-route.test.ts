@@ -14,6 +14,7 @@ const claimGuest = vi.fn();
 const cancelGuest = vi.fn();
 const cancelFree = vi.fn();
 const notify = vi.fn();
+const notifyHost = vi.fn();
 
 vi.mock('@/lib/api/authHelpers', () => ({ getAuthenticatedUserId: () => getUser() }));
 // next/server is aliased to a stub suite-wide (vitest.config.ts), so the
@@ -31,6 +32,7 @@ vi.mock('@/lib/rate-limit', () => ({
 }));
 vi.mock('@/domain/events/notify', () => ({
   notifyTicketIssued: (...a: unknown[]) => notify(...a),
+  notifyHostTicketTaken: (...a: unknown[]) => notifyHost(...a),
 }));
 vi.mock('@/utils/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 vi.mock('@/domain/events/tickets', async importOriginal => {
@@ -82,6 +84,8 @@ describe('a guest ticket', () => {
     expect(claimGuest).toHaveBeenCalledWith(expect.anything(), 'ev-1', 'Anna');
     expect(res.data.ticketPath).toBe('/events/ev-1/ticket/c0de');
     expect(notify).not.toHaveBeenCalled();
+    // The host is told, by the name the guest gave.
+    expect(notifyHost).toHaveBeenCalledWith({ eventId: 'ev-1', guestName: 'Anna' });
   });
 
   it('refuses a missing or too-long name before touching the database', async () => {
@@ -108,6 +112,7 @@ describe('a guest ticket', () => {
     };
     expect(res.status).toBe(409);
     expect(res.message).toBe('This event is full');
+    expect(notifyHost).not.toHaveBeenCalled();
   });
 
   it('is given back with its code, and not without one', async () => {
@@ -130,6 +135,7 @@ describe('a signed-in ticket is unchanged', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ eventId: 'ev-1', userId: 'u-1' })
     );
+    expect(notifyHost).toHaveBeenCalledWith({ eventId: 'ev-1', userId: 'u-1' });
   });
 
   it('gives back the person’s own ticket', async () => {

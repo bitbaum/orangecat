@@ -90,12 +90,12 @@ export default function ResearchDashboard() {
 
   return (
     <EntityListShell
-      title="DeSci Research"
+      title={ENTITY_REGISTRY.research.namePlural}
       description="Independent research with decentralized funding"
       headerActions={
         <Button onClick={() => router.push(`${ROUTES.DASHBOARD.RESEARCH}/create`)}>
           <Plus className="w-4 h-4 mr-2" />
-          Create Research
+          Create {ENTITY_REGISTRY.research.name}
         </Button>
       }
     >
@@ -197,7 +197,7 @@ export default function ResearchDashboard() {
           </p>
           <Button onClick={() => router.push(`${ROUTES.DASHBOARD.RESEARCH}/create`)}>
             <Plus className="w-4 h-4 mr-2" />
-            Create Research
+            Create {ENTITY_REGISTRY.research.name}
           </Button>
         </div>
       ) : (

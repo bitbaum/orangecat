@@ -11,6 +11,8 @@ import { WalletVisibilityToggle } from '@/components/wallets/WalletVisibilityTog
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import type { EntityType } from '@/config/entity-registry';
 import { DeleteEntityButton } from '@/components/entity/DeleteEntityButton';
+import { TakeOfflineButton } from '@/components/entity/TakeOfflineButton';
+import { canDeleteInStatus } from '@/config/entity-status';
 import { PublishNowButton } from './PublishNowButton';
 
 export function PublicEntityOwnerBar({
@@ -55,6 +57,13 @@ export function PublicEntityOwnerBar({
             {isOwnerPreview && entityStatus === 'draft' && (
               <PublishNowButton entityType={entityType} entityId={entityId} />
             )}
+            {entityStatus && !canDeleteInStatus(entityType, entityStatus) && (
+              <TakeOfflineButton
+                entityType={entityType}
+                entityId={entityId}
+                entityStatus={entityStatus}
+              />
+            )}
             {ownerActions}
             <Button href={editHref} variant="outline" size="sm" className="gap-1.5">
               <Pencil className="h-3.5 w-3.5" />
@@ -64,6 +73,7 @@ export function PublicEntityOwnerBar({
               entityType={entityType}
               entityId={entityId}
               entityTitle={entityTitle}
+              entityStatus={entityStatus}
             />
           </div>
         </div>

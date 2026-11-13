@@ -20,7 +20,7 @@ import { Inbox, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
+import { MoneyLoading, MoneyPage, MoneyPrompt } from '@/components/money/MoneyPage';
 import { MoneyActionBar } from '@/components/money/MoneyActionBar';
 import { isAmountInRange } from '@/components/money/amount-draft';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
@@ -34,6 +34,7 @@ import { requestAmountLabel } from '@/components/requests/request-amount';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { usePeopleFinder } from '@/hooks/usePeopleFinder';
+import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
 import {
   createRequest,
   closeRequest,
@@ -42,6 +43,7 @@ import {
 } from '@/services/payment-requests/request-client';
 import { REQUEST_COPY, REQUEST_NOTE_MAX_LENGTH } from '@/config/payment-requests';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
+import { ROUTES } from '@/config/routes';
 import { haptic } from '@/lib/haptics';
 
 interface SentRequest {
@@ -54,6 +56,8 @@ interface SentRequest {
 export function RequestsScreen() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const { formatAmountBtc } = useDisplayCurrency();
+  // The same check a payment to them runs (the server refuses too).
+  const receive = useSellerPaymentMethods(user?.id ?? null);
 
   const [loading, setLoading] = useState(true);
   const [incoming, setIncoming] = useState<PaymentRequestRow[]>([]);
@@ -141,7 +145,7 @@ export function RequestsScreen() {
     [incoming, outgoing]
   );
 
-  if (authLoading || loading) {
+  if (authLoading || loading || receive.loading) {
     return (
       <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle}>
         <MoneyLoading />
@@ -170,73 +174,81 @@ export function RequestsScreen() {
 
   return (
     <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle}>
-      <div className="space-y-4">
-        <Input
-          label={REQUEST_COPY.payerLabel}
-          value={payer}
-          onChange={e => {
-            setPayer(e.target.value);
-            setPicked(false);
-          }}
-          placeholder={REQUEST_COPY.payerPlaceholder}
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          className="min-h-11"
-        />
-
-        {!picked && (
-          <PeoplePicker
-            people={people}
-            onPick={handle => {
-              setPayer(handle);
-              setPicked(true);
-            }}
-          />
-        )}
-
-        {!listAnswers && <PayerStatus check={payerCheck} handle={payer} />}
-
-        {isRequestablePayer(payerCheck) && (
-          <>
-            <AmountField
-              value={amount}
-              onChange={setAmount}
-              onEntry={setEntry}
-              minBtc={PAY_MIN_BTC}
-              maxBtc={PAY_MAX_BTC}
-            />
-            <OptionalNoteField
-              value={note}
-              onChange={setNote}
-              maxLength={REQUEST_NOTE_MAX_LENGTH}
-              label={REQUEST_COPY.noteLabel}
-              addLabel={REQUEST_COPY.noteAdd}
-              placeholder={REQUEST_COPY.notePlaceholder}
-            />
-          </>
-        )}
-
-        {error && <p className="text-sm text-status-negative">{error}</p>}
-        <p className="text-center text-xs text-fg-tertiary">{REQUEST_COPY.disclaimer}</p>
-
-        {/* Where Send's button is: kept reachable above the tab bar on a phone. */}
-        <MoneyActionBar>
-          <Button
-            variant="primary"
-            className="w-full"
-            onClick={handleSubmit}
-            disabled={
-              submitting ||
-              !isRequestablePayer(payerCheck) ||
-              !isAmountInRange(amount, PAY_MIN_BTC, PAY_MAX_BTC)
-            }
-            isLoading={submitting}
-          >
-            {submitting ? REQUEST_COPY.submitting : REQUEST_COPY.submit}
+      {!receive.hasWallet ? (
+        <MoneyPrompt heading={REQUEST_COPY.noWalletTitle} body={REQUEST_COPY.noWalletBody}>
+          <Button variant="primary" className="w-full" href={ROUTES.RECEIVE}>
+            {REQUEST_COPY.noWalletCta}
           </Button>
-        </MoneyActionBar>
-      </div>
+        </MoneyPrompt>
+      ) : (
+        <div className="space-y-4">
+          <Input
+            label={REQUEST_COPY.payerLabel}
+            value={payer}
+            onChange={e => {
+              setPayer(e.target.value);
+              setPicked(false);
+            }}
+            placeholder={REQUEST_COPY.payerPlaceholder}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            className="min-h-11"
+          />
+
+          {!picked && (
+            <PeoplePicker
+              people={people}
+              onPick={handle => {
+                setPayer(handle);
+                setPicked(true);
+              }}
+            />
+          )}
+
+          {!listAnswers && <PayerStatus check={payerCheck} handle={payer} />}
+
+          {isRequestablePayer(payerCheck) && (
+            <>
+              <AmountField
+                value={amount}
+                onChange={setAmount}
+                onEntry={setEntry}
+                minBtc={PAY_MIN_BTC}
+                maxBtc={PAY_MAX_BTC}
+              />
+              <OptionalNoteField
+                value={note}
+                onChange={setNote}
+                maxLength={REQUEST_NOTE_MAX_LENGTH}
+                label={REQUEST_COPY.noteLabel}
+                addLabel={REQUEST_COPY.noteAdd}
+                placeholder={REQUEST_COPY.notePlaceholder}
+              />
+            </>
+          )}
+
+          {error && <p className="text-sm text-status-negative">{error}</p>}
+          <p className="text-center text-xs text-fg-tertiary">{REQUEST_COPY.disclaimer}</p>
+
+          {/* Where Send's button is: kept reachable above the tab bar on a phone. */}
+          <MoneyActionBar>
+            <Button
+              variant="primary"
+              className="w-full"
+              onClick={handleSubmit}
+              disabled={
+                submitting ||
+                !isRequestablePayer(payerCheck) ||
+                !isAmountInRange(amount, PAY_MIN_BTC, PAY_MAX_BTC)
+              }
+              isLoading={submitting}
+            >
+              {submitting ? REQUEST_COPY.submitting : REQUEST_COPY.submit}
+            </Button>
+          </MoneyActionBar>
+        </div>
+      )}
 
       <RequestList
         title={REQUEST_COPY.incomingTitle}

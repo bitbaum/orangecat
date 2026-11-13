@@ -33,4 +33,4 @@ export const PUBLIC_VISIBILITY: Partial<Record<EntityType, VisibilityFilter>> = 
  * {{ENTITY_VISIBILITY_SUMMARY}}.
  */
 export const ENTITY_VISIBILITY_SUMMARY =
-  'While a project, product, service or other listing is a draft, only you can see it. Once you publish it, it is public: anyone can open it, and you choose whether it also appears on your profile. Some kinds, such as loans, companions, wishlists, circles and groups, have their own visibility setting. Posts and articles can be public, followers-only or private.';
+  'While a project, product, service or other listing is a draft, only you can see it. Once you publish it, it is public: anyone can open it, and you choose whether it also appears on your profile. Some kinds, such as loans, bots, wishlists, circles and organizations, have their own visibility setting. Posts and articles can be public, followers-only or private.';

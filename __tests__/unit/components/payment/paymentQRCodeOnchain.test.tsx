@@ -11,8 +11,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PaymentQRCode } from '@/components/payment/PaymentQRCode';
 
+const viewer = { currency: 'CHF' };
 vi.mock('@/hooks/useDisplayCurrency', () => ({
-  useDisplayCurrency: () => ({ formatAmountBtc: () => 'CHF 9.98' }),
+  useDisplayCurrency: () => ({
+    formatAmountBtc: () => 'CHF 9.98',
+    displayCurrency: viewer.currency,
+  }),
 }));
 
 const ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
@@ -23,6 +27,7 @@ const BOLT11 =
 const writeText = vi.fn().mockResolvedValue(undefined);
 
 beforeEach(() => {
+  viewer.currency = 'CHF';
   writeText.mockClear();
   Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
 });
@@ -56,8 +61,21 @@ describe('PaymentQRCode — on-chain', () => {
   });
 });
 
-describe('PaymentQRCode — Lightning is unchanged', () => {
-  it('copies the invoice and shows no address or BTC line', async () => {
+describe('PaymentQRCode — Lightning', () => {
+  it('shows the BTC the wallet will show under the franc headline', () => {
+    render(<PaymentQRCode qrData={BOLT11} methodLabel="Lightning" amountBtc={0.0025} />);
+    expect(screen.getByText('CHF 9.98')).toBeTruthy();
+    expect(screen.getByText(/0\.0025\d* BTC/)).toBeTruthy();
+    expect(screen.queryByText(/must arrive/)).toBeNull();
+  });
+
+  it('does not repeat the BTC for a viewer who reads BTC', () => {
+    viewer.currency = 'BTC';
+    render(<PaymentQRCode qrData={BOLT11} methodLabel="Lightning" amountBtc={0.0025} />);
+    expect(screen.queryByText(/0\.0025\d* BTC/)).toBeNull();
+  });
+
+  it('copies the invoice and shows no address', async () => {
     render(
       <PaymentQRCode
         qrData={BOLT11}

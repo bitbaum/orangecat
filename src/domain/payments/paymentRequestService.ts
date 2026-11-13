@@ -19,6 +19,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
+import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
 import { buildPayUrl } from '@/config/pay';
 import { SITE_URL } from '@/config/brand';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
@@ -131,6 +132,19 @@ export async function createPaymentRequest(
 
   if (!Number.isFinite(amountBtc) || amountBtc < PAY_MIN_BTC || amountBtc > PAY_MAX_BTC) {
     return fail('invalid_amount', 'Enter an amount we can actually request.');
+  }
+
+  // The same resolution a payment to the requester runs: a wallet that the
+  // pay page could not pay into does not count.
+  const requesterWallet = await resolveUserWallet(
+    getAdminClient() as unknown as SupabaseClient,
+    requesterId
+  ).catch(() => null);
+  if (!requesterWallet) {
+    return fail(
+      'requester_cannot_receive',
+      'Add a wallet to get paid first. A request is paid into it, so without one there is nowhere for the money to land.'
+    );
   }
 
   const username = payerUsername.trim().replace(/^@/, '');

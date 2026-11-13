@@ -101,6 +101,8 @@ export function FormField({
             onChange={onChange}
             onCurrencyChange={onCurrencyChange}
             onFocus={onFocus}
+            onBlur={onBlur}
+            invalid={Boolean(error)}
             placeholder={placeholder}
             disabled={disabled}
             defaultCurrency={userCurrency}

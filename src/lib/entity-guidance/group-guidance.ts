@@ -40,7 +40,7 @@ type GroupFieldType =
 export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceContent> = {
   name: {
     icon: React.createElement(Users, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Group Name',
+    title: `${ENTITY_REGISTRY.group.name} Name`,
     description: "Choose a clear, memorable name that represents your group's purpose and values.",
     tips: [
       'Keep it simple and easy to remember',
@@ -77,7 +77,7 @@ export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceC
   },
   label: {
     icon: React.createElement(Tag, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Group Label',
+    title: `${ENTITY_REGISTRY.group.name} Label`,
     description:
       "Labels help categorize your group and set smart defaults. They don't restrict capabilities - you can enable any features regardless of label.",
     tips: [

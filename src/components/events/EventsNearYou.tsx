@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * "What's on near me tonight?" — upcoming public events around the visitor,
- * nearest first, filterable by the music. Uses the browser's location when
- * granted, or a place the visitor types (geocoded by OpenStreetMap); never
+ * "What's on near me tonight?" — upcoming public events, filterable by the
+ * music. It opens on every upcoming public event (online first, then by
+ * date); the browser's location, or a place the visitor types (geocoded by
+ * OpenStreetMap), narrows it to the ones around there, nearest first. Never
  * stores either.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import Link from 'next/link';
 import { eventZone, formatEventShort } from '@/domain/events/time';
@@ -19,6 +20,7 @@ import { MUSIC_GENRES } from '@/config/event-crew';
 import { formatCurrency } from '@/services/currency';
 import { searchNominatim } from '@/lib/nominatim';
 import type { NearbyEvent } from '@/domain/events/nearby';
+import type { UpcomingEvent } from '@/domain/events/upcoming';
 
 type Point = { lat: number; lng: number; label: string };
 
@@ -33,24 +35,35 @@ const GEO_ERRORS: Record<number, string> = {
   3: 'Finding your location took too long. Try again, or type a place.',
 };
 
+/** "3 km" around a point; "Online" for an online event with no point. */
+function distanceLabel(ev: NearbyEvent | UpcomingEvent): string {
+  if (typeof ev.distance_km === 'number') {
+    return `${ev.distance_km < 1 ? '<1' : Math.round(ev.distance_km)} km`;
+  }
+  return 'is_online' in ev && ev.is_online ? 'Online' : '';
+}
+
 export default function EventsNearYou() {
   const [point, setPoint] = useState<Point | null>(null);
   const [place, setPlace] = useState('');
   const [genre, setGenre] = useState('');
   const [radius, setRadius] = useState<number>(25);
-  const [events, setEvents] = useState<NearbyEvent[] | null>(null);
+  const [events, setEvents] = useState<Array<NearbyEvent | UpcomingEvent> | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function search(at: Point, nextGenre = genre, nextRadius = radius) {
+  /** No point: every upcoming public event. A point narrows to around it. */
+  async function search(at: Point | null, nextGenre = genre, nextRadius = radius) {
     setPoint(at);
     setLoading(true);
     setStatus(null);
     try {
       const params = new URLSearchParams({
-        lat: String(at.lat),
-        lng: String(at.lng),
-        radius_km: String(nextRadius),
+        ...(at && {
+          lat: String(at.lat),
+          lng: String(at.lng),
+          radius_km: String(nextRadius),
+        }),
         ...(nextGenre && { genre: nextGenre }),
       });
       const res = await fetch(`${API_ROUTES.EVENTS.NEARBY}?${params}`);
@@ -58,13 +71,23 @@ export default function EventsNearYou() {
       if (!res.ok) {
         throw new Error(json?.error?.message || 'Search failed');
       }
-      setEvents(json.data.events as NearbyEvent[]);
+      setEvents(json.data.events as Array<NearbyEvent | UpcomingEvent>);
     } catch {
-      setStatus('Could not load events nearby. Try again in a moment.');
+      setStatus(
+        at
+          ? 'Could not load events nearby. Try again in a moment.'
+          : 'Could not load upcoming events. Try again in a moment.'
+      );
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    void search(null);
+    // The opening list, once; later searches are the visitor's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -92,9 +115,7 @@ export default function EventsNearYou() {
   const refilter = (nextGenre: string, nextRadius: number) => {
     setGenre(nextGenre);
     setRadius(nextRadius);
-    if (point) {
-      search(point, nextGenre, nextRadius);
-    }
+    search(point, nextGenre, nextRadius);
   };
 
   return (
@@ -149,7 +170,36 @@ export default function EventsNearYou() {
 
       {status && <p className="text-sm text-fg-secondary">{status}</p>}
 
-      {events && events.length === 0 && (
+      {events && events.length > 0 && (
+        <p className="mb-0 text-sm text-fg-secondary">
+          {point ? (
+            <>
+              Near {point.label}, within {radius} km.{' '}
+              <button
+                type="button"
+                onClick={() => search(null)}
+                className="min-h-11 underline underline-offset-4"
+              >
+                Show everywhere
+              </button>
+            </>
+          ) : (
+            'Coming up, online first. Near me or a place narrows it.'
+          )}
+        </p>
+      )}
+
+      {events && events.length === 0 && !point && (
+        <p className="text-sm text-fg-secondary">
+          Nothing coming up{genre ? ` playing ${genre}` : ''} yet.{' '}
+          <Link href={ENTITY_REGISTRY.event.createPath} className="underline underline-offset-4">
+            Host the first one
+          </Link>
+          .
+        </p>
+      )}
+
+      {events && events.length === 0 && point && (
         <p className="text-sm text-fg-secondary">
           Nothing on within {radius} km{genre ? ` playing ${genre}` : ''} yet.{' '}
           {radius < RADII_KM[RADII_KM.length - 1] ? 'Widen the distance, or ' : ''}
@@ -172,9 +222,7 @@ export default function EventsNearYou() {
                   <span className="min-w-0 break-words font-medium text-fg-primary">
                     {ev.title}
                   </span>
-                  <span className="shrink-0 text-sm text-fg-secondary">
-                    {ev.distance_km < 1 ? '<1' : Math.round(ev.distance_km)} km
-                  </span>
+                  <span className="shrink-0 text-sm text-fg-secondary">{distanceLabel(ev)}</span>
                 </div>
                 <div className="text-sm text-fg-secondary">
                   {formatEventShort(ev.start_date, eventZone(ev))}

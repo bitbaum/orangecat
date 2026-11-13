@@ -47,7 +47,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       new Set(assistantIds).size !== assistantIds.length ||
       new Set(fleetSlugs).size !== fleetSlugs.length
     ) {
-      return apiBadRequest('A companion can sit in a group chat once');
+      return apiBadRequest('A bot can sit in a group chat once');
     }
     // Only companions the person may talk to — their own, or public and active
     // — can be seated; RLS answers that question on the read.
@@ -58,7 +58,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
         .in('id', assistantIds);
       const seen = new Set(((data ?? []) as { id: string }[]).map(r => r.id));
       if (assistantIds.some(id => !seen.has(id))) {
-        return apiBadRequest('One of these companions is not available to you');
+        return apiBadRequest('One of these bots is not available to you');
       }
     }
     const room = await createRoom(supabase, user.id, {

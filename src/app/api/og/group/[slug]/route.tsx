@@ -16,6 +16,7 @@
 
 import { ImageResponse } from 'next/og';
 import { createServerClient } from '@/lib/supabase/server';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { APP_NAME, APP_KICKER } from '@/config/brand';
 import { OG_SIZE, OG_COLOR, Avatar, BrandFooter } from '@/lib/og/branding';
@@ -81,7 +82,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
               textTransform: 'uppercase',
             }}
           >
-            Group
+            {ENTITY_REGISTRY.group.name}
           </span>
           <span
             style={{
