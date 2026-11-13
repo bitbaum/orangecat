@@ -111,13 +111,23 @@ export function buildShelf(hits: PublicHit[], counts: TypeCounts) {
   };
 }
 
-// strict: a failed read throws to discover/error.tsx (Try again) instead of
-// being cached for two minutes as an empty shelf.
-const cachedCounts = unstable_cache(
+// strict: a failed read throws instead of being cached for two minutes as
+// zero. The listings themselves go to discover/error.tsx (Try again); the
+// counts only decorate the chips, so a failed count is caught below and the
+// page draws without numbers rather than not at all.
+const cachedCountsStrict = unstable_cache(
   () => countPublic(getAdminClient(), { strict: true }),
   ['discover-counts'],
   { revalidate: 120 }
 );
+
+async function cachedCounts(): Promise<TypeCounts> {
+  try {
+    return await cachedCountsStrict();
+  } catch {
+    return {};
+  }
+}
 
 const cachedShelfHits = unstable_cache(
   async () =>

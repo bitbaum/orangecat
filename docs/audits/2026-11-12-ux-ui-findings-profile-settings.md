@@ -4,12 +4,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### profile-settings#0 · high · Cat permission rows show the model's tool instructions instead of words for the person
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard/cat/permissions, /dashboard/cat/settings#can-do (both, both themes)
 - **What a person meets:** The person deciding whether Cat may touch their wallet reads instructions written for the model, about 'the user', with internal tool names. On the one page that exists to answer 'what am I allowing', a non-technical person cannot tell.
 - **Cause:** src/components/cat-settings/permissions/CategoryRow.tsx:44 and src/app/api/cat/permissions/route.ts:62; single `description` field at src/config/cat-actions.ts:74-88; RISK_COLORS at cat-actions.ts:2431-2435 (only consumer: CategoryRow.tsx:27).
 - **Fix:** Paths under /workspace/orangecat. (1) src/config/cat-actions.ts:74-88: add OPTIONAL `summary?: string` (optional so INVESTOR_ROOM_ACTIONS in cat-actions-room.ts still compiles); leave `description` untouched, it is the model's text and **tests**/unit/cat/action-disambiguation.test.ts depends on it. (2) src/app/api/cat/permissions/route.ts:62: `description: a.summary ?? a.description`. (3) Write summaries first for every riskLevel 'high' action and the 21 flagged ones: second person, one sentence, at most 90 characters, e.g. connect_wallet 'Save the wallet address you paste, so people can pay you.' (4) New test **tests**/unit/cat/action-summaries.test.ts (beside the other registry tests, not in unit/config): every enabled high-risk action has a summary; no summary matches /[a-z]+_[a-z]+/ or 'the user', or contains NOT, NEVER, ALWAYS, ONLY, MUST, INSTEAD or RECEIVE in capitals. Do not …
 
 ### profile-settings#1 · high · A brand-new account is told Payments is on ('Send Bitcoin and fund projects') and that something high-risk is enabled
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /dashboard/cat/permissions, /dashboard/cat/settings#can-do (both, both themes)
 - **What a person meets:** Before doing anything, a newcomer reads that their Cat may send Bitcoin and that a high-risk action is on. What is actually allowed (saving a wallet they paste and explaining a transaction, both with confirmation) is hidden behind a 28px chevron. Switching Payments off and on again grants all eight payment actions, including Send Payment.
@@ -18,6 +22,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** The proposed renames break the pinned copy in **tests**/unit/cat/ai-error-contract.test.ts and produce ungrammatical labels (every label must say what it means).
 
 ### profile-settings#2 · high · Share sheet on a phone: the 'Share via…' label is white on near-white in dark, and the sheet has two close buttons
+
+**Status:** Fixed (fourth pull request).
 
 Status: Partly (#1634): the label is readable; the two close buttons are open.
 
@@ -28,6 +34,8 @@ Status: Partly (#1634): the label is readable; the two close buttons are open.
 
 ### profile-settings#4 · high · Settings does not recognise an account with no email: 'the email associated with your account' sits above an empty field
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /settings, /profile?tab=info (both, both themes)
 - **What a person meets:** The fastest way into OrangeCat creates an account that lives in one browser. The one page that can make it safe never says 'you have no email yet, add one', so the newcomer most at risk of losing the account gets copy written for someone else and status rows that read as broken.
 - **Cause:** src/app/(authenticated)/settings/SettingsEmailSection.tsx:17-21 and :38-41; src/app/(authenticated)/settings/page.tsx:71-79; src/components/auth/SignInMethodsCard.tsx:110 and :160-164; src/components/profile/ProfileDetailsCard.tsx:186; src/components/profile/ProfileInfoTab.tsx:95-99.
@@ -35,12 +43,16 @@ Status: Partly (#1634): the label is readable; the two close buttons are open.
 
 ### profile-settings#6 · high · Edit profile on a phone: no field in the first screen, Save 3,771px down and not pinned
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard/info/edit (phone, both themes)
 - **What a person meets:** Someone who came to change their name scrolls a full screen to reach the field and about four more to reach Save, with nothing on the way saying the change is unsaved. View and edit do not look like the same object.
 - **Cause:** src/app/(authenticated)/dashboard/info/edit/page.tsx:44-71; src/components/profile/components/ProfileFormActions.tsx:28-47; src/components/profile/ModernProfileEditor.tsx (inline wrapper `overflow-hidden`, and :63); src/components/profile/hooks/useProfileEditor.ts:121-126; src/app/(authenticated)/dashboard/info/edit/profile-completion.ts:72-78.
 - **Fix:** Paths under /workspace/orangecat. (1) page.tsx: replace :42-71 with `&lt;EntityListShell title="Edit profile" description="Update your profile details. This information will be visible on your public profile." breadcrumbs={[{ label: 'Profile', href: ROUTES.PROFILE.SELF }, { label: 'Edit profile' }]}>`. (2) ProfileMobileSupport: keep the help button and the guidance sheet where they are; move the progress block (:31-59) below the form grid and collapse it to `&lt;button type="button" aria-expanded className="flex min-h-11 w-full items-center justify-between ...">Profile 9% complete: see what is missing&lt;/button>`; bar `bg-fg-primary`. (3) ModernProfileEditor inline wrapper: `overflow-hidden` becomes `overflow-clip` (clip does not create a scroll container, so sticky works). (4) ProfileFormActions, inline variant only: container `sticky bottom-[var(--mobile-nav-clearance)] z-10 -mx-6 …
 
 ### profile-settings#5 · medium · Own profile on first run: the Overview panel is blank and the only filled button publishes an empty card
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /profile, /dashboard/info, /profiles/[username] (owner view) (both, both themes)
 - **What a person meets:** The page a newcomer opens to see how they look offers one prominent action that does nothing useful, then a void. Nothing says what to add first (a way to be paid, a bio, a first project), and the tab row advertises ten empty sections.
@@ -50,12 +62,16 @@ Status: Partly (#1634): the label is readable; the two close buttons are open.
 
 ### profile-settings#7 · medium · Permission presets apply on one tap, replace every individual choice, and never show which one is active
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard/cat/permissions, /dashboard/cat/settings#can-do (both, both themes)
 - **What a person meets:** On a phone these are three full-width cards in the scroll path of Cat settings. A tap to find out what 'Creator' means silently rewrites up to 70 per-action choices; nothing confirms what changed and nothing shows which preset the account is on.
 - **Cause:** src/components/cat-settings/permissions/PermissionPresets.tsx:16-70; src/components/cat-settings/permissions/useCatPermissionsData.ts:54-109 and :149.
 - **Fix:** Paths under /workspace/orangecat. PermissionPresets.tsx: one `&lt;div role="radiogroup" aria-label="Preset" className="grid grid-cols-2 gap-3 sm:grid-cols-4">` with four `&lt;button type="button" role="radio" aria-checked>` cells in the order Off, Minimal, Creator, Power; each `min-h-11 rounded-md border p-3 text-left`, selected `border-fg-primary bg-surface-raised`, others `border-default hover:bg-surface-raised`. Drop the green and amber shield icons (decoration). Pass `summary.categories` in; preset p is active when every category has enabledActionCount === (presetAllows(p, category) ? actionCount : 0). When none matches, no cell is checked and a line under the grid reads `Your own mix: {enabledActions} of {totalActions} actions on`. A tap on a cell that is not active opens ConfirmDialog (src/components/ui/ConfirmDialog.tsx): title `Switch to ${label}?`, description 'This replaces …
 
 ### profile-settings#8 · medium · Settings → Account is one 6,930px card titled 'Account & Security' holding 13 sections and three save behaviours
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /settings (both, both themes)
 - **What a person meets:** To change theme or currency on a phone a person scrolls 4,300 to 4,900px past passwords, two-factor, passkeys and Nostr inside a card called 'Account & Security'. Per-section buttons, a shared disabled button and instant apply on one page leave it unclear what has been saved.
@@ -64,12 +80,16 @@ Status: Partly (#1634): the label is readable; the two close buttons are open.
 
 ### profile-settings#9 · medium · Cat's spending caps must be typed as a Bitcoin decimal by people who see every other amount in CHF
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard/cat/permissions, /dashboard/cat/settings#can-do (both, both themes)
 - **What a person meets:** The one hard limit on what Cat can spend asks for a number like 0.0005. A person who thinks in francs cannot enter 'CHF 50 a day', so the cap stays empty, and empty means no cap.
 - **Cause:** src/components/cat-settings/permissions/SpendCapsCard.tsx:84-123.
 - **Fix:** Paths under /workspace/orangecat. SpendCapsCard.tsx: state becomes `number | null`. Stack the two caps (`grid grid-cols-1 gap-4`). For each: a visible `&lt;h4 className="text-sm font-medium text-fg-primary">` ('Most Cat may pay at once', 'Most Cat may pay in a day'), then `&lt;AmountField label=... value={cap ?? 0} onChange={btc => setCap(btc > 0 ? btc : null)} minBtc={PAY_MIN_BTC} maxBtc={PAY_MAX_BTC} />` (the bounds used at src/app/(public)/pay/[username]/PayPageClient.tsx:112-113), then a status line `&lt;p className="mb-0 text-sm text-fg-secondary">`: when null 'No cap. Cat may pay any amount you confirm.'; when set 'Stored in Bitcoin; the amount in your currency moves with the rate.' plus a `min-h-11` text button 'Remove cap' that sets null. Send the two state values in the existing POST body; keep 'Save caps' as the card's one button and the `dirty` check. Add a unit test for the …
 
 ### profile-settings#10 · medium · On/off rows come in five shapes; several have no name, a 20px target, or a label where ON means hidden
+
+**Status:** Fixed (fourth pull request).
 
 Status: Partly (#1634): shared switch, names and sizes; the five row shapes are open.
 
@@ -80,6 +100,8 @@ Status: Partly (#1634): shared switch, names and sizes; the five row shapes are 
 
 ### profile-settings#12 · medium · Orange marks the selected settings tab, the theme tick, profile progress, the civic sliders and a disabled button
 
+**Status:** Fixed (fourth pull request).
+
 Status: Partly (#1634): settings tab and theme tick; profile progress and the civic sliders are open.
 
 - **Where:** /settings, /settings/notifications, /settings/ai, /dashboard/info/edit, /dashboard/civic-split (both, both themes)
@@ -89,6 +111,8 @@ Status: Partly (#1634): settings tab and theme tick; profile progress and the ci
 - **Mind:** A hard gate on accent-warm would fail about 80 existing lines; the repo's own pattern for that case is a ratchet (check-type-scale.mjs).
 
 ### profile-settings#13 · medium · Edit profile: four of the eight 'How can others help?' options are cut off at 390px
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /dashboard/info/edit (phone, both themes)
 - **What a person meets:** The person is asked to pick up to five ways others can help and cannot read half of the choices; whatever they guess becomes a tag on their public profile.

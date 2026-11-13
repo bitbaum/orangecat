@@ -24,12 +24,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#4 · high · The auto-hiding header takes keyboard focus off-screen and leaves a 64px gap above the desktop sidebar
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /, /dashboard, /discover, every page with the header (both, both themes)
 - **What a person meets:** After any scroll, a keyboard user pressing Tab or Shift+Tab sends focus to up to eleven controls they cannot see (WCAG 2.4.7 and 2.4.11). On desktop the sidebar appears to hang in mid-air, and the global actions vanish on a screen with plenty of height.
 - **Cause:** src/hooks/useHeaderScroll.ts:64-68 hides the header on scroll-down at every width and nothing reveals it on focus; src/lib/ui/header-utils.ts:32 applies -translate-y-full; src/components/sidebar/Sidebar.tsx:129 pins the sidebar at top: 4rem whether or not the header is there.
 - **Fix:** src/hooks/useHeaderScroll.ts: (a) at the top of the effect add `if (!hideOnScrollDown) { setIsHidden(false); }` so a resize from phone to desktop cannot leave the header stuck hidden; (b) add `const reveal = useCallback(() => { if (hideTimeoutRef.current) { clearTimeout(hideTimeoutRef.current); hideTimeoutRef.current = null; } setIsHidden(false); }, [])` and return it. src/components/layout/Header.tsx: import useIsDesktop from '@/hooks/useMediaQuery'; line 56 becomes `const isDesktop = useIsDesktop(); const { isScrolled, isHidden, reveal } = useHeaderScroll({ hideOnScrollDown: !isDesktop });`; add onFocus={reveal} to the &lt;header> (React onFocus bubbles). html[data-header-hidden] keeps following isHidden, so .sticky-below-header (globals.css:1407-1430) stays correct.
 
 ### chrome#1 · medium · Header navigation: "Product" holds company pages, "Support" is a fundraising page, and one route has several names
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /, /pricing, /blog, /support, every public page (both, both themes)
 - **What a person meets:** A first-time visitor on desktop cannot get from the header to what the product does or what it costs without opening a menu named for something else. Someone who clicks Support for help lands on a request for money. Different labels for one page make people doubt they are in the same place.
@@ -39,6 +43,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#2 · medium · "Search or jump to" finds no public page, and for a visitor every default row leads to the sign-in form
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /, /discover, /pricing, /dashboard, every page with the header (both, both themes)
 - **What a person meets:** The search box sits in the middle of the header on every page and promises to jump. A visitor who types pricing, blog, docs or faq is told nothing matches and is offered a Cat they cannot use without an account. Pressing Enter on the empty palette sends them to a login form. It reads as broken.
 - **Cause:** src/components/search/command-palette-items.tsx:79-115 (no public pages, no auth flag on items) and src/components/search/CommandPalette.tsx:113-118 (same list whatever the auth state).
@@ -47,12 +53,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#5 · medium · Closing search, notifications or the Cat panel drops keyboard focus to the top of the page
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /, /dashboard, every page with the header (both, both themes)
 - **What a person meets:** The palette is a keyboard feature, and every use of it resets the person's place to the top of the page. Screen-reader users are not moved into the Cat panel when it opens and are left nowhere when it closes (WCAG 2.4.3).
 - **Cause:** Radix modal Dialog returns focus only to a Dialog.Trigger (it calls preventDefault, then focuses context.triggerRef, which is null here). These overlays are opened from outside state: src/components/search/palette-store.ts:19-25 with src/components/search/CommandPalette.tsx:134 (cmdk's Command.Dialog forwards no onCloseAutoFocus); src/components/notifications/NotificationCenter.tsx:51-52; src/components/ai-chat/GlobalCatLauncher.tsx:86-104 unmounts the launcher while open, and its aside at :114-116 has no focus …
 - **Fix:** palette-store.ts setPaletteOpen: keep `let returnTo: HTMLElement | null`; when opening store document.activeElement if it is an HTMLElement; when closing, after emit(), `const el = returnTo; returnTo = null; requestAnimationFrame(() => { if (el?.isConnected) el.focus(); })`. NotificationCenter.tsx: new prop returnFocusRef?: RefObject&lt;HTMLButtonElement | null>; on DialogContent add onCloseAutoFocus={e => { if (returnFocusRef?.current) { e.preventDefault(); returnFocusRef.current.focus(); } }} (the MobileCreateSheet.tsx:50-55 pattern); HeaderActions.tsx NotificationsButton takes buttonRef and passes it as ref to HeaderIconButton; Header.tsx creates the ref. GlobalCatLauncher.tsx: add launcherRef on the button and `const wasOpen = useRef(false); useEffect(() => { if (wasOpen.current && !open) launcherRef.current?.focus(); wasOpen.current = open; }, [open])` (the button is remounted on …
 
 ### chrome#7 · medium · A signed-out visitor on Discover gets the app's chrome: no site navigation, no footer, and Create as the loudest control
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /discover, /events, /loans, /investments, /jobs, public entity pages (both, both themes)
 - **What a person meets:** Someone browsing the public marketplace cannot reach How it works, Pricing or About without going back to the home page. The most prominent control invites them to create, then shows a sign-in form for an account they do not have. The white "+" competes with the orange Get Started.
@@ -62,6 +72,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#8 · medium · The bottom of the signed-in phone drawer is hidden under the tab bar, including its Close button
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard, /messages, /discover, every signed-in page below 1024px (phone, both themes)
 - **What a person meets:** The drawer's only labelled way to close is never visible, and the last item of any open section is cut by the tab bar. Settings lives in that last section, so the path to Settings ends under the bar.
 - **Cause:** src/components/sidebar/Sidebar.tsx:125 and :187; the bar is md:hidden at src/components/layout/MobileBottomNav.tsx:92.
@@ -69,12 +81,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#10 · medium · In light theme hover, open and selected states are invisible, and no button has a pressed state
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /, /dashboard, every page (both, both themes)
 - **What a person meets:** In light theme a keyboard user cannot tell which palette row Enter will open, and mouse users get no hover feedback in the header. On touch screens, where hover never fires, buttons give no response to a press in either theme.
 - **Cause:** src/app/globals.css:235-237 sets light --surface-page to 97% and --surface-raised to 96% (dark is 7% and 14%), and every chrome state paints bg-surface-raised on the page surface: src/components/layout/HeaderIconButton.tsx:31-35, src/components/layout/HeaderNavigation.tsx:194 and :264, src/components/search/PaletteRows.tsx:78. src/config/design-system.ts:46-56 has no pressed styles.
 - **Fix:** Use the existing surface-overlay token for states that sit on the page. PaletteRows.tsx:78: 'aria-selected:bg-surface-overlay' (light 1.07:1, dark 1.33:1 against the page). HeaderIconButton.tsx:32 ghost 'text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay'; :36 active ghost 'bg-surface-overlay text-fg-primary'. HeaderNavigation.tsx:193-194 and :262-264: bg-surface-overlay / hover:bg-surface-overlay, and treat the open dropdown as active: `(hasActiveChild || isOpen)`. Rows inside the dropdown panel sit on surface-base and stay on surface-raised (1.09:1 light). design-system.ts:46-56: primary add 'active:bg-muted-strong'; secondary 'bg-surface-raised text-fg-primary hover:bg-surface-overlay active:bg-surface-overlay'; ghost 'text-fg-primary hover:bg-surface-overlay active:bg-surface-overlay'; outline '… hover:bg-surface-overlay active:bg-surface-overlay'; accent add …
 
 ### chrome#11 · medium · Notifications panel shows an error and "No notifications found" together, and its filter row runs off a phone screen
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /dashboard, every signed-in page (both, both themes)
 - **What a person meets:** When loading fails, the panel tells the person they have no notifications, which may be false. The error names no cause and offers only a small ghost "Retry". On a phone the fifth filter is cut off and all five are under the 44px rule.
@@ -84,6 +100,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#12 · low · One destination, several names: Money / Receive, Create / Post, Home / Dashboard, My things / My Projects
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /dashboard, /messages, /receive, every signed-in page (both, both themes)
 - **What a person meets:** People learn a place by its name. A tab that changes its word between pages and a menu that renames the sidebar's destinations make the same app read as three. Settings, the thing a gear promises, is not behind the gear.
 - **Cause:** src/config/navigation.ts:266 and :440; src/components/ui/UserProfileDropdown.tsx:40-59. Not MobileBottomNav.tsx:129.
@@ -91,6 +109,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** The proposed fixed 'Create' label conflicts with fleet 'Every label says what happens when it is tapped'.
 
 ### chrome#13 · low · The feedback tab is a 24px-wide black sliver on a near-black page, marked only with a spiral
+
+**Status:** Open: the feedback tab is drawn by the Loki widget; the fix belongs in bitbaum/loki.
 
 - **Where:** /, /discover, every page on production (both, dark theme)
 - **What a person meets:** The control meant for reporting a problem is the hardest one on the page to see and to hit. The spiral is another product's logo and does not say feedback, and 24px is about half the 44px target.

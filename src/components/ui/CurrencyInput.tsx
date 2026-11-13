@@ -98,6 +98,7 @@ export function CurrencyInput({
 
           {allowCurrencySwitch ? (
             <select
+              aria-label={label ? `${label} currency` : 'Currency'}
               value={inputCurrency}
               onChange={e => handleCurrencyChange(e.target.value as Currency)}
               disabled={disabled}

@@ -9,6 +9,15 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-13
+
+- **Signing up is one clear step.** Sign-in and sign-up each have one highlighted button, a mistake shows under the field it belongs to, and wherever you sign in from you land in the same place: the Cat if you are new, your dashboard if you are back.
+- **The phone app is easier to move around.** The menu closes when you pick a page and stays closed after a reload, Create lists what you can make in plain words with the page's own kind first, and the money tab is called "Money" everywhere.
+- **Paying and getting paid say what is happening.** The pay page shows who you are paying, buttons wait until the amount is within the limits, and Send takes you straight to connecting a wallet when you need one.
+- **Listings always offer a next step.** When the owner has not added a wallet yet, you can ask them how to pay; prices and the book button sit at the top of the page.
+- **The Cat's permissions read like sentences.** Each row says what the Cat may do in plain words, a new account is no longer shown payments as on, and spending limits are entered in your own currency.
+- **Settings are easier to find.** Account is split into sections, and currency, date format and theme have their own Preferences page.
+
 ## 2026-11-12
 
 - **Your tasks are yours.** A task is seen and changed by the person who made it and by the person it was asked of; before, every signed-in account could see and complete it. Asking someone to do a task now means picking that person, instead of notifying every account on OrangeCat.
