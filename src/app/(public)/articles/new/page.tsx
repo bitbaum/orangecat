@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useAuthRedirects';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
@@ -17,7 +17,9 @@ type Import =
 
 /**
  * `?import=<fleet article JSON url>` seeds the composer with an article from a
- * sister product (BiasLens's "Post on OrangeCat"). The server proxy checks the
+ * sister product (BiasLens's "Post on OrangeCat"); `?project=` chooses one of
+ * the writer's projects to post it on too. The link contract is documented once,
+ * in `src/services/articles/import-source.ts`. The server proxy checks the
  * host; this only waits for the answer.
  */
 function useImport(url: string | null): Import {
@@ -78,8 +80,15 @@ function Spinner() {
 function NewArticle() {
   const { user, isLoading } = useRequireAuth();
   const params = useSearchParams();
+  const pathname = usePathname();
   const importUrl = params.get('import');
+  const projectParam = params.get('project');
   const imported = useImport(importUrl);
+  // The link's context (what to import, which project) survives signing in.
+  const query = params.toString();
+  const signInHref = `${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(
+    query ? `${pathname}?${query}` : pathname
+  )}`;
 
   if (isLoading || imported.state === 'loading') {
     return <Spinner />;
@@ -89,7 +98,7 @@ function NewArticle() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface-page px-6 text-center">
         <p className="text-fg-secondary">Sign in to write an article.</p>
-        <Button href={`${ROUTES.AUTH}?mode=login`} variant="accent">
+        <Button href={signInHref} variant="accent">
           Sign in
         </Button>
       </div>
@@ -107,9 +116,10 @@ function NewArticle() {
         </p>
       )}
       <ArticleComposer
-        key={`${user.id}:${importUrl ?? 'new'}`}
+        key={`${user.id}:${importUrl ?? 'new'}:${projectParam ?? ''}`}
         user={{ id: user.id }}
         prefill={imported.state === 'ready' ? imported.prefill : undefined}
+        projectParam={projectParam}
       />
     </>
   );
