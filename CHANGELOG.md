@@ -15,7 +15,7 @@ to the map, sub-bullets stay here for the human reader.
 - **A shared link shows the page you shared.** Its own title and picture, on X too, and share cards only say what is true.
 - **An event that is over says so and sells no more tickets.**
 - **Organizations count right.** Discover's numbers match what it lists, member counts are real, and a public organization's Events and Activity open signed out.
-- **The community feed and public posts open without an account.**
+- **The community feed opens without an account.**
 - **Bitcoin amounts are readable in light mode**, and long articles keep diagrams legible on a phone.
 - **On a phone, notifications show their actions and the Cat's chat reaches Loki.**
 
