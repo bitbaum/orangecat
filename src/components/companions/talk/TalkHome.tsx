@@ -51,8 +51,11 @@ export function TalkHome() {
     void load();
   }, [load]);
 
-  // A companion opened from a link, not yet on the list: fetch its name so
-  // the header and the list can show it (RLS decides whether it exists).
+  // A companion not on the list this screen holds. Most often it is the bot
+  // the person made a moment ago, so the list is read again first: read from
+  // the list it is theirs, with its routines, abilities and chips. Only one
+  // that is still not there (someone else's, opened from a link) is fetched
+  // by itself, for its name (RLS decides whether it exists).
   const companionId = target?.kind === 'companion' ? target.id : null;
   const known = companionId ? home?.companions.find(c => c.id === companionId) : undefined;
   useEffect(() => {
@@ -61,6 +64,16 @@ export function TalkHome() {
     }
     let cancelled = false;
     (async () => {
+      const fresh = await fetch(API_ROUTES.AI_ASSISTANTS.TALK)
+        .then(async r => (r.ok ? ((await r.json()) as Envelope<TalkHomeData>).data : undefined))
+        .catch(() => undefined);
+      if (cancelled) {
+        return;
+      }
+      if (fresh?.companions.some(c => c.id === companionId)) {
+        setHome(fresh);
+        return;
+      }
       const res = await fetch(API_ROUTES.AI_ASSISTANTS.BY_ID(companionId));
       const json = (await res.json().catch(() => ({}))) as Envelope<Record<string, unknown>>;
       if (cancelled || !res.ok || !json.data) {
