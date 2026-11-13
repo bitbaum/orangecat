@@ -15,7 +15,9 @@ import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/progress';
 import type { RouteView } from '@/domain/money-routes/service';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/config/routes';
 import { MoneyRoutesEditor } from './MoneyRoutesEditor';
+import { FINANCE_SECTION_LABEL } from './finance-styles';
 import {
   ROUTES_COPY as COPY,
   formatAmount,
@@ -106,19 +108,16 @@ export function MoneyRoutes({ initialLines, initialNext, wallets, currency }: Mo
       className="rounded-lg border border-default bg-surface-base p-5"
       aria-labelledby="money-routes-title"
     >
-      <h2
-        id="money-routes-title"
-        className="text-xs font-semibold uppercase tracking-wider text-fg-secondary"
-      >
+      <h2 id="money-routes-title" className={FINANCE_SECTION_LABEL}>
         {COPY.title}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm text-fg-secondary">{COPY.lede}</p>
-      <p className="mt-1 max-w-2xl text-xs text-fg-tertiary">{COPY.scope}</p>
+      <p className="mb-0 mt-2 max-w-2xl text-sm text-fg-secondary">{COPY.lede}</p>
+      <p className="mb-0 mt-1 max-w-2xl text-xs text-fg-tertiary">{COPY.scope}</p>
 
       {wallets.length === 0 ? (
         <p className="mt-4 text-sm text-fg-secondary">
           {COPY.noWallets}{' '}
-          <Link href={COPY.walletsHref} className="font-medium text-fg-primary underline">
+          <Link href={ROUTES.DASHBOARD.WALLETS} className="font-medium text-fg-primary underline">
             {COPY.walletsCta}
           </Link>
         </p>

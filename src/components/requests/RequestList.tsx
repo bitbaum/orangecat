@@ -59,43 +59,56 @@ export function RequestList({
         <ul className="divide-y divide-subtle rounded-lg border border-subtle">
           {rows.map(row => {
             const name = row.counterparty_name ?? REQUEST_COPY.unknownParty;
+            const pending = row.status === 'pending';
+            // The ask is a suggestion: the pay page opens prefilled and stays
+            // editable, exactly like a shared pay link.
+            const payHref =
+              pending && direction === 'incoming' && row.counterparty_username
+                ? buildPayUrl(payLinkOrigin(), row.counterparty_username, {
+                    amountBtc: row.amount_btc,
+                    note: row.note ?? undefined,
+                    requestId: row.id,
+                  })
+                : null;
+            const close = (
+              <Button
+                variant="outline"
+                size="sm"
+                className={payHref ? 'w-full' : undefined}
+                onClick={() => onClose(row.id)}
+              >
+                {direction === 'incoming' ? REQUEST_COPY.decline : REQUEST_COPY.cancel}
+              </Button>
+            );
             return (
-              <li key={row.id} className="flex items-center justify-between gap-3 px-3 py-3">
-                <div className="min-w-0">
-                  <MoneyFigure
-                    label={requestAmountLabel(row, formatAmountBtc)}
-                    size="md"
-                    className="justify-start"
-                  />
-                  <p className="mb-0 truncate text-sm text-fg-secondary">
-                    {direction === 'incoming' ? REQUEST_COPY.from(name) : REQUEST_COPY.to(name)}
-                    {row.note ? ` · ${row.note}` : ''}
-                  </p>
-                  <p className={`text-xs ${STATUS_STYLES[row.status]}`}>
-                    {REQUEST_COPY.statusLabels[row.status]}
-                  </p>
+              <li key={row.id} className="px-3 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <MoneyFigure
+                      label={requestAmountLabel(row, formatAmountBtc)}
+                      size="md"
+                      className="justify-start"
+                    />
+                    <p className="mb-0 truncate text-sm text-fg-secondary">
+                      {direction === 'incoming' ? REQUEST_COPY.from(name) : REQUEST_COPY.to(name)}
+                      {row.note ? ` · ${row.note}` : ''}
+                    </p>
+                    <p className={`mb-0 text-xs ${STATUS_STYLES[row.status]}`}>
+                      {REQUEST_COPY.statusLabels[row.status]}
+                    </p>
+                  </div>
+                  {/* One action sits beside the row. */}
+                  {pending && !payHref && <div className="shrink-0">{close}</div>}
                 </div>
 
-                {row.status === 'pending' && (
-                  <div className="flex shrink-0 gap-2">
-                    {/* The ask is a suggestion: the pay page opens prefilled and
-                        stays editable, exactly like a shared pay link. */}
-                    {direction === 'incoming' && row.counterparty_username && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        href={buildPayUrl(payLinkOrigin(), row.counterparty_username, {
-                          amountBtc: row.amount_btc,
-                          note: row.note ?? undefined,
-                          requestId: row.id,
-                        })}
-                      >
-                        {REQUEST_COPY.pay}
-                      </Button>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => onClose(row.id)}>
-                      {direction === 'incoming' ? REQUEST_COPY.decline : REQUEST_COPY.cancel}
+                {/* Two actions are two equal cells under the text, so the note
+                    keeps the row's full width instead of reading "Dinn…". */}
+                {payHref && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <Button variant="primary" size="sm" className="w-full" href={payHref}>
+                      {REQUEST_COPY.pay}
                     </Button>
+                    {close}
                   </div>
                 )}
               </li>

@@ -154,6 +154,7 @@ export function AmountField({
     emit(btc);
   };
 
+  // The same bounds every committing button gates on (isAmountInRange).
   const tooSmall = value > 0 && value < minBtc;
   const tooLarge = value > maxBtc;
   const secondary = inBtc
@@ -184,7 +185,10 @@ export function AmountField({
         onClick={() => inputRef.current?.focus()}
         className={cn(
           'cursor-text rounded-xl border bg-surface-base px-4 pb-4 pt-6 text-center transition-colors',
-          'focus-within:border-interactive',
+          // The plate is the focus indicator, at AA strength; the digits
+          // inside it draw no ring of their own (globals.css rings every
+          // :focus-visible, and a rectangle around the figure is noise).
+          'focus-within:border-interactive focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
           tooSmall || tooLarge ? 'border-status-negative' : 'border-subtle'
         )}
       >
@@ -212,7 +216,7 @@ export function AmountField({
             // the figure and its symbol centred as a single group.
             style={{ width: `${Math.max(draft.length, 1)}ch` }}
             className={cn(
-              'oc-figure-input min-w-[1ch] max-w-full bg-transparent p-0 font-heading font-semibold tabular-nums tracking-display text-fg-primary outline-none',
+              'oc-figure-input min-w-[1ch] max-w-full bg-transparent p-0 font-heading font-semibold tabular-nums tracking-display text-fg-primary outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
               'placeholder:text-fg-tertiary',
               figureSize
             )}

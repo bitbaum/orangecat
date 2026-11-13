@@ -17,6 +17,8 @@ import { cache, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { SITE_URL } from '@/config/brand';
+import { ROUTES } from '@/config/routes';
+import { PayeeIdentity } from '@/components/money/PayeeIdentity';
 import { PAY_COPY, renamedPayHref } from '@/config/pay';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { listPublicPaymentMethods } from '@/domain/payments/paymentMethodsService';
@@ -92,11 +94,16 @@ export default async function PayPage({ params, searchParams }: PageProps) {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10">
       <header className="mb-8 text-center">
-        <p className="text-sm text-fg-tertiary">Pay</p>
-        <h1 className="mt-1 font-heading text-3xl font-bold tracking-display text-fg-primary">
-          {recipient.displayName}
-        </h1>
-        <p className="mt-2 text-sm text-fg-secondary">{PAY_COPY.subtitle}</p>
+        <p className="mb-0 text-sm text-fg-tertiary">Pay</p>
+        <PayeeIdentity
+          asHeading
+          name={recipient.displayName}
+          username={recipient.username}
+          avatarUrl={recipient.avatarUrl}
+          profileHref={ROUTES.PROFILES.VIEW(recipient.username)}
+          className="mt-2"
+        />
+        <p className="mb-0 mt-2 text-sm text-fg-secondary">{PAY_COPY.subtitle}</p>
       </header>
 
       <Suspense

@@ -9,7 +9,8 @@
 
 'use client';
 
-import { Wallet as WalletIcon, QrCode } from 'lucide-react';
+import { QrCode } from 'lucide-react';
+import { PageHeading } from '@/components/layout/PageHeading';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
@@ -19,12 +20,11 @@ export function WalletsPageHeader() {
     <div className="mb-6 lg:mb-8">
       <Breadcrumb items={[{ label: 'Wallets' }]} className="mb-4" />
       <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="flex items-center gap-3">
-          <WalletIcon className="w-8 h-8 text-fg-secondary" />
-          <h1 className="text-2xl lg:text-3xl font-bold text-fg-primary">Wallets</h1>
-        </div>
-        {/* In-app actions are monochrome; orange means Bitcoin or the one public CTA. */}
-        <Button variant="primary" size="sm" href={ROUTES.RECEIVE}>
+        {/* The same heading as the money tabs this page is linked from. */}
+        <PageHeading>Wallets</PageHeading>
+        {/* A way out, not this page's action: adding a wallet is. Outline, so
+            the page keeps one primary. */}
+        <Button variant="outline" size="sm" href={ROUTES.RECEIVE}>
           <QrCode className="mr-2 h-4 w-4" />
           Receive
         </Button>

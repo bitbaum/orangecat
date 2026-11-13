@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { Check, Copy, ExternalLink, MessageSquare } from 'lucide-react';
 import { RailGlyph } from '@/components/payment/RailGlyph';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
@@ -55,6 +56,14 @@ export function OtherWaysToPay({
   // Which row was copied last; `copied` from the hook says whether it still shows.
   const [lastCopiedId, setLastCopiedId] = useState<string | null>(null);
   const copiedId = copied ? lastCopiedId : null;
+  // Asking is a message, and a message needs an account. A signed-out payer is
+  // told that on the row and sent to register, coming back to the same draft.
+  const { user, hydrated } = useAuth();
+  const signedOut = hydrated && !user;
+  const askHref = ROUTES.MESSAGES_TO(recipientId, 'ask-payment-details');
+  const askTarget = signedOut
+    ? `${ROUTES.AUTH}?mode=register&from=${encodeURIComponent(askHref)}`
+    : askHref;
 
   if (methods.length === 0) {
     return null;
@@ -92,17 +101,14 @@ export function OtherWaysToPay({
                   <p className="mb-0 truncate font-mono text-sm text-fg-secondary">{shown}</p>
                 ) : (
                   <p className="mb-0 text-sm text-fg-secondary">
-                    {PAYMENT_METHODS_COPY.sharedOnRequest(recipientName)}
+                    {signedOut
+                      ? PAYMENT_METHODS_COPY.sharedOnRequestSignedOut(recipientName)
+                      : PAYMENT_METHODS_COPY.sharedOnRequest(recipientName)}
                   </p>
                 )}
               </div>
               {!row.handle ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  href={ROUTES.MESSAGES_TO(recipientId)}
-                  className={ACTION}
-                >
+                <Button variant="outline" size="sm" href={askTarget} className={ACTION}>
                   <MessageSquare className="h-4 w-4" aria-hidden="true" />
                   {PAYMENT_METHODS_COPY.ask}
                 </Button>

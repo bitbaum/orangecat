@@ -65,16 +65,19 @@ export function AmountPresets({
           .filter(btc => btc > 0 && btc >= minBtc && btc <= maxBtc)
           .map(btc => ({
             btc,
-            label: inBtc ? `${toDraft(btc, BTC_DECIMALS)} BTC` : formatAmountBtc(btc),
+            label: inBtc ? toDraft(btc, BTC_DECIMALS) : formatAmountBtc(btc),
+            spoken: inBtc ? `${toDraft(btc, BTC_DECIMALS)} BTC` : undefined,
           }))
       : inBtc
         ? CONTRIBUTION_QUICK_AMOUNTS_BTC.filter(btc => btc >= minBtc && btc <= maxBtc).map(btc => ({
             btc,
-            label: `${toDraft(btc, BTC_DECIMALS)} BTC`,
+            label: toDraft(btc, BTC_DECIMALS),
+            spoken: `${toDraft(btc, BTC_DECIMALS)} BTC`,
           }))
         : CONTRIBUTION_QUICK_AMOUNTS_FIAT.map(fiat => ({
             btc: convertToBTC(fiat, displayCurrency),
             label: `${symbol}${ALPHABETIC_SYMBOL.test(symbol) ? ' ' : ''}${fiat}`,
+            spoken: undefined as string | undefined,
           })).filter(p => p.btc > 0 && p.btc >= minBtc && p.btc <= maxBtc);
     // The row is four equal cells; the largest rungs are the ones people pick.
     return ladder.slice(-PRESET_CELLS);
@@ -89,7 +92,10 @@ export function AmountPresets({
     // Equal cells in one row, never pills that wrap wherever the words run
     // out — a row of choices is one row (AGENTS.md → "One shape per kind, here").
     <div className="grid grid-cols-4 gap-2">
-      {presets.map(({ btc, label }) => {
+      {/* In BTC entry the rung is the number alone: "0.00005 BTC" does not fit
+          a quarter of a phone at 14px, and the field above already says BTC.
+          The unit stays in what a screen reader hears. */}
+      {presets.map(({ btc, label, spoken }) => {
         const chosen = Math.abs(value - btc) < btc * 0.001;
         return (
           <button
@@ -97,6 +103,7 @@ export function AmountPresets({
             type="button"
             onClick={() => onPick(btc)}
             aria-pressed={chosen}
+            aria-label={spoken}
             className={cn(
               'min-h-11 min-w-0 truncate rounded-md border px-2 text-sm tabular-nums transition-colors',
               chosen

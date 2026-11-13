@@ -64,8 +64,9 @@ export const RECEIVE_COPY = {
     'Payments arrive in the wallet app you connected. OrangeCat cannot open that app or show its balance.',
   onchainNote: 'On-chain payments need block confirmations — not ideal for in-person speed.',
   noWalletTitle: 'How should people pay you?',
-  noWalletBody:
-    'Paste whatever your Bitcoin app shows when you tap Receive. If you do not have one yet, get a free one below and paste what it gives you. You can skip this and come back later.',
+  /** One sentence. "Don't have a wallet?" and "Not now" under the field say the rest. */
+  noWalletBody: 'Paste what your Bitcoin app shows when you tap Receive.',
+  saveWallet: 'Save wallet',
   notNow: 'Not now',
   /** The moment a payment arrives while the code is on screen. */
   receivedTitle: 'Received',

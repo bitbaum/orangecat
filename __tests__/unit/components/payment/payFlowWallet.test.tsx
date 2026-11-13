@@ -112,6 +112,56 @@ describe('PayFlow — pay from my wallet', () => {
     renderFlow();
 
     expect(screen.queryByRole('button', { name: 'Pay from my wallet' })).toBeNull();
-    expect(screen.getByRole('button', { name: PAY_COPY.generate })).toBeTruthy();
+    // The one action names the verb and the figure, not "Show the code".
+    const pay = screen.getByRole('button', { name: /^Pay / });
+    expect(pay.hasAttribute('disabled')).toBe(false);
+  });
+});
+
+describe('PayFlow — the action waits for an amount it can pay', () => {
+  function renderWith(amount?: number) {
+    canPayFromWallet = false;
+    render(
+      <PayFlow
+        username="mao"
+        recipientName="Mao"
+        initialCanReceive
+        initialAmountBtc={amount}
+        words={PAY_COPY}
+      />
+    );
+  }
+
+  it('says "Enter an amount" and is disabled before an amount exists', () => {
+    renderWith(0);
+    const button = screen.getByRole('button', { name: PAY_COPY.enterAmount });
+    expect(button.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('stays disabled while the amount is above the maximum the field shows in red', () => {
+    renderWith(5);
+    expect(screen.getByText(/above the maximum/)).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: PAY_COPY.enterAmount }).hasAttribute('disabled')
+    ).toBe(true);
+  });
+
+  it('disables both wallet-holder actions out of range too', () => {
+    canPayFromWallet = true;
+    render(
+      <PayFlow
+        username="mao"
+        recipientName="Mao"
+        initialCanReceive
+        initialAmountBtc={5}
+        words={PAY_COPY}
+      />
+    );
+    expect(
+      screen.getByRole('button', { name: 'Pay from my wallet' }).hasAttribute('disabled')
+    ).toBe(true);
+    expect(screen.getByRole('button', { name: PAY_COPY.generate }).hasAttribute('disabled')).toBe(
+      true
+    );
   });
 });

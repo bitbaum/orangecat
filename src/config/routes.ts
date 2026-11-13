@@ -217,6 +217,17 @@ export interface RouteChrome {
    * Confirm card (seen live 2026-11-01 at 390px).
    */
   feedbackTab: boolean;
+  /**
+   * The page already has its one orange action (a pay page's "Pay CHF 20"),
+   * so the header's sign-up steps down to outline: two orange buttons on one
+   * screen leave the payer guessing which one pays.
+   */
+  quietHeaderSignup: boolean;
+}
+
+/** One person's pay page (/pay/<username>), not the /pay landing. */
+export function isPayPagePath(pathname: string): boolean {
+  return /^\/pay\/[^/]+\/?$/.test(pathname);
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -265,6 +276,7 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // headings, the Open Accounting card, My things, /pay and a project's
     // "Hide the code" (QA 2026-11-10). The edge tab is the host's quiet shape.
     feedbackTab: true,
+    quietHeaderSignup: isPayPagePath(pathname),
   };
 }
 
@@ -522,6 +534,8 @@ export const ROUTES = {
     PEOPLE: '/dashboard/people',
     WALLETS: ENTITY_REGISTRY['wallet'].basePath,
     WALLETS_CREATE: ENTITY_REGISTRY['wallet'].createPath,
+    /** Opens the wallet form on the connection field, for someone who came to send. */
+    WALLETS_FOR_SEND: `${ENTITY_REGISTRY['wallet'].basePath}?for=send`,
     GROUPS: ENTITY_REGISTRY['group'].basePath,
     GROUPS_CREATE: ENTITY_REGISTRY['group'].createPath,
     ASSETS: ENTITY_REGISTRY['asset'].basePath,

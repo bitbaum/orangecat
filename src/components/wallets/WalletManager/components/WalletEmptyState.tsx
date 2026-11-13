@@ -5,7 +5,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Wallet as WalletIcon, ExternalLink } from 'lucide-react';
+import { Wallet as WalletIcon, ArrowRight } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 
 interface WalletEmptyStateProps {
@@ -16,15 +16,16 @@ interface WalletEmptyStateProps {
 export function WalletEmptyState({ isOwner, onAddClick }: WalletEmptyStateProps) {
   return (
     <>
-      <div className="text-center py-12 border-2 border-dashed border-strong rounded-lg bg-surface-raised/40/50 dark:bg-surface-raised/50">
+      <div className="text-center py-12 border-2 border-dashed border-strong rounded-lg bg-surface-raised/40">
         <WalletIcon className="w-16 h-16 text-fg-tertiary mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-fg-primary mb-2">No wallets yet</h3>
         <p className="text-fg-secondary mb-4 max-w-md mx-auto">
-          Add your first Bitcoin wallet to start receiving support.
+          Add a Bitcoin wallet so people can pay you.
         </p>
+        {/* The page's one action when it is empty. */}
         {isOwner && (
-          <Button onClick={onAddClick} variant="outline">
-            Add Your First Wallet
+          <Button onClick={onAddClick} variant="primary">
+            Add a wallet
           </Button>
         )}
       </div>
@@ -35,7 +36,8 @@ export function WalletEmptyState({ isOwner, onAddClick }: WalletEmptyStateProps)
             className="text-sm text-fg-secondary hover:text-fg-primary dark:hover:text-fg-primary transition-colors inline-flex items-center gap-1"
           >
             I don't have a wallet yet
-            <ExternalLink className="w-4 h-4" />
+            {/* An internal page: an arrow, not the leaving-the-site glyph. */}
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       )}

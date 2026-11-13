@@ -172,7 +172,7 @@ describe('create forms', () => {
 });
 
 describe('wallet form disclosures (/receive and "Pay into" on create forms)', () => {
-  it.each(['Other ways to get paid (advanced)', 'Name & details (optional)'])(
+  it.each(['Add an on-chain address or a wallet connection', 'Name and details'])(
     '"%s" is 44px on touch and says whether it is open',
     name => {
       render(<WalletForm onSubmit={async () => {}} />);

@@ -3,7 +3,9 @@
 import Button from '@/components/ui/Button';
 import AccountMenuControl from '@/components/layout/AccountMenuControl';
 import { useAuth } from '@/hooks/useAuth';
+import { usePathname } from 'next/navigation';
 import { useIsAuthRoute } from '@/hooks/useRouteContext';
+import { getRouteChrome } from '@/config/routes';
 import { authNavigationItems } from '@/config/navigation';
 import { getAuthStatus } from '@/lib/auth/utils';
 import { Loader2 } from 'lucide-react';
@@ -18,6 +20,9 @@ export default function AuthButtons({ className = '' }: AuthButtonsProps) {
   const isAuthRoute = useIsAuthRoute();
   const isMobileNav = className.includes('flex-col');
   const [signIn, getStarted] = authNavigationItems;
+  const signupVariant = getRouteChrome(usePathname() ?? '/').quietHeaderSignup
+    ? 'outline'
+    : 'accent';
 
   // During auth hydration: on a public surface keep Sign In / Get Started
   // actionable; on an authed surface render a neutral avatar skeleton so a
@@ -33,6 +38,7 @@ export default function AuthButtons({ className = '' }: AuthButtonsProps) {
         getStarted={getStarted}
         isMobileNav={isMobileNav}
         className={className}
+        signupVariant={signupVariant}
       />
     );
   }
@@ -58,6 +64,7 @@ export default function AuthButtons({ className = '' }: AuthButtonsProps) {
       getStarted={getStarted}
       isMobileNav={isMobileNav}
       className={className}
+      signupVariant={signupVariant}
     />
   );
 }
@@ -67,6 +74,8 @@ interface UnauthenticatedButtonsProps {
   getStarted: (typeof authNavigationItems)[number];
   isMobileNav: boolean;
   className: string;
+  /** Outline where the page already has its own orange action (getRouteChrome). */
+  signupVariant: 'accent' | 'outline';
 }
 
 function UnauthenticatedButtons({
@@ -74,6 +83,7 @@ function UnauthenticatedButtons({
   getStarted,
   isMobileNav,
   className,
+  signupVariant,
 }: UnauthenticatedButtonsProps) {
   return (
     <div
@@ -84,7 +94,7 @@ function UnauthenticatedButtons({
           and returning people to the wrong form. */}
       <Button
         href={getStarted.href}
-        variant="accent"
+        variant={signupVariant}
         size="sm"
         className="min-h-9 text-sm font-medium sm:hidden"
       >
@@ -101,7 +111,7 @@ function UnauthenticatedButtons({
       </Button>
       <Button
         href={getStarted.href}
-        variant="accent"
+        variant={signupVariant}
         size="sm"
         className={`hidden sm:inline-flex min-h-9 text-sm ${isMobileNav ? 'w-full justify-center' : ''}`}
       >

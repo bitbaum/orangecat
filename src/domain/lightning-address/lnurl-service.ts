@@ -28,6 +28,8 @@ export interface LnurlRecipient {
   userId: string;
   username: string;
   displayName: string;
+  /** Shown on the pay page so the payer sees the face, not just a name. */
+  avatarUrl: string | null;
 }
 
 function admin(): SupabaseClient {
@@ -52,19 +54,25 @@ export async function resolveLnurlRecipient(username: string): Promise<LnurlReci
   // decides which wallet a payment settles into; it cannot be approximate.
   const { data, error } = await admin()
     .from(DATABASE_TABLES.PROFILES)
-    .select('id, username, display_name:name')
+    .select('id, username, display_name:name, avatar_url')
     .eq('username_lower', handle.toLowerCase())
     .maybeSingle();
   if (error) {
     throw new HandleLookupError(error.message);
   }
 
-  const row = data as { id?: string; username?: string; display_name?: string } | null;
+  const row = data as {
+    id?: string;
+    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
+  } | null;
   if (row?.id && row.username) {
     return {
       userId: row.id,
       username: row.username,
       displayName: row.display_name || row.username,
+      avatarUrl: row.avatar_url ?? null,
     };
   }
 
@@ -77,14 +85,19 @@ export async function resolveLnurlRecipient(username: string): Promise<LnurlReci
   }
   const { data: current, error: currentError } = await admin()
     .from(DATABASE_TABLES.PROFILES)
-    .select('id, username, display_name:name')
+    .select('id, username, display_name:name, avatar_url')
     .eq('id', historicalId)
     .maybeSingle();
   if (currentError) {
     throw new HandleLookupError(currentError.message);
   }
 
-  const owner = current as { id?: string; username?: string; display_name?: string } | null;
+  const owner = current as {
+    id?: string;
+    username?: string;
+    display_name?: string;
+    avatar_url?: string | null;
+  } | null;
   if (!owner?.id || !owner.username) {
     return null;
   }
@@ -92,6 +105,7 @@ export async function resolveLnurlRecipient(username: string): Promise<LnurlReci
     userId: owner.id,
     username: owner.username,
     displayName: owner.display_name || owner.username,
+    avatarUrl: owner.avatar_url ?? null,
   };
 }
 

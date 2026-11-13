@@ -39,6 +39,14 @@ export default function DashboardWalletsPage() {
   const _router = useRouter();
   const [focusedField, setFocusedField] = useState<WalletFieldType>(null);
   const [showMobileGuidance, setShowMobileGuidance] = useState(false);
+  // Send's "Connect a wallet" lands here with ?for=send: the form opens on the
+  // connection field instead of making them find it under a receive toggle.
+  const [openFor, setOpenFor] = useState<'send' | undefined>(undefined);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('for') === 'send') {
+      setOpenFor('send');
+    }
+  }, []);
 
   // Custom hooks
   const { isDesktop } = useResponsiveLayout();
@@ -127,7 +135,15 @@ export default function DashboardWalletsPage() {
               />
             </div>
 
-            <div className="bg-surface-base rounded-lg shadow-sm border border-default p-4 sm:p-6">
+            {/* With no wallets the empty state, or the add form, is the only
+                surface: a card around it was a card around a card. */}
+            <div
+              className={
+                walletsState.some(w => w.is_active)
+                  ? 'bg-surface-base rounded-lg shadow-sm border border-default p-4 sm:p-6'
+                  : undefined
+              }
+            >
               <WalletManager
                 wallets={walletsState}
                 entityType="profile"
@@ -140,6 +156,7 @@ export default function DashboardWalletsPage() {
                 isOwner={!!user?.id && !!profile?.id}
                 onFieldFocus={setFocusedField}
                 unusableConnectionWalletIds={receiveStatus?.unusableConnectionWalletIds}
+                openFor={openFor}
               />
             </div>
 
