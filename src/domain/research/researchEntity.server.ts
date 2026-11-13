@@ -16,6 +16,7 @@ import {
   decidePreregistration,
   PREREGISTRATION_LOCKED_MESSAGE,
 } from './openScience';
+import { STATUS } from '@/config/database-constants';
 
 export type ResearchErrorCode = 'not_found' | 'forbidden';
 
@@ -72,7 +73,9 @@ export async function getResearchWithRelations(
       ? { ok: false, code: 'not_found', message: 'Research entity not found' }
       : { ok: false, dbError: error };
   }
-  if (!entity.is_public && (!viewerId || viewerId !== entity.user_id)) {
+  // A draft is the owner's until it is published, whatever its visibility flag.
+  const isOwner = Boolean(viewerId && viewerId === entity.user_id);
+  if (!isOwner && (!entity.is_public || entity.status === STATUS.RESEARCH.DRAFT)) {
     return { ok: false, code: 'forbidden', message: 'This research entity is private' };
   }
 

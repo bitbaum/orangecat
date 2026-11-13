@@ -21,6 +21,7 @@ import { getPagination, getString } from '@/lib/api/query';
 import { applyRateLimitHeaders, rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getCacheControl, calculatePage } from '@/lib/api/helpers';
 import { getTableName } from '@/config/entity-registry';
+import { STATUS } from '@/config/database-constants';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import type { ResearchEntityCreate } from '@/types/research';
 import { NextRequest } from 'next/server';
@@ -59,9 +60,18 @@ export const GET = compose(
     if (actorId) {
       itemsQuery = itemsQuery.eq('actor_id', actorId);
       countQuery = countQuery.eq('actor_id', actorId);
-    } else {
-      itemsQuery = itemsQuery.eq('is_public', true);
-      countQuery = countQuery.eq('is_public', true);
+    }
+    // Only the owner sees their drafts and private topics. Anyone else, with
+    // or without ?user_id, sees what is public and published: a draft marked
+    // public was listed to every visitor, and ?user_id= returned a stranger's
+    // whole list, drafts included (full-path review, 2026-11-13).
+    const {
+      data: { user: viewer },
+    } = await supabase.auth.getUser();
+    const viewerIsOwner = Boolean(actorId && viewer && viewer.id === userId);
+    if (!viewerIsOwner) {
+      itemsQuery = itemsQuery.eq('is_public', true).neq('status', STATUS.RESEARCH.DRAFT);
+      countQuery = countQuery.eq('is_public', true).neq('status', STATUS.RESEARCH.DRAFT);
     }
 
     if (field) {

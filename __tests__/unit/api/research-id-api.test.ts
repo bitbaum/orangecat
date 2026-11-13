@@ -108,7 +108,7 @@ describe('Research [id] API', () => {
 
   describe('GET — visibility rules', () => {
     it('returns public research to anonymous visitors', async () => {
-      const entity = makeResearch({ is_public: true });
+      const entity = makeResearch({ is_public: true, status: 'active' });
 
       // GET uses withOptionalAuth — no user returned for anonymous
       const supabase = makeSupabase('', entity);
@@ -129,6 +129,30 @@ describe('Research [id] API', () => {
 
       expect(response.status).toBe(200);
       expect(body.success).toBe(true);
+    });
+
+    it('keeps a draft from anonymous visitors even when it is marked public', async () => {
+      const entity = makeResearch({ is_public: true, status: 'draft' });
+
+      // GET uses withOptionalAuth — no user returned for anonymous
+      const supabase = makeSupabase('', entity);
+      // withOptionalAuth may return user: null; mock returns empty user
+      supabase.auth.getUser = vi.fn().mockResolvedValue({ data: { user: null }, error: null });
+      // Also need related data mocks (progress_updates, votes, contributions)
+      supabase.from = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: entity, error: null }),
+      });
+
+      (createServerClient as Mock).mockResolvedValue(supabase);
+
+      const response = await GET({} as any, makeParams());
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body.success).toBe(false);
     });
 
     it('blocks access to private research for non-owner', async () => {
