@@ -25,6 +25,11 @@ describe('header create menu', () => {
     render(<HeaderCreateButton />);
     screen.getByRole('button', { name: 'Create new' }).focus();
     await user.keyboard('{ArrowDown}');
+    // The need-first row leads, as on /create and the phone's sheet.
+    await waitFor(() =>
+      expect(screen.getByRole('menuitem', { name: /Need money for something/ })).toHaveFocus()
+    );
+    await user.keyboard('{ArrowDown}');
     await waitFor(() => expect(screen.getByRole('menuitem', { name: /Article/ })).toHaveFocus());
   });
 });
