@@ -72,8 +72,14 @@ export function FormField({
           <Input
             id={name}
             type="number"
-            value={(value as string | number) ?? ''}
-            onChange={e => onChange(e.target.value ? parseFloat(e.target.value) : null)}
+            value={
+              value === undefined || value === null || value === config.emptyValue
+                ? ''
+                : (value as string | number)
+            }
+            onChange={e =>
+              onChange(e.target.value ? parseFloat(e.target.value) : (config.emptyValue ?? null))
+            }
             onFocus={onFocus}
             onBlur={onBlur}
             placeholder={placeholder}

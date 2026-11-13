@@ -71,6 +71,12 @@ export interface FieldConfig {
   max?: number;
   /** Step value for number fields */
   step?: number;
+  /**
+   * Number fields: the stored value an empty input stands for (e.g. -1 =
+   * unlimited stock). The input shows empty for it and sends it when cleared,
+   * so a person never has to type a sentinel.
+   */
+  emptyValue?: number;
   /** Number of rows for textarea */
   rows?: number;
   /** Conditional visibility based on other fields */

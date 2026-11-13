@@ -68,7 +68,7 @@ const fieldGroups: FieldGroup[] = [
         type: 'currency',
         isGoal: true,
         placeholder: '10000',
-        hint: 'Optional: Set a funding target for your project. Currency selector is included in this field.',
+        hint: 'How much you want to raise. Leave empty if there is no target.',
       },
       {
         name: 'funding_purpose',
@@ -91,7 +91,7 @@ const fieldGroups: FieldGroup[] = [
         name: 'logo_url',
         label: 'Logo',
         type: 'image',
-        hint: "Optional: your project's logo, shown on its page and cards",
+        hint: "Your project's logo, shown on its page and cards.",
         colSpan: 2,
       },
       {
@@ -99,7 +99,7 @@ const fieldGroups: FieldGroup[] = [
         label: 'Project Website',
         type: 'url',
         placeholder: 'https://your-project.com',
-        hint: 'Optional: Link to your project website or landing page',
+        hint: 'Your project website or landing page.',
       },
       {
         name: 'category',
@@ -119,13 +119,13 @@ const fieldGroups: FieldGroup[] = [
         name: 'start_date',
         label: 'Start Date',
         type: 'date',
-        hint: 'Optional: When do you plan to start the project?',
+        hint: 'When you plan to start.',
       },
       {
         name: 'target_completion',
         label: 'Target Completion',
         type: 'date',
-        hint: 'Optional: When do you expect to complete the project?',
+        hint: 'When you expect to finish.',
       },
     ],
   },

@@ -70,7 +70,10 @@ const fieldGroups: FieldGroup[] = [
   {
     id: 'pricing',
     title: 'Pricing',
-    description: 'Set your product price (enter in your preferred currency)',
+    description: 'What it costs, in the currency you think in',
+    // One currency control: the selector inside the Price field sets
+    // `currency`. A second "Default Currency" select below it set the same
+    // value and read as a different setting.
     fields: [
       {
         name: 'price',
@@ -79,20 +82,8 @@ const fieldGroups: FieldGroup[] = [
         placeholder: '50.00',
         required: true,
         min: 1,
-        hint: 'Enter in your preferred currency. All payments are in Bitcoin.',
+        hint: 'Buyers pay in Bitcoin; they see the price in their own currency.',
         colSpan: 2,
-      },
-      {
-        name: 'currency',
-        label: 'Default Currency',
-        type: 'select',
-        options: [
-          { value: 'CHF', label: 'Swiss Franc (CHF)' },
-          { value: 'USD', label: 'US Dollar (USD)' },
-          { value: 'EUR', label: 'Euro (EUR)' },
-          { value: 'BTC', label: 'Bitcoin (BTC)' },
-        ],
-        hint: 'Your preferred currency for displaying prices. All transactions settle in Bitcoin.',
       },
     ],
   },
@@ -105,9 +96,11 @@ const fieldGroups: FieldGroup[] = [
         name: 'inventory_count',
         label: 'Inventory Count',
         type: 'number',
-        placeholder: '-1 for unlimited',
-        min: -1,
-        hint: 'Use -1 for unlimited stock',
+        placeholder: 'Unlimited',
+        min: 0,
+        // Stored as -1 (unlimited); the field shows it as empty.
+        emptyValue: -1,
+        hint: 'Leave empty if you can always make more.',
       },
       {
         name: 'fulfillment_type',
