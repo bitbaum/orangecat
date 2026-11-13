@@ -32,7 +32,10 @@ describe('create form copy', () => {
       ...fields(productConfig.fieldGroups),
       ...fields(projectConfig.fieldGroups),
     ]) {
-      expect(field.hint ?? '').not.toMatch(/^Optional:|-1|selector is included/);
+      const hint = field.hint ?? '';
+      expect(hint.startsWith('Optional:')).toBe(false);
+      expect(hint).not.toContain('-1');
+      expect(hint).not.toContain('selector is included');
     }
   });
 
