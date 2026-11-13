@@ -9,7 +9,8 @@
  * Last Modified Summary: Extracted from ModernProfileEditor component
  */
 
-import { User, Camera } from 'lucide-react';
+import { Camera } from 'lucide-react';
+import DefaultAvatar from '@/components/ui/DefaultAvatar';
 import { IMAGE_UPLOAD_ACCEPT } from '@/services/images/upload';
 import { Profile } from '@/types/profile';
 
@@ -76,12 +77,12 @@ export function ProfileImagesSection({
       </div>
 
       {/* Avatar Upload */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-center gap-4">
         <div
           role="button"
           tabIndex={0}
           aria-label="Upload profile photo"
-          className="relative w-20 h-20 bg-surface-raised rounded-full border-2 border-strong cursor-pointer overflow-hidden flex-shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="relative w-20 h-20 bg-surface-raised rounded-lg border-2 border-strong cursor-pointer overflow-hidden flex-shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           onClick={() => avatarInputRef.current?.click()}
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -98,11 +99,11 @@ export function ProfileImagesSection({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center w-full h-full">
-              <User className="w-8 h-8 text-fg-tertiary" data-testid="camera-icon" />
-            </div>
+            // The same mark and shape the profile page shows, so the editor
+            // previews what visitors will see.
+            <DefaultAvatar className="h-full w-full rounded-lg border-0" />
           )}
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center rounded-full">
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center rounded-lg">
             <Camera className="w-5 h-5 text-white opacity-0 hover:opacity-100" />
           </div>
         </div>
@@ -113,6 +114,14 @@ export function ProfileImagesSection({
           onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'avatar')}
           className="hidden"
         />
+        <button
+          type="button"
+          onClick={() => avatarInputRef.current?.click()}
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-fg-primary underline-offset-2 hover:underline"
+        >
+          <Camera className="h-4 w-4 text-fg-secondary" aria-hidden />
+          {avatarPreview || profile.avatar_url ? 'Change photo' : 'Add photo'}
+        </button>
       </div>
     </div>
   );

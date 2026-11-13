@@ -73,7 +73,11 @@ export const getProfileCompletionPercentage = (profile: Profile | null): number 
   if (!profile) {
     return 0;
   }
-  const total = PROFILE_COMPLETION_FIELDS.length;
-  const completed = PROFILE_COMPLETION_FIELDS.filter(field => field.isComplete(profile)).length;
+  // Weighted: a username matters more than a phone number, as declared above.
+  const total = PROFILE_COMPLETION_FIELDS.reduce((sum, field) => sum + field.weight, 0);
+  const completed = PROFILE_COMPLETION_FIELDS.filter(field => field.isComplete(profile)).reduce(
+    (sum, field) => sum + field.weight,
+    0
+  );
   return Math.round((completed / total) * 100);
 };
