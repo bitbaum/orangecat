@@ -82,7 +82,7 @@ export function GroupJoinButton({
   return (
     <Button variant="primary" onClick={handleJoin} disabled={joining} className={className}>
       <UserPlus className="h-4 w-4 mr-2" />
-      {joining ? 'Joining…' : 'Join'}
+      {joining ? 'Joining…' : `Join ${ENTITY_REGISTRY.group.name.toLowerCase()}`}
     </Button>
   );
 }
