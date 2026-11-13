@@ -54,7 +54,7 @@ export function MemoryList({ companionId, name }: MemoryListProps) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(API_ROUTES.AI_ASSISTANTS.MEMORIES(companionId), {
+      const res = await fetch(`${API_ROUTES.AI_ASSISTANTS.MEMORIES(companionId)}/write`, {
         method: id ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(id ? { id, content } : { content }),

@@ -331,6 +331,8 @@ export const API_ROUTES = {
     HANDS: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/hands`,
     /** The photos, files and links from the caller's chats with this bot. */
     LIBRARY: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/library`,
+    /** The caller's own rules for their bots, and their time zone. */
+    RULES: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rules`,
     /** The models this person can choose for a bot's chat (their own key's list). */
     MODELS: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/models`,
     /** The talk home (companions, group chats, fleet bots in one list) and a companion made in a minute. */

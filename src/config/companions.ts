@@ -130,6 +130,21 @@ export const COMPANION_COPY = {
       job: 'money, pages and your account',
       preview: 'Say what you want done on OrangeCat',
     },
+    /** The owner's own rules for all their bots, and their time zone: a row in a bot's details. */
+    rules: {
+      row: 'Your rules for your bots',
+      rowSet: 'Your rules for your bots · set',
+      intro:
+        'Write what your bots must never do, or must ask you about first. Every bot of yours reads them, and a step a bot would take on its own is checked against them: if a rule says no or ask, it waits for your tap.',
+      label: 'Rules',
+      placeholder:
+        'For example: Never send a task to the orangecat project without asking me. Never open a page that is not about my own sites.',
+      zone: 'Your time zone',
+      zoneNone: 'Not set',
+      save: 'Save',
+      saved: 'Saved.',
+      failed: 'That did not save. Try again.',
+    },
     /** Which model a bot's answers come from: the row in its details. */
     model: {
       row: 'Model: automatic',
