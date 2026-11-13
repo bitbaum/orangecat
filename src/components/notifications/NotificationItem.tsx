@@ -71,24 +71,26 @@ export function NotificationItem({
         <div className="flex-shrink-0 mt-0.5">{getNotificationIcon(notification)}</div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-medium text-fg-primary">
-                {notificationTitle(notification)}
-              </h4>
-              {notification.message && notification.message !== notificationTitle(notification) && (
-                <p
-                  className={`text-sm mt-1 ${notification.is_read ? 'text-fg-secondary' : 'text-fg-primary'}`}
-                >
-                  {notification.message}
-                </p>
-              )}
-              <p className="text-xs text-fg-secondary mt-2">
-                {formatRelativeTime(notification.created_at)}
-              </p>
-            </div>
+          <h4 className="pr-4 text-sm font-medium text-fg-primary">
+            {notificationTitle(notification)}
+          </h4>
+          {notification.message && notification.message !== notificationTitle(notification) && (
+            <p
+              className={`text-sm mt-1 mb-0 ${notification.is_read ? 'text-fg-secondary' : 'text-fg-primary'}`}
+            >
+              {notification.message}
+            </p>
+          )}
 
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* The actions share the time's line, so the words keep the card's
+              full width. Where there is no hover to reveal them (a phone),
+              they are always shown: a hidden button there is still tappable. */}
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="mb-0 text-xs text-fg-secondary">
+              {formatRelativeTime(notification.created_at)}
+            </p>
+
+            <div className="-my-1.5 -mr-2 flex items-center gap-1 transition-opacity pointer-fine:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
               {notification.type !== 'message' && (
                 <button
                   onClick={e => {
