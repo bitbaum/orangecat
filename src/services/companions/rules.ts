@@ -96,6 +96,9 @@ const READS = new Set([
   'loki_run_status',
   'loki_finding_status',
   'walk_site',
+  'github_read',
+  'gmail_read',
+  'calendar_read',
 ]);
 
 /** Does this step do something a rule could forbid? Pure. */

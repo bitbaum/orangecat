@@ -13,11 +13,7 @@
  * nothing had. An agent reporting a side effect it never observed is the
  * expensive bug, and a queued build is the easiest possible place to make it.
  */
-import {
-  requestLokiSite,
-  slugFromTitle,
-  CAT_SITE_KINDS,
-} from '@/services/loki/site-build';
+import { requestLokiSite, slugFromTitle, CAT_SITE_KINDS } from '@/services/loki/site-build';
 import type { CatSiteKind } from '@/services/loki/site-build';
 import type { ActionHandler } from './types';
 
