@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { formatRelativeTime } from '@/utils/dates';
-import { formatCurrency } from '@/services/currency';
+import { ViewerAmount } from '@/components/ui/ViewerAmount';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import PublicEntityCTA from '@/components/public/PublicEntityCTA';
 import { ROUTES } from '@/config/routes';
@@ -47,7 +47,7 @@ export const loanDetailConfig: EntityDetailConfig = {
     amount: {
       '@type': 'MonetaryAmount',
       value: entity.original_amount,
-      currency: entity.currency || 'BTC',
+      currency: entity.currency || PLATFORM_DEFAULT_CURRENCY,
     },
     ...(entity.interest_rate !== null &&
       entity.interest_rate !== undefined && { annualPercentageRate: entity.interest_rate }),
@@ -79,6 +79,10 @@ export const loanDetailConfig: EntityDetailConfig = {
       isNumber(currentRate) && isNumber(desiredRate) && currentRate > desiredRate
         ? currentRate - desiredRate
         : null;
+    const currency = (entity.currency as string | null) ?? PLATFORM_DEFAULT_CURRENCY;
+    // A new request is asked, not owed: "Remaining balance … Original" read
+    // like a refinance on a loan nobody had taken yet (create#14).
+    const isNewRequest = !showRefinance;
     return (
       <>
         <Card>
@@ -88,24 +92,24 @@ export const loanDetailConfig: EntityDetailConfig = {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm text-fg-secondary">Remaining Balance</span>
-                <span className="break-words text-xl font-bold text-fg-primary sm:text-right">
-                  {formatCurrency(
-                    entity.remaining_balance,
-                    entity.currency ?? PLATFORM_DEFAULT_CURRENCY
-                  )}
+                <span className="text-sm text-fg-secondary">
+                  {isNewRequest ? 'Asking for' : 'Remaining balance'}
                 </span>
+                <ViewerAmount
+                  amount={isNewRequest ? entity.original_amount : entity.remaining_balance}
+                  currency={currency}
+                  detail
+                  className="break-words text-xl font-bold text-fg-primary sm:text-right"
+                />
               </div>
               <Progress value={progress} aria-label="Funding progress" className="h-2" />
               <div className="flex flex-col gap-1 text-xs text-fg-secondary sm:flex-row sm:justify-between">
                 <span>{progress.toFixed(1)}% funded</span>
-                <span className="break-words sm:text-right">
-                  Original:{' '}
-                  {formatCurrency(
-                    entity.original_amount,
-                    entity.currency ?? PLATFORM_DEFAULT_CURRENCY
-                  )}
-                </span>
+                {!isNewRequest && (
+                  <span className="break-words sm:text-right">
+                    Original: <ViewerAmount amount={entity.original_amount} currency={currency} />
+                  </span>
+                )}
               </div>
             </div>
 
@@ -128,10 +132,7 @@ export const loanDetailConfig: EntityDetailConfig = {
                     Monthly Payment
                   </div>
                   <div className="break-words text-lg font-semibold">
-                    {formatCurrency(
-                      entity.monthly_payment,
-                      entity.currency ?? PLATFORM_DEFAULT_CURRENCY
-                    )}
+                    <ViewerAmount amount={entity.monthly_payment} currency={currency} />
                   </div>
                 </div>
               )}
@@ -236,7 +237,7 @@ export const loanDetailConfig: EntityDetailConfig = {
           <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
             <span className="text-fg-secondary">Loan Type</span>
             <Badge variant="secondary">
-              {labelFor(LOAN_TYPES, entity.loan_type) ?? 'Request New Loan'}
+              {labelFor(LOAN_TYPES, entity.loan_type) ?? LOAN_TYPES[0].label}
             </Badge>
           </div>
           <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -255,10 +256,10 @@ export const loanDetailConfig: EntityDetailConfig = {
             <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
               <span className="text-fg-secondary">Min Offer</span>
               <span className="break-words font-medium sm:text-right">
-                {formatCurrency(
-                  entity.minimum_offer_amount,
-                  entity.currency ?? PLATFORM_DEFAULT_CURRENCY
-                )}
+                <ViewerAmount
+                  amount={entity.minimum_offer_amount}
+                  currency={entity.currency ?? PLATFORM_DEFAULT_CURRENCY}
+                />
               </span>
             </div>
           )}
