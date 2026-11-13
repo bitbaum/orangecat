@@ -23,7 +23,7 @@ import {
   getMyTicket,
   guestTicketPath,
 } from '@/domain/events/tickets';
-import { notifyTicketIssued } from '@/domain/events/notify';
+import { notifyHostTicketTaken, notifyTicketIssued } from '@/domain/events/notify';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
 
@@ -79,6 +79,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     return respond(async () => {
       const ticket = await claimFreeTicket(await client(), id);
       void notifyTicketIssued({ eventId: id, userId, seats: 1, paid: false });
+      void notifyHostTicketTaken({ eventId: id, userId });
       return { ticket };
     });
   }
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
   }
   return respond(async () => {
     const ticket = await claimGuestTicket(await client(), id, name);
+    void notifyHostTicketTaken({ eventId: id, guestName: name });
     return { ticket, ticketPath: guestTicketPath(id, ticket.ticket_code) };
   });
 }

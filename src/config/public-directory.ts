@@ -60,8 +60,14 @@ export const EXACT_FIXTURE_USERNAMES = [
 ] as const;
 const EXACT_FIXTURE_USERNAME_SET = new Set<string>(EXACT_FIXTURE_USERNAMES);
 
-// "QA Grok A": a QA run's profile, named for the run.
-const FIXTURE_DISPLAY_NAME = /^(e2e reset user|user|qa\s.+)$/i;
+// "QA Grok A": a QA run's profile, named for the run. "E2E User", "Messaging
+// Test User", "Test Service User": names test suites gave the accounts they
+// signed up (seen in production's people list, 2026-11-13). Written in the regex
+// subset JavaScript and PostgreSQL read alike, so a query can apply it too
+// (PostgREST `imatch`) before it pages.
+export const FIXTURE_DISPLAY_NAME_PATTERN =
+  '^(e2e( reset)? user|user|qa\\s.+|(\\S+\\s)?test(\\s\\S+)?\\suser)$';
+const FIXTURE_DISPLAY_NAME = new RegExp(FIXTURE_DISPLAY_NAME_PATTERN, 'i');
 
 /**
  * Names CI and workflow audits give the groups they mint, as POSIX regular

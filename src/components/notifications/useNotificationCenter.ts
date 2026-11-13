@@ -6,20 +6,9 @@ import { toast } from 'sonner';
 import { useNotifications, notificationTitle, type Notification } from '@/hooks/useNotifications';
 import { ROUTES } from '@/config/routes';
 
+// Payments, Social and Messages are categories (NOTIFICATION_TYPE_CATEGORY),
+// sent to the API as they are; each covers every type filed under it.
 type UIFilter = 'all' | 'unread' | 'payments' | 'social' | 'messages';
-
-function getAPIFilter(uiFilter: UIFilter): 'all' | 'unread' | string {
-  switch (uiFilter) {
-    case 'payments':
-      return 'payment';
-    case 'social':
-      return 'follow';
-    case 'messages':
-      return 'message';
-    default:
-      return uiFilter;
-  }
-}
 
 interface UseNotificationCenterParams {
   onClose: () => void;
@@ -41,7 +30,7 @@ export function useNotificationCenter({ onClose }: UseNotificationCenterParams) 
     clearRead,
     refresh,
   } = useNotifications({
-    filter: getAPIFilter(uiFilter),
+    filter: uiFilter,
     limit: 20,
     realtime: true,
   });

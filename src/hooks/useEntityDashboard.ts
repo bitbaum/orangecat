@@ -210,7 +210,9 @@ export function useEntityDashboard<T extends BaseEntity>({
         await refresh();
       } catch (err) {
         logger.error(`Failed to delete ${config.name}`, { error: err, id }, 'EntityDashboardPage');
-        toast.error(`Failed to delete ${config.name}. Please try again.`);
+        toast.error(`Couldn't delete this ${config.name.toLowerCase()}`, {
+          description: err instanceof Error ? err.message : undefined,
+        });
       } finally {
         setDeletingIds(prev => {
           const next = new Set(prev);
