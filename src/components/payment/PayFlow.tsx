@@ -43,6 +43,8 @@ interface PayWords {
   disclaimer: string;
   generating: string;
   generate: string;
+  /** The generate action when "pay from my wallet" sits above it. */
+  generateOther?: string;
   payFromWallet: string;
   payFromWalletNote: string;
   payingFromWallet: string;
@@ -260,7 +262,7 @@ export function PayFlow({
             disabled={notReady}
             isLoading={flow.generating}
           >
-            {flow.generating ? words.generating : words.generate}
+            {flow.generating ? words.generating : (words.generateOther ?? words.generate)}
           </Button>
         </>
       ) : (

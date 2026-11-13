@@ -160,8 +160,8 @@ describe('PayFlow — the action waits for an amount it can pay', () => {
     expect(
       screen.getByRole('button', { name: 'Pay from my wallet' }).hasAttribute('disabled')
     ).toBe(true);
-    expect(screen.getByRole('button', { name: PAY_COPY.generate }).hasAttribute('disabled')).toBe(
-      true
-    );
+    expect(
+      screen.getByRole('button', { name: PAY_COPY.generateOther }).hasAttribute('disabled')
+    ).toBe(true);
   });
 });
