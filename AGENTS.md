@@ -176,6 +176,16 @@ PR, stay on it until it is deployed, and give the owner the live URL. Ask the
 owner about the product, never about git, and offer options rather than an open
 question.
 
+**Every step you ask of the owner carries its link.** Never write "open the
+Cat", "go to Settings → AI" or "look in Cat → Controls" without the full
+address beside it, written out so it can be tapped
+(`https://orangecat.ch/companions/talk?with=cat`,
+`https://orangecat.ch/settings/ai`). The owner reads on a phone and should
+never have to find a page you already know the address of. Take the path from
+`src/config/routes.ts`, not from memory; if a step has no page of its own, say
+which page it is on and link that. This holds for every message, not only the
+last one: a status update that names a page links it too.
+
 **Two hand-offs keep the chain alive; never remove either.** Both exist because
 the sweep falls back to `GITHUB_TOKEN` when `FLEET_PAT` is absent, and a
 `GITHUB_TOKEN` push triggers no workflow:
