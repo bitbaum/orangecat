@@ -527,6 +527,9 @@ export const PAYMENT_METHODS_COPY = {
   publicOnlyHeading: (name: string) => `Pay ${name} with`,
   publicNote: (name: string) => `Paid in that app, straight to ${name}. OrangeCat never holds it.`,
   sharedOnRequest: (name: string) => `${name} shares the details when asked`,
+  /** Signed out: Ask opens a conversation, which needs an account. Say so before the tap. */
+  sharedOnRequestSignedOut: (name: string) =>
+    `${name} shares the details when asked. Asking needs a free account.`,
   open: 'Open',
   copy: 'Copy',
   copied: 'Copied',

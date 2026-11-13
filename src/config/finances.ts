@@ -11,6 +11,7 @@ export const FINANCES_PAGE = {
         ? '1 payment had no price recorded when it arrived and is valued at today’s rate.'
         : `${n} payments had no price recorded when they arrived and are valued at today’s rate.`,
     empty: 'Nothing has come in yet. Sell something, offer a service, or get paid by link.',
+    emptyCta: 'Get paid by link',
   },
   debts: {
     title: 'You owe',
@@ -40,7 +41,6 @@ export const FINANCES_PAGE = {
     },
     satisfied: 'Every line is covered — payments now land in your usual wallet.',
     noWallets: 'Add a wallet first — each line sends money to one of your wallets.',
-    walletsHref: '/wallets',
     walletsCta: 'Add a wallet',
     share: (percent: number) => `${percent}% of everything that comes in`,
     fillOnce: (amount: string) => `${amount}, once`,

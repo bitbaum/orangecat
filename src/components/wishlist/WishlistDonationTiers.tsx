@@ -105,7 +105,7 @@ export function WishlistDonationTiers({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <Gift className="h-5 w-5 text-accent-warm" />
+        <Gift className="h-5 w-5 text-fg-secondary" />
         <h4 className="font-semibold text-fg-primary">Support a specific goal:</h4>
       </div>
 

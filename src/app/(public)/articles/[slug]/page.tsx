@@ -143,7 +143,7 @@ export default async function ArticlePage({ params }: PageProps) {
           )}
 
           <header className="mb-10">
-            <h1 className="text-4xl font-semibold leading-[1.15] tracking-display text-fg-primary sm:text-5xl">
+            <h1 className="font-heading text-4xl font-semibold leading-[1.15] tracking-display text-fg-primary sm:text-5xl">
               {article.title}
             </h1>
             {showExcerpt && (
@@ -198,7 +198,7 @@ export default async function ArticlePage({ params }: PageProps) {
               the article column; it hides itself under 3 headings, so short
               pieces render a clean single column. */}
           <div className="xl:relative">
-            <div className="[&>.bp-article>*:first-child]:mt-0">
+            <div className="[&_.bp-article]:px-0 [&>.bp-article>*:first-child]:mt-0">
               <LongformBody blocks={blocks} />
             </div>
             <aside className="hidden xl:absolute xl:left-full xl:top-0 xl:ml-12 xl:block xl:h-full xl:w-[240px]">

@@ -35,11 +35,14 @@ describe('phone tap targets', () => {
     expect(link.querySelector('.hidden')).toBeNull();
   });
 
-  it('the switch between signing in and signing up is 44px tall', () => {
+  // The sign-in / create-account switch itself is now a SegmentedControl
+  // under the title (44px cells; auth-one-accent-and-errors.test.tsx). The
+  // way back from a password reset stays a text button, and stays 44px.
+  it('"Sign in instead" on the reset form is 44px tall', () => {
     render(
-      <AuthSocialLogin mode="login" setMode={() => {}} loading={false} onOAuthSignIn={() => {}} />
+      <AuthSocialLogin mode="forgot" setMode={() => {}} loading={false} onOAuthSignIn={() => {}} />
     );
-    expect(screen.getByRole('button', { name: 'Create an account' }).className).toMatch(
+    expect(screen.getByRole('button', { name: 'Sign in instead' }).className).toMatch(
       /\bmin-h-11\b/
     );
   });

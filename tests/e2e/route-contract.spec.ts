@@ -31,7 +31,6 @@ const PUBLIC_PAGES = [
   '/faq',
   '/privacy',
   '/terms',
-  '/technology',
   '/docs',
   '/community',
 ];
@@ -40,6 +39,9 @@ const PUBLIC_PAGES = [
 const LEGACY_REDIRECTS: Array<[from: string, to: RegExp]> = [
   ['/loans', /\/discover\?type=loans$/],
   ['/circles', /\/discover\?type=circles$/],
+  ['/technology', /\/docs$/],
+  ['/company/about', /\/about$/],
+  ['/pages', /\/discover$/],
   // The breadcrumb on a public asset page; it opens public assets like its
   // siblings. The owner's own list is /dashboard/assets.
   ['/assets', /\/discover\?type=assets$/],

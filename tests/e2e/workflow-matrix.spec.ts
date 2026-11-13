@@ -204,7 +204,7 @@ test.describe('workflow matrix', () => {
       const resetUrl = `${BASE_URL}/auth/reset-password?access_token=${encodeURIComponent(resetToken)}&refresh_token=${encodeURIComponent(refreshToken)}&type=recovery`;
       await page.goto(resetUrl);
 
-      await expect(page.getByRole('heading', { name: 'Create New Password' })).toBeVisible({
+      await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible({
         timeout: 15000,
       });
 
@@ -213,10 +213,8 @@ test.describe('workflow matrix', () => {
       await passwordFields.nth(0).fill(newPassword);
       await passwordFields.nth(1).fill(newPassword);
 
-      await page.getByRole('button', { name: 'Update Password', exact: true }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Password Updated Successfully' })
-      ).toBeVisible({
+      await page.getByRole('button', { name: 'Update password', exact: true }).click();
+      await expect(page.getByRole('heading', { name: 'Password updated' })).toBeVisible({
         timeout: 20000,
       });
     });

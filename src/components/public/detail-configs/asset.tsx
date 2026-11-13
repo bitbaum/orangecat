@@ -21,7 +21,6 @@ import { AssetEventsCard } from './AssetEventsCard';
 export const assetDetailConfig: EntityDetailConfig = {
   entityType: 'asset',
   ownerLabel: 'Listed By',
-  descriptionTitle: 'About this Asset',
   metadataSelect: 'title, description',
   showPaymentSection: false,
   getViewRoute: id => ROUTES.ASSETS.VIEW(id),

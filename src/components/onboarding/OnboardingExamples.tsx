@@ -9,27 +9,35 @@ const EXAMPLE_PROMPTS = [
   'My neighbourhood needs a community space — I want to fundraise and organise it',
 ];
 
+/** How many to show: three whole sentences read; six wrapped pills were a wall. */
+const SHOWN = 3;
+
 /**
- * Example bios to start from. Each chip shows the whole sentence and lets CSS
- * clamp it to two lines, so a long one ends at a line, not mid-word as the old
- * 50-character slice did ("start sellin…").
+ * Example bios to start from: whole sentences, one per row, each a full-width
+ * 44px target, so none is cut mid-word and nothing wraps into a pill box.
  */
 export function OnboardingExamples({ onPick }: { onPick: (prompt: string) => void }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-fg-tertiary font-medium uppercase tracking-wide">Examples</p>
-      <div className="flex flex-wrap gap-2">
-        {EXAMPLE_PROMPTS.map(prompt => (
-          <button
-            key={prompt}
-            type="button"
-            onClick={() => onPick(prompt)}
-            className="rounded-sm border border-subtle px-3 py-1.5 text-left text-xs text-fg-secondary transition-colors hover:border-strong hover:bg-surface-raised hover:text-fg-primary"
-          >
-            <span className="line-clamp-2">{prompt}</span>
-          </button>
+    <div className="space-y-2">
+      <p
+        id="onboarding-examples"
+        className="mb-0 text-xs font-medium uppercase tracking-wide text-fg-secondary"
+      >
+        Examples
+      </p>
+      <ul aria-labelledby="onboarding-examples" className="flex flex-col gap-2">
+        {EXAMPLE_PROMPTS.slice(0, SHOWN).map(prompt => (
+          <li key={prompt}>
+            <button
+              type="button"
+              onClick={() => onPick(prompt)}
+              className="flex min-h-11 w-full items-center rounded-md border border-subtle px-3 py-2 text-left text-sm text-fg-secondary transition-colors hover:border-strong hover:bg-surface-raised hover:text-fg-primary"
+            >
+              {prompt}
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

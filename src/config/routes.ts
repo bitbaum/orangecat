@@ -194,6 +194,25 @@ export function getRouteSurface(pathname: string): RouteSurface {
   return 'public';
 }
 
+/**
+ * Public pages that the app's own navigation also lists (src/config/navigation.ts):
+ * signed in, they open inside the app shell, so the sidebar and tab bar do not
+ * vanish on the way there and back.
+ */
+const SIGNED_IN_APP_PAGES: readonly string[] = ['/what-you-can-do'];
+
+/**
+ * getRouteSurface, given who is looking. Shell chrome (AppShell, the tab bar)
+ * reads this; everything that only needs the route's own class keeps
+ * getRouteSurface.
+ */
+export function getShellSurface(pathname: string, signedIn: boolean): RouteSurface {
+  const surface = getRouteSurface(pathname);
+  return surface === 'public' && signedIn && SIGNED_IN_APP_PAGES.includes(pathname)
+    ? 'app'
+    : surface;
+}
+
 /** Shell chrome overrides for routes that need a focused, low-distraction layout. */
 export interface RouteChrome {
   hideMobileBottomNav: boolean;
@@ -217,6 +236,17 @@ export interface RouteChrome {
    * Confirm card (seen live 2026-11-01 at 390px).
    */
   feedbackTab: boolean;
+  /**
+   * The page already has its one orange action (a pay page's "Pay CHF 20"),
+   * so the header's sign-up steps down to outline: two orange buttons on one
+   * screen leave the payer guessing which one pays.
+   */
+  quietHeaderSignup: boolean;
+}
+
+/** One person's pay page (/pay/<username>), not the /pay landing. */
+export function isPayPagePath(pathname: string): boolean {
+  return /^\/pay\/[^/]+\/?$/.test(pathname);
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -265,6 +295,7 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // headings, the Open Accounting card, My things, /pay and a project's
     // "Hide the code" (QA 2026-11-10). The edge tab is the host's quiet shape.
     feedbackTab: true,
+    quietHeaderSignup: isPayPagePath(pathname),
   };
 }
 
@@ -323,6 +354,26 @@ export const SIGN_IN_REQUIRED_PREFIXES = [
   // The "Following" feed: signed out it can only say "Please sign in".
   '/home',
 ] as const;
+
+/**
+ * Which form a signed-out person meets when sign-in is required.
+ *
+ * Sign-in by default: someone opening /dashboard, /settings or /messages
+ * without a session is almost always a returning person on a new device or
+ * after a timeout. Sign-up only where a newcomer is the likely visitor:
+ *   - a create form ("Create your account" is what they are doing);
+ *   - the Cat, which the public "What do you want to do?" box sends a sentence
+ *     to, when this browser has never held a session (no `sb-*` cookie).
+ */
+export function signInModeFor(pathname: string, hasHeldSession: boolean): 'login' | 'register' {
+  if (/\/create(\/|$)/.test(pathname)) {
+    return 'register';
+  }
+  if (!hasHeldSession && pathname.startsWith(ROUTES.DASHBOARD.CAT)) {
+    return 'register';
+  }
+  return 'login';
+}
 
 /** True when the middleware must see a signed-in user before the page renders. */
 export function requiresSignIn(pathname: string): boolean {
@@ -408,6 +459,7 @@ export const ROUTES = {
   GOVERNANCE: '/governance',
   ECOSYSTEM: '/ecosystem',
   ABOUT: '/about',
+  /** The studio behind OrangeCat (bitbaum). */
   HOW_IT_WORKS: '/how-it-works',
   /** The map: every capability in the visitor's words, with a Start on each. */
   WHAT_YOU_CAN_DO: '/what-you-can-do',
@@ -522,6 +574,8 @@ export const ROUTES = {
     PEOPLE: '/dashboard/people',
     WALLETS: ENTITY_REGISTRY['wallet'].basePath,
     WALLETS_CREATE: ENTITY_REGISTRY['wallet'].createPath,
+    /** Opens the wallet form on the connection field, for someone who came to send. */
+    WALLETS_FOR_SEND: `${ENTITY_REGISTRY['wallet'].basePath}?for=send`,
     GROUPS: ENTITY_REGISTRY['group'].basePath,
     GROUPS_CREATE: ENTITY_REGISTRY['group'].createPath,
     ASSETS: ENTITY_REGISTRY['asset'].basePath,
@@ -642,4 +696,5 @@ export const ROUTES = {
   SETTINGS_NOTIFICATIONS: '/settings/notifications',
   SETTINGS_MEMORY: '/settings/memory',
   SETTINGS_USAGE: '/settings/usage',
+  SETTINGS_PREFERENCES: '/settings/preferences',
 } as const;

@@ -8,6 +8,7 @@
 
 'use client';
 
+import type { Ref } from 'react';
 import { MessageSquare, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUnreadCount } from '@/stores/messaging';
@@ -38,15 +39,19 @@ export function MessagesButton() {
 export function NotificationsButton({
   onClick,
   isOpen = false,
+  ref,
 }: {
   onClick: () => void;
   /** Whether the notification center it controls is currently open. */
   isOpen?: boolean;
+  /** The bell, so the notification center can hand focus back to it. */
+  ref?: Ref<HTMLButtonElement>;
 }) {
   const { count: unreadCount } = useUnreadNotifications();
 
   return (
     <HeaderIconButton
+      ref={ref}
       icon={Bell}
       label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
       onClick={onClick}

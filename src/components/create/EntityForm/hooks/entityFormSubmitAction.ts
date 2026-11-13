@@ -1,4 +1,5 @@
 import { ZodError } from 'zod';
+import { focusFirstInvalidField } from './focusFirstInvalidField';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
@@ -76,6 +77,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
             fieldErrors[err.path[0] as string] = err.message;
           });
           setErrors(fieldErrors);
+          focusFirstInvalidField(config.fieldGroups, Object.keys(fieldErrors));
           return;
         }
         // No errors on visible fields — advance (errors on hidden fields caught at final submit)
@@ -241,6 +243,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
         ...fieldErrors,
         general: invalidFieldsSummary(config, Object.keys(fieldErrors)),
       });
+      focusFirstInvalidField(config.fieldGroups, Object.keys(fieldErrors));
     } else {
       const errorMsg =
         error instanceof Error ? error.message : `Failed to ${mode} ${config.name.toLowerCase()}`;

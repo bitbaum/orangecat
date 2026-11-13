@@ -1,50 +1,46 @@
 /**
  * FORM HEADER COMPONENT
- * Renders back link and page title
+ *
+ * The create/edit page header, drawn by PageHeader (the SSOT for signed-in
+ * page chrome) so a create form, a wizard and a list page share one frame:
+ * breadcrumb → title → subtitle, with actions (owner, template) on the right.
+ * It used to hand-build its own header with a palette-coloured type icon.
  */
 
-import { type LucideIcon } from 'lucide-react';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { COLOR_CLASSES } from '@/config/entity-registry';
-import type { EntityMetadata } from '@/config/entity-registry';
+import type { ReactNode } from 'react';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface FormHeaderProps {
-  icon: LucideIcon;
-  colorTheme: EntityMetadata['colorTheme'];
   name: string;
   namePlural: string;
   pageDescription: string;
   backUrl: string;
   mode: 'create' | 'edit';
+  actions?: ReactNode;
+  className?: string;
+}
+
+export function formHeaderTitle(mode: 'create' | 'edit', name: string): string {
+  return `${mode === 'create' ? 'Create' : 'Edit'} ${name}`;
 }
 
 export function FormHeader({
-  icon: Icon,
-  colorTheme,
   name,
   namePlural,
   pageDescription,
   backUrl,
   mode,
+  actions,
+  className = 'mb-6',
 }: FormHeaderProps) {
+  const title = formHeaderTitle(mode, name);
   return (
-    <div className="mb-6">
-      <Breadcrumb
-        items={[
-          { label: namePlural, href: backUrl },
-          { label: `${mode === 'create' ? 'Create' : 'Edit'} ${name}` },
-        ]}
-        className="mb-4"
-      />
-      <div className="flex items-center gap-3">
-        <Icon className={`w-8 h-8 ${COLOR_CLASSES[colorTheme].text}`} />
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-fg-primary">
-            {mode === 'create' ? 'Create' : 'Edit'} {name}
-          </h1>
-          <p className="text-fg-secondary mt-1">{pageDescription}</p>
-        </div>
-      </div>
-    </div>
+    <PageHeader
+      className={className}
+      title={title}
+      subtitle={pageDescription}
+      breadcrumbs={[{ label: namePlural, href: backUrl }, { label: title }]}
+      actions={actions}
+    />
   );
 }

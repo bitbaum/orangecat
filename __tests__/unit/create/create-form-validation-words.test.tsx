@@ -46,25 +46,20 @@ describe('number fields speak plainly', () => {
   });
 });
 
-describe('a create page where picking a card is the way on', () => {
-  const scratchCard = () =>
-    screen.getByText('Start from scratch').closest('button') as HTMLButtonElement;
-  const templates = [{ id: 't1', name: 'Cargo bike', description: 'A bike', defaults: {} }];
-
-  it('starts with nothing ticked', () => {
+describe('the template picker', () => {
+  // Templates open in a dialog over the form, so there is no "Start from
+  // scratch" card: the form is it. Nothing reads as chosen until a pick.
+  it('starts with nothing chosen', () => {
     render(
       <WizardTemplatePicker
-        templates={templates as never}
+        templates={[{ id: 't1', name: 'Cargo bike', description: 'A bike', defaults: {} }] as never}
         onSelectTemplate={() => {}}
-        preselectScratch={false}
       />
     );
-    expect(scratchCard().className).not.toContain('ring-ring/20');
-  });
-
-  it('the wizard, which has Next, still starts on Start from scratch', () => {
-    render(<WizardTemplatePicker templates={templates as never} onSelectTemplate={() => {}} />);
-    expect(scratchCard().className).toContain('ring-ring/20');
+    expect(screen.queryByText('Start from scratch')).toBeNull();
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.getAttribute('aria-pressed')).not.toBe('true');
+    }
   });
 });
 

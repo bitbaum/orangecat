@@ -4,6 +4,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### systemic#11 · medium · Orange is used as decoration and as text outside its two meanings; as text it is 2.0-2.3:1 in light
 
+**Status:** Fixed (fourth pull request).
+
 Status: Partly (#1634): settings, collaborate, consent, pricing, profile claims, in-text links; the wider sweep is open.
 
 - **Where:** /settings, /collaborate, /pricing, /study-bitcoin, /bitcoin-wallet-guide, /dashboard/profile-claims, … (both, both themes)
@@ -12,6 +14,8 @@ Status: Partly (#1634): settings, collaborate, consent, pricing, profile claims,
 - **Fix:** First step, exact: SettingsShell.tsx:56 -> `border-fg-primary text-fg-primary` and reword the docstring at :19. collaborate/page.tsx:156 remove the title icon (MoneyPage has none on purpose) or `text-accent-warm` -> `text-fg-secondary`; :164 and :217 drop `variant="accent"` (primary is the default). oauth/authorize/ConsentForm.tsx:140 and AddEmailForm.tsx:68 `text-accent-warm` -> `font-semibold text-fg-primary`. pricing/page.tsx:137 and :141: accent border and badge only when `!isComingSoon`; otherwise `border-default` and `border border-default bg-surface-raised text-fg-secondary`. In-text links (share/page.tsx:46, wallets/WhyReceive.tsx:17, WalletForm.tsx:259, create/wallet-selector/WalletSelectorField.tsx:207, profile/ProfileArticlesTab.tsx:31, articles/CoverImageUpload.tsx:164) -> `text-fg-primary underline underline-offset-4`. Then a ratchet in the style of check-type-scale.mjs: …
 
 ### systemic#13 · low · At 320px the footer's last row is clipped on both sides
+
+**Status:** Already fixed on main.
 
 - **Where:** all 35 public pages with the footer (phone, both themes)
 - **What a person meets:** On the smallest phones, and at 125% zoom on a 390px phone, the first and last footer links are cut off (WCAG 1.4.10 Reflow).

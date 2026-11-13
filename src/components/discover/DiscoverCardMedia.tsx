@@ -62,9 +62,10 @@ export function DiscoverCardMedia({
           aria-hidden
           className={cn(
             'oc-mark-monogram text-fg-primary/40',
-            round
-              ? 'flex h-18 w-18 items-center justify-center rounded-full border border-border-subtle text-3xl'
-              : 'text-5xl'
+            // A small bordered tile, not a letter filling half the card: a
+            // missing picture should look intended, and take little room.
+            'flex items-center justify-center border border-border-subtle',
+            round ? 'h-18 w-18 rounded-full text-3xl' : 'h-12 w-12 rounded-md text-2xl'
           )}
         >
           {initialOf(title)}

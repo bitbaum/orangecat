@@ -16,6 +16,7 @@
 
 import { Composer } from '@bitbaum/chatkit/react';
 import type { ComposerSendResult } from '@bitbaum/chatkit';
+import type { ComposerVoice } from '@bitbaum/chatkit/react';
 import '@bitbaum/chatkit/styles.css';
 import { cn } from '@/lib/utils';
 import { CAT_HUB_COPY } from '@/config/cat-hub';
@@ -36,6 +37,8 @@ interface ChatInputProps {
   sendLabel?: string;
   autoFocus?: boolean;
   sendBlockedReason?: string | null;
+  /** The microphone. Defaults to the Cat's (server transcription, signed in). */
+  voice?: ComposerVoice;
 }
 
 export function ChatInput({
@@ -50,6 +53,7 @@ export function ChatInput({
   sendLabel = 'Send message',
   autoFocus,
   sendBlockedReason,
+  voice = CHAT_VOICE,
 }: ChatInputProps) {
   const isInline = placement === 'inline';
 
@@ -72,7 +76,7 @@ export function ChatInput({
           sending={isLoading}
           onStop={onStop}
           autoFocus={autoFocus ?? isInline}
-          voice={CHAT_VOICE}
+          voice={voice}
           labels={{ send: sendLabel, stop: 'Stop generating', voice: 'Dictate your message' }}
         />
       </div>

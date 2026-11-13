@@ -18,7 +18,7 @@ import { ComponentType, SVGProps } from 'react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { COMPANION_COPY } from './companions';
 import { ROUTES } from './routes';
-import { ENTITY_REGISTRY } from './entity-registry';
+import { ENTITY_REGISTRY, ENTITY_TYPES } from './entity-registry';
 import { XBrandIcon, GitHubIcon } from '@/components/icons/BrandIcons';
 import {
   Home,
@@ -36,7 +36,8 @@ import {
   Globe,
   Info,
   HelpCircle,
-  Search,
+  Pencil,
+  ShoppingBag,
   ClipboardList,
   BarChart3,
   Handshake,
@@ -44,7 +45,9 @@ import {
   UserPlus,
   Landmark,
 } from 'lucide-react';
-import { ECOSYSTEM_PILLARS } from './ecosystem';
+import { ECOSYSTEM, ECOSYSTEM_PILLARS } from './ecosystem';
+import { SOURCE_REPO_URL } from './brand';
+import { CTA_LABELS } from './landing-page';
 
 /**
  * Counter source identifier for nav items showing a live numeric badge.
@@ -65,6 +68,8 @@ export interface NavigationItem {
   external?: boolean; // For external links that open in new tab
   comingSoon?: boolean; // For features not yet available
   counter?: NavCounterSource; // Optional live counter source for badges
+  /** Other paths this item owns: it shows active on them as well as on href. */
+  activeFor?: readonly string[];
 }
 
 export interface NavSection {
@@ -86,11 +91,107 @@ interface NavItem {
 }
 
 /**
+ * The name and one-line description of each public page, keyed by route.
+ *
+ * The header, the visitor menu and the footer used to label the same routes
+ * independently, so one page had several names ("Pricing" in the header,
+ * "Cat plans" in the footer; "Docs" and "Documentation"). Every public link is
+ * built from this map, so a page is called one thing wherever it is listed.
+ */
+export const PUBLIC_PAGES = {
+  [ROUTES.HOW_IT_WORKS]: {
+    name: 'How it works',
+    description: 'How people and agents publish and fund work with Bitcoin',
+  },
+  [ROUTES.WHAT_YOU_CAN_DO]: {
+    name: 'What you can do',
+    description: 'Everything here, explained',
+  },
+  [ROUTES.DISCOVER]: {
+    name: 'Discover',
+    description: 'Explore projects, causes, products and services',
+  },
+  [ROUTES.PAY_LANDING]: {
+    name: 'Get paid',
+    description: 'Your own pay page; the money goes to your wallet',
+  },
+  [ROUTES.BUILDERS]: { name: 'Builders', description: 'Independent builders the studio approves' },
+  [ROUTES.PRICING]: {
+    name: 'Pricing',
+    description: 'Cat plans — free, BYOK, credits, supporter',
+    keywords: 'plans cost price subscription free',
+  },
+  [ROUTES.BLOG]: { name: 'Blog', description: 'Guides and stories from the build' },
+  [ROUTES.ABOUT]: { name: 'About & mission', description: 'Why OrangeCat exists' },
+  [ROUTES.ROADMAP]: { name: 'Roadmap', description: 'What works now and what comes next' },
+  [ROUTES.CHANGELOG]: { name: 'Changelog', description: 'Every shipped improvement' },
+  [ROUTES.DOCS]: {
+    name: 'Docs',
+    description: 'Entities, Bitcoin payments, and security',
+    keywords: 'documentation help guide',
+  },
+  [ROUTES.WHITEPAPER]: { name: 'Whitepaper', description: 'The economic coordination thesis' },
+  [ROUTES.GOVERNANCE]: { name: 'Governance', description: 'Solon-governed platform policies' },
+  [ROUTES.SUPPORT]: {
+    name: 'Support OrangeCat',
+    description: 'Back OrangeCat with Bitcoin',
+    keywords: 'fund back contribute',
+  },
+  [ROUTES.STUDY_BITCOIN]: {
+    name: 'Bitcoin guide',
+    description: 'Wallets, Lightning Network and self-custody',
+  },
+  [ROUTES.FEEDBACK]: {
+    name: 'Ask the Cat',
+    description: 'Ask anything, or tell us what could be better',
+  },
+  [ROUTES.FAQ]: {
+    name: 'FAQ',
+    description: 'Frequently asked questions',
+    keywords: 'help questions support',
+  },
+  [ROUTES.STATUS]: { name: 'Status', description: 'Current status of the platform services' },
+  [ROUTES.ECOSYSTEM]: {
+    name: 'The stack',
+    description: 'One stack, three pillars — and what binds them',
+  },
+  [ROUTES.COMMUNITY]: { name: 'Community', description: 'Public timeline and community posts' },
+  [ROUTES.STEAL]: {
+    name: 'Steal the cat',
+    description: 'MIT-licensed: take the code and own your copy',
+  },
+  [ROUTES.PRIVACY]: { name: 'Privacy', description: 'How we handle your data' },
+  [ROUTES.TERMS]: { name: 'Terms', description: 'Terms of service' },
+  [ROUTES.SECURITY]: { name: 'Security', description: 'Security practices and data protection' },
+} as const satisfies Record<string, { name: string; description: string; keywords?: string }>;
+
+export type PublicPageRoute = keyof typeof PUBLIC_PAGES;
+
+/** A public page as a navigation link: its one name, its one line, its route. */
+export function publicPageLink(route: PublicPageRoute): NavigationItem & { href: string } {
+  const page = PUBLIC_PAGES[route];
+  return { name: page.name, href: route, description: page.description };
+}
+
+/** The sibling products, from the pillar SSOT, as external links. */
+const ecosystemPillarLinks: Array<NavigationItem & { href: string; external: true }> =
+  ECOSYSTEM_PILLARS.filter(pillar => !pillar.isSelf).map(pillar => ({
+    name: pillar.title,
+    href: pillar.siteUrl,
+    external: true,
+    description: pillar.tagline,
+  }));
+
+/**
  * Header navigation configuration
  *
  * SSOT for the marketing/public header links. This nav is for anonymous
  * visitors only — signed-in users get ONE navigation system (the app
  * sidebar + header actions), never a second marketing nav on top of it.
+ *
+ * "Product" is what the product does; "About" is the company and its record.
+ * They used to be one menu called Product, and a top-level "Support" pointed
+ * at the page where people fund OrangeCat — not where they get help.
  */
 const headerNavigationConfig = {
   /** Navigation for unauthenticated visitors (marketing surfaces) */
@@ -98,61 +199,34 @@ const headerNavigationConfig = {
     {
       name: 'Product',
       children: [
-        { name: 'About & mission', href: ROUTES.ABOUT, description: 'Why OrangeCat exists' },
-        {
-          name: 'Roadmap',
-          href: ROUTES.ROADMAP,
-          description: 'What works now and what comes next',
-        },
-        { name: 'Changelog', href: ROUTES.CHANGELOG, description: 'Every shipped improvement' },
-        {
-          name: 'Docs',
-          href: ROUTES.DOCS,
-          description: 'Entities, Bitcoin payments, and security',
-        },
-        {
-          name: 'Whitepaper',
-          href: ROUTES.WHITEPAPER,
-          description: 'The economic coordination thesis',
-        },
-        {
-          name: 'Governance',
-          href: ROUTES.GOVERNANCE,
-          description: 'Solon-governed platform policies',
-        },
-        {
-          name: 'Pricing',
-          href: ROUTES.PRICING,
-          description: 'Cat plans — free, BYOK, credits, supporter',
-        },
+        publicPageLink(ROUTES.HOW_IT_WORKS),
+        publicPageLink(ROUTES.WHAT_YOU_CAN_DO),
+        publicPageLink(ROUTES.DISCOVER),
+        publicPageLink(ROUTES.PAY_LANDING),
       ],
     },
-    { name: 'Blog', href: ROUTES.BLOG, description: 'Guides and stories from the build' },
+    publicPageLink(ROUTES.PRICING),
+    publicPageLink(ROUTES.BLOG),
     {
-      name: 'Support',
-      href: ROUTES.SUPPORT,
-      description: 'Back OrangeCat with Bitcoin',
+      name: 'About',
+      children: [
+        publicPageLink(ROUTES.ABOUT),
+        publicPageLink(ROUTES.ROADMAP),
+        publicPageLink(ROUTES.CHANGELOG),
+        publicPageLink(ROUTES.DOCS),
+        publicPageLink(ROUTES.WHITEPAPER),
+        publicPageLink(ROUTES.GOVERNANCE),
+        publicPageLink(ROUTES.SUPPORT),
+      ],
     },
     {
       // The sibling products used to sit loose in the top bar, one link each,
       // with nothing saying they belong together. One menu, three pillars —
       // led by the page that explains the stack.
       name: 'Ecosystem',
-      children: [
-        {
-          name: 'The stack',
-          href: ROUTES.ECOSYSTEM,
-          description: 'One stack, three pillars — and what binds them',
-        },
-        ...ECOSYSTEM_PILLARS.filter(pillar => !pillar.isSelf).map(pillar => ({
-          name: pillar.title,
-          href: pillar.siteUrl,
-          external: true,
-          description: pillar.tagline,
-        })),
-      ],
+      children: [publicPageLink(ROUTES.ECOSYSTEM), ...ecosystemPillarLinks],
     },
-  ],
+  ] satisfies NavigationItem[],
 };
 
 /**
@@ -178,6 +252,9 @@ export function getHeaderNavigationItems(): NavigationItem[] {
  * 3. More (Settings, Profile, Help) - collapsed by default
  */
 
+/** The money screens toggle between themselves; one nav item owns all three. */
+const MONEY_PATHS: readonly string[] = [ROUTES.RECEIVE, ROUTES.SEND, ROUTES.REQUESTS];
+
 /**
  * The four entity sections the sidebar used to carry (Create · Fund ·
  * Coordinate · Finance — fifteen nouns behind four chevrons) are gone. One
@@ -201,6 +278,27 @@ const peopleSection: NavSection = {
       requiresAuth: true,
     },
     {
+      name: 'Timeline',
+      href: ROUTES.TIMELINE,
+      icon: BookOpen,
+      description: 'Your feed',
+      requiresAuth: true,
+    },
+    {
+      name: 'Community',
+      href: ROUTES.COMMUNITY,
+      icon: Globe,
+      description: 'Public feed',
+      requiresAuth: false,
+    },
+    {
+      name: 'Collaborate',
+      href: ROUTES.COLLABORATE,
+      icon: Handshake,
+      description: 'Open roles',
+      requiresAuth: true,
+    },
+    {
       // The claims dashboard shipped complete on 2026-08-18 — table,
       // API, dashboard, and a public /claim/<id> landing page — and had
       // written zero rows by 2026-09-05, because nothing in this file
@@ -211,24 +309,105 @@ const peopleSection: NavSection = {
       description: 'Create a profile for someone who has not joined yet',
       requiresAuth: true,
     },
+  ],
+};
+
+/**
+ * Money and work: what you earned, owe and traded, and the work that brings
+ * it in. One word per place, the same word its page uses ("Finances", not
+ * "Your money"), and no icon shared with another row (Deals used to wear
+ * Collaborate's handshake).
+ */
+const moneyAndWorkSection: NavSection = {
+  id: 'operations',
+  title: 'Money and work',
+  priority: 6,
+  defaultExpanded: false,
+  collapsible: true,
+  requiresAuth: true,
+  items: [
+    {
+      name: 'Finances',
+      href: ROUTES.DASHBOARD.FINANCES,
+      icon: Receipt,
+      description: 'Income, debts, civic split, tax estimate',
+      requiresAuth: true,
+    },
+    {
+      name: 'Deals',
+      href: ROUTES.DASHBOARD.DEALS,
+      icon: ShoppingBag,
+      description: 'What you bought and sold, and reviewing the other side',
+      requiresAuth: true,
+    },
     {
       // "Of the money you owe the public, how would you divide it?" —
       // a person's declared split between locality, region and nation.
-      name: 'Your civic split',
+      name: 'Civic split',
       href: ROUTES.DASHBOARD.CIVIC_SPLIT,
       icon: Landmark,
       description: 'Say where your public money should go',
       requiresAuth: true,
     },
     {
-      name: 'Collaborate',
-      href: ROUTES.COLLABORATE,
-      icon: Handshake,
-      description: 'Open roles',
+      name: 'Tasks',
+      href: ROUTES.DASHBOARD.TASKS,
+      icon: ClipboardList,
+      description: 'Manage team tasks',
+      requiresAuth: true,
+    },
+    {
+      name: 'Bookings',
+      href: ROUTES.DASHBOARD.BOOKINGS,
+      icon: CalendarCheck,
+      description: 'Service bookings',
+      requiresAuth: true,
+    },
+    {
+      name: 'Analytics',
+      href: ROUTES.DASHBOARD.TASKS_ANALYTICS,
+      icon: BarChart3,
+      description: 'Task analytics',
       requiresAuth: true,
     },
   ],
 };
+
+/**
+ * The places under "you" — your page, your profile, settings, help. They live
+ * in the account menu (the avatar), not in the sidebar: listing them in both
+ * gave one place two names and two icons. The palette reads them from here.
+ */
+export const accountNavItems: NavigationItem[] = [
+  {
+    name: 'Your page',
+    href: ROUTES.PROFILE.SELF,
+    icon: UserIcon,
+    description: 'Your profile, as others see it',
+    requiresAuth: true,
+  },
+  {
+    name: 'Edit profile',
+    href: ROUTES.DASHBOARD.INFO_EDIT,
+    icon: Pencil,
+    description: 'Name, photo, bio and links',
+    requiresAuth: true,
+  },
+  {
+    name: 'Settings',
+    href: ROUTES.SETTINGS,
+    icon: Settings,
+    description: 'Preferences',
+    requiresAuth: true,
+  },
+  {
+    name: 'Help',
+    href: ROUTES.FAQ,
+    icon: HelpCircle,
+    description: 'FAQ & Support',
+    requiresAuth: false,
+  },
+];
 
 // Simplified main navigation - X/Twitter style
 const simplifiedSections: NavSection[] = [
@@ -262,6 +441,9 @@ const simplifiedSections: NavSection[] = [
         icon: LayoutGrid,
         description: 'Everything you made or joined',
         requiresAuth: true,
+        // Each type's own list belongs to My things: without this, opening
+        // your products left every row in the sidebar dark.
+        activeFor: ENTITY_TYPES.map(type => ENTITY_REGISTRY[type].basePath),
       },
       {
         // Moving money is the defining verb on an economic platform, so it gets
@@ -272,6 +454,7 @@ const simplifiedSections: NavSection[] = [
         icon: QrCode,
         description: 'Get paid or send Bitcoin',
         requiresAuth: true,
+        activeFor: MONEY_PATHS,
       },
       {
         // Stays primary: it carries the unread counter and holds a slot in the
@@ -295,38 +478,11 @@ const simplifiedSections: NavSection[] = [
     ],
   },
   peopleSection,
+  moneyAndWorkSection,
   {
-    id: 'operations',
-    title: 'Work',
-    priority: 6,
-    defaultExpanded: false, // Collapsed by default
-    collapsible: true,
-    requiresAuth: true,
-    items: [
-      {
-        name: 'Tasks',
-        href: ROUTES.DASHBOARD.TASKS,
-        icon: ClipboardList,
-        description: 'Manage team tasks',
-        requiresAuth: true,
-      },
-      {
-        name: 'Analytics',
-        href: ROUTES.DASHBOARD.TASKS_ANALYTICS,
-        icon: BarChart3,
-        description: 'Task analytics',
-        requiresAuth: true,
-      },
-      {
-        name: 'Bookings',
-        href: ROUTES.DASHBOARD.BOOKINGS,
-        icon: CalendarCheck,
-        description: 'Service bookings',
-        requiresAuth: true,
-      },
-    ],
-  },
-  {
+    // Three rows, not ten: Profile, Settings and Help moved to the account
+    // menu; Timeline and Community to People; Finances and Deals to Money and
+    // work.
     id: 'more',
     title: 'More',
     priority: 7,
@@ -338,56 +494,15 @@ const simplifiedSections: NavSection[] = [
         name: COMPANION_COPY.talk.title,
         href: ROUTES.AI_ASSISTANTS.TALK,
         icon: ENTITY_REGISTRY['ai_assistant'].icon,
-        description: 'The Cat, the fleet\u2019s specialists and your own bots, one list',
+        description: 'The Cat, the fleet’s specialists and your own bots, one list',
         requiresAuth: true,
       },
       {
-        name: 'Profile',
-        href: ROUTES.PROFILES.ME,
-        icon: UserIcon,
-        description: 'Your profile',
-        requiresAuth: true,
-      },
-      {
-        name: 'Your money',
-        href: ROUTES.DASHBOARD.FINANCES,
-        icon: Receipt,
-        description: 'Income, debts, civic split, tax estimate',
-        requiresAuth: true,
-      },
-      {
-        name: 'Your deals',
-        href: ROUTES.DASHBOARD.DEALS,
-        icon: Handshake,
-        description: 'What you bought and sold, and reviewing the other side',
-        requiresAuth: true,
-      },
-      {
-        name: 'Settings',
-        href: ROUTES.SETTINGS,
-        icon: Settings,
-        description: 'Preferences',
-        requiresAuth: true,
-      },
-      {
-        name: 'Timeline',
-        href: ROUTES.TIMELINE,
-        icon: BookOpen,
-        description: 'Your feed',
-        requiresAuth: true,
-      },
-      {
-        name: 'Explore',
+        // Named after its page, with the compass the anonymous tab bar uses.
+        name: 'Discover',
         href: ROUTES.DISCOVER,
-        icon: Search,
-        description: 'Discover',
-        requiresAuth: false,
-      },
-      {
-        name: 'Community',
-        href: ROUTES.COMMUNITY,
-        icon: Globe,
-        description: 'Public feed',
+        icon: Compass,
+        description: 'Find people and projects',
         requiresAuth: false,
       },
       {
@@ -395,13 +510,6 @@ const simplifiedSections: NavSection[] = [
         href: ROUTES.ABOUT,
         icon: Info,
         description: 'About OrangeCat',
-        requiresAuth: false,
-      },
-      {
-        name: 'Help',
-        href: ROUTES.FAQ,
-        icon: HelpCircle,
-        description: 'FAQ & Support',
         requiresAuth: false,
       },
     ],
@@ -436,20 +544,28 @@ export interface MobileTabItem {
   /** Opens the contextual create surface rather than navigating to `href`. */
   opensCreate?: boolean;
   counter?: NavCounterSource;
+  /** Other paths this slot owns: it shows active on them as well as on href. */
+  activeFor?: readonly string[];
 }
 
 export const mobileTabBar: MobileTabItem[] = [
   { name: 'Cat', href: ROUTES.DASHBOARD.CAT, icon: BrandMarkIcon },
   { name: 'Home', href: ROUTES.DASHBOARD.HOME, icon: Home },
-  { name: 'Receive', href: ROUTES.RECEIVE, icon: QrCode, primary: true },
+  // Same name as the sidebar's entry: one destination, one word.
+  { name: 'Money', href: ROUTES.RECEIVE, icon: QrCode, primary: true, activeFor: MONEY_PATHS },
   { name: 'Create', href: ROUTES.CREATE, icon: Plus, opensCreate: true },
   { name: 'Messages', href: ROUTES.MESSAGES, icon: MessageSquare, counter: 'messages' },
 ];
 
+/**
+ * A visitor's bar: places to look, and the way in. Creating needs an account,
+ * so a raised Create slot here was the loudest control on Discover and led
+ * straight to the sign-in form. No slot is raised.
+ */
 export const mobileTabBarAnonymous: MobileTabItem[] = [
   { name: 'Home', href: ROUTES.HOME, icon: Home },
   { name: 'Explore', href: ROUTES.DISCOVER, icon: Compass },
-  { name: 'Create', href: ROUTES.CREATE, icon: Plus, primary: true, opensCreate: true },
+  { name: PUBLIC_PAGES[ROUTES.HOW_IT_WORKS].name, href: ROUTES.HOW_IT_WORKS, icon: Info },
   { name: 'Sign in', href: ROUTES.AUTH, icon: UserIcon },
 ];
 
@@ -467,45 +583,42 @@ export const bottomNavItems: NavItem[] = [];
  */
 export const footerNavigation = {
   product: [
-    { name: 'Discover', href: ROUTES.DISCOVER },
-    { name: 'Get paid', href: ROUTES.PAY_LANDING },
-    { name: 'How it works', href: ROUTES.HOW_IT_WORKS },
-    { name: 'What you can do', href: ROUTES.WHAT_YOU_CAN_DO },
-    { name: 'Builders', href: ROUTES.BUILDERS },
-    { name: 'Roadmap', href: ROUTES.ROADMAP },
-    { name: 'Changelog', href: ROUTES.CHANGELOG },
-    { name: 'Cat plans', href: ROUTES.PRICING },
+    publicPageLink(ROUTES.DISCOVER),
+    publicPageLink(ROUTES.PAY_LANDING),
+    publicPageLink(ROUTES.HOW_IT_WORKS),
+    publicPageLink(ROUTES.WHAT_YOU_CAN_DO),
+    // /builders only redirects to bitbaum; say so in the link itself.
+    { ...publicPageLink(ROUTES.BUILDERS), href: ECOSYSTEM.studio.buildersUrl, external: true },
+    publicPageLink(ROUTES.ROADMAP),
+    publicPageLink(ROUTES.CHANGELOG),
+    publicPageLink(ROUTES.PRICING),
   ],
   learn: [
-    { name: 'Documentation', href: ROUTES.DOCS },
-    { name: 'Whitepaper', href: ROUTES.WHITEPAPER },
-    { name: 'Blog', href: ROUTES.BLOG },
-    { name: 'Bitcoin guide', href: ROUTES.STUDY_BITCOIN },
+    publicPageLink(ROUTES.DOCS),
+    publicPageLink(ROUTES.WHITEPAPER),
+    publicPageLink(ROUTES.BLOG),
+    publicPageLink(ROUTES.STUDY_BITCOIN),
   ],
   support: [
-    { name: 'Ask the Cat', href: ROUTES.FEEDBACK },
-    { name: 'Support OrangeCat', href: ROUTES.SUPPORT },
-    { name: 'FAQ', href: ROUTES.FAQ },
-    { name: 'Status', href: ROUTES.STATUS },
+    publicPageLink(ROUTES.FEEDBACK),
+    publicPageLink(ROUTES.SUPPORT),
+    publicPageLink(ROUTES.FAQ),
+    publicPageLink(ROUTES.STATUS),
   ],
   ecosystem: [
-    { name: 'The stack', href: ROUTES.ECOSYSTEM },
+    publicPageLink(ROUTES.ECOSYSTEM),
     // Sibling products come from the pillar SSOT, so a fourth pillar (or a
     // moved domain) never has to be remembered here.
-    ...ECOSYSTEM_PILLARS.filter(pillar => !pillar.isSelf).map(pillar => ({
-      name: pillar.title,
-      href: pillar.siteUrl,
-      external: true,
-    })),
-    { name: 'Governance', href: ROUTES.GOVERNANCE },
-    { name: 'Community', href: ROUTES.COMMUNITY },
-    { name: 'About OrangeCat', href: ROUTES.ABOUT },
-    { name: 'Steal the cat', href: ROUTES.STEAL },
+    ...ecosystemPillarLinks,
+    publicPageLink(ROUTES.GOVERNANCE),
+    publicPageLink(ROUTES.COMMUNITY),
+    publicPageLink(ROUTES.ABOUT),
+    publicPageLink(ROUTES.STEAL),
   ],
   legal: [
-    { name: 'Privacy', href: ROUTES.PRIVACY },
-    { name: 'Terms', href: ROUTES.TERMS },
-    { name: 'Security', href: ROUTES.SECURITY },
+    publicPageLink(ROUTES.PRIVACY),
+    publicPageLink(ROUTES.TERMS),
+    publicPageLink(ROUTES.SECURITY),
   ],
   social: [
     {
@@ -515,7 +628,7 @@ export const footerNavigation = {
     },
     {
       name: 'GitHub',
-      href: 'https://github.com/bitbaum/orangecat',
+      href: SOURCE_REPO_URL,
       icon: GitHubIcon,
     },
   ],
@@ -526,7 +639,7 @@ export const footerNavigation = {
  */
 export const authNavigationItems = [
   { name: 'Sign In', href: `${ROUTES.AUTH}?mode=login` },
-  { name: 'Get Started', href: `${ROUTES.AUTH}?mode=register` },
+  { name: CTA_LABELS.primaryAction, href: ROUTES.AUTH_REGISTER },
 ];
 
 /**
@@ -538,4 +651,5 @@ export const navigationLabels = {
   COMING_SOON: 'Coming soon',
   SIDEBAR_EXPAND: 'Expand sidebar',
   SIDEBAR_COLLAPSE: 'Collapse sidebar',
+  SIDEBAR_MORE: 'More',
 } as const;

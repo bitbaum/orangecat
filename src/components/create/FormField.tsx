@@ -21,6 +21,10 @@ import type { Currency } from '@/types/settings';
 import { AvailabilityEditor } from './fields/AvailabilityEditor';
 import { ImageField } from './fields/ImageField';
 import { DateInput } from './fields/DateInputs';
+import { SelectField } from './fields/SelectField';
+import { CheckboxField, RadioGroupField } from './fields/ChoiceFields';
+
+export { CHOICE_INPUT } from './fields/ChoiceFields';
 
 // ==================== COMPONENT ====================
 
@@ -65,8 +69,14 @@ export function FormField({
           <Input
             id={name}
             type="number"
-            value={(value as string | number) ?? ''}
-            onChange={e => onChange(e.target.value ? parseFloat(e.target.value) : null)}
+            value={
+              value === undefined || value === null || value === config.emptyValue
+                ? ''
+                : (value as string | number)
+            }
+            onChange={e =>
+              onChange(e.target.value ? parseFloat(e.target.value) : (config.emptyValue ?? null))
+            }
             onFocus={onFocus}
             onBlur={onBlur}
             placeholder={placeholder}
@@ -102,75 +112,43 @@ export function FormField({
           />
         );
 
-      case 'select': {
-        // The chosen option's meaning, where the choice is made — not in a
-        // guidance panel a screen away.
-        const chosen = options?.find(o => o.value === value)?.description;
+      case 'select':
         return (
-          <>
-            <select
-              id={name}
-              value={(value as string) || ''}
-              onChange={e => onChange(e.target.value)}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              disabled={disabled}
-              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:border-interactive transition-colors ${baseInputClass} ${
-                disabled ? 'bg-surface-raised cursor-not-allowed' : ''
-              }`}
-            >
-              <option value="">Select {label.toLowerCase()}</option>
-              {options?.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {chosen && <p className="mt-1.5 text-xs text-fg-secondary">{chosen}</p>}
-          </>
+          <SelectField
+            id={name}
+            label={label}
+            value={value}
+            options={options}
+            onChange={onChange}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            disabled={disabled}
+            className={baseInputClass}
+          />
         );
-      }
 
       case 'radio':
         return (
-          <div className="space-y-2">
-            {options?.map(option => (
-              <label key={option.value} className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name={name}
-                  value={option.value}
-                  checked={value === option.value}
-                  onChange={e => onChange(e.target.value)}
-                  onFocus={onFocus}
-                  disabled={disabled}
-                  className="mt-1"
-                />
-                <div>
-                  <span className="text-sm font-medium text-fg-primary">{option.label}</span>
-                  {option.description && (
-                    <p className="text-xs text-fg-secondary">{option.description}</p>
-                  )}
-                </div>
-              </label>
-            ))}
-          </div>
+          <RadioGroupField
+            name={name}
+            value={value}
+            options={options}
+            onChange={onChange}
+            onFocus={onFocus}
+            disabled={disabled}
+          />
         );
 
       case 'checkbox':
         return (
-          <label className="flex min-h-11 items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              id={name}
-              checked={!!value}
-              onChange={e => onChange(e.target.checked)}
-              onFocus={onFocus}
-              disabled={disabled}
-              className="w-4 h-4 rounded border-strong text-fg-primary focus:ring-ring"
-            />
-            <span className="text-sm text-fg-primary">{placeholder || label}</span>
-          </label>
+          <CheckboxField
+            id={name}
+            checked={!!value}
+            text={placeholder || label}
+            onChange={onChange}
+            onFocus={onFocus}
+            disabled={disabled}
+          />
         );
 
       case 'url':

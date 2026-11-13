@@ -1,20 +1,19 @@
 'use client';
 
-import Link from 'next/link';
 import type { RefObject } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { CREATE_OPTIONS, type CreateOption } from '@/config/create-options';
+import { CreateOptionList } from '@/components/create/CreateOptionList';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
+import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 
 interface MobileCreateSheetProps {
   /** Whether the sheet is visible */
   isOpen: boolean;
   /** Callback when sheet should close */
   onClose: () => void;
-  /** Optional callback when an option is selected (before navigation) */
-  onSelect?: (option: CreateOption) => void;
   returnFocusRef?: RefObject<HTMLButtonElement | null>;
+  /** The kind of thing on the current page; its create row is drawn first. */
+  suggestedType?: EntityType;
 }
 
 /**
@@ -26,14 +25,9 @@ interface MobileCreateSheetProps {
 export function MobileCreateSheet({
   isOpen,
   onClose,
-  onSelect,
   returnFocusRef,
+  suggestedType,
 }: MobileCreateSheetProps) {
-  const handleSelect = (option: CreateOption) => {
-    onSelect?.(option);
-    onClose();
-  };
-
   return (
     <Dialog
       open={isOpen}
@@ -57,25 +51,14 @@ export function MobileCreateSheet({
         <DialogTitle className="flex min-h-11 items-center pr-12">Create</DialogTitle>
 
         {/* Speaking beats picking a type you don't know the name of yet. Above
-            the grid because it's the faster path, not an afterthought. */}
+            the list because it's the faster path, not an afterthought. */}
         <VoiceCreate className="mb-3" onNavigate={onClose} />
 
-        {/* Options Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {CREATE_OPTIONS.map(option => (
-            <Link
-              key={option.name}
-              href={option.href}
-              onClick={() => handleSelect(option)}
-              className="flex touch-manipulation flex-col items-center gap-1.5 rounded-md border border-subtle p-3 transition-colors hover:border-strong hover:bg-surface-raised active:bg-surface-raised/80"
-            >
-              <div className={cn('rounded-md p-2.5', option.bgColor)}>
-                <option.icon className={cn('w-5 h-5', option.color)} />
-              </div>
-              <span className="text-xs font-medium text-fg-primary text-center">{option.name}</span>
-            </Link>
-          ))}
-        </div>
+        {/* The same list as /create and the header menu: one row anatomy. */}
+        <CreateOptionList
+          onNavigate={onClose}
+          suggestedHref={suggestedType ? ENTITY_REGISTRY[suggestedType].createPath : undefined}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import Loading from '@/components/Loading';
 import { MFAVerify } from '@/components/auth/MFAVerify';
 import { AuthHeroPanel } from './AuthHeroPanel';
+import { AnonymousEntry, AuthNotices } from './AuthNotices';
+import { AuthTitle } from './AuthTitle';
 import { AuthDivider } from './AuthDivider';
 import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
@@ -16,6 +19,11 @@ import { EmailCodeSignIn } from './EmailCodeSignIn';
 import { clearPendingEmailCode, readPendingEmailCode } from './pendingEmailCode';
 import { PasskeySignInButton } from './PasskeySignInButton';
 import { APP_NAME } from '@/config/brand';
+
+const MODE_ITEMS = [
+  { value: 'login', label: 'Sign in' },
+  { value: 'register', label: 'Create account' },
+] as const;
 
 /**
  * @param clientName  The app that sent the person here (Solon, Loki…), already
@@ -48,7 +56,7 @@ export default function AuthPageClient({
   }, [emailCodeAvailable]);
   const {
     mode,
-    setMode,
+    switchMode,
     formData,
     setFormData,
     showPassword,
@@ -56,7 +64,10 @@ export default function AuthPageClient({
     showConfirmPassword,
     setShowConfirmPassword,
     loading,
+    anonLoading,
+    fieldErrors,
     error,
+    retryable,
     success,
     rememberMe,
     setRememberMe,
@@ -81,12 +92,13 @@ export default function AuthPageClient({
   } = useAuthForm();
 
   if (session && hydrated) {
-    return <Loading fullScreen message="Welcome back! Setting up your dashboard..." />;
+    // Not "Welcome back": this also shows to someone who signed up a second ago.
+    return <Loading fullScreen message={`Opening ${APP_NAME}…`} />;
   }
 
   if (showMFAVerify) {
     return (
-      <div className="min-h-screen bg-surface-raised/40 dark:bg-surface-page flex items-center justify-center p-8">
+      <div className="min-h-screen bg-surface-page flex items-center justify-center p-8">
         <MFAVerify
           onVerificationComplete={handleMFAVerificationComplete}
           onCancel={handleMFACancelled}
@@ -96,10 +108,10 @@ export default function AuthPageClient({
   }
 
   return (
-    <div className="min-h-screen bg-surface-raised/40 dark:bg-surface-page flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-surface-page flex flex-col lg:flex-row">
       <AuthHeroPanel client={clientName ? { name: clientName, home: clientHome } : null} />
 
-      <div className="flex-1 flex flex-col justify-center items-center p-8 max-[359px]:pt-4 lg:p-12 bg-surface-raised/40 dark:bg-surface-page">
+      <div className="flex-1 flex flex-col justify-center items-center p-8 max-[359px]:pt-4 lg:p-12 bg-surface-page">
         {/* Mobile-only back link — the desktop hero panel hosts the same
             link but is hidden below lg. Without this, mobile users have
             no non-browser escape from the form. */}
@@ -116,9 +128,9 @@ export default function AuthPageClient({
               (fixed bottom-right). Compacting non-essential vertical rhythm
               here — never touch-target sizes — clears it without a layout
               rewrite. */}
-          <div className="text-center mb-8 max-[359px]:mb-4">
-            <h1 className="text-2xl font-semibold mb-2 text-fg-primary">
-              {mode === 'forgot'
+          <AuthTitle
+            title={
+              mode === 'forgot'
                 ? 'Reset password'
                 : clientName
                   ? mode === 'login'
@@ -126,90 +138,61 @@ export default function AuthPageClient({
                     : `Create your account for ${clientName}`
                   : mode === 'login'
                     ? 'Welcome back'
-                    : 'Get started'}
-            </h1>
-            <p className="text-fg-secondary">
-              {mode === 'forgot'
+                    : 'Get started'
+            }
+            lede={
+              mode === 'forgot'
                 ? 'Enter your email to receive reset instructions'
                 : clientName
                   ? `One account for ${clientName}, ${APP_NAME} and the apps built with it.`
                   : mode === 'login'
                     ? `Sign in to your ${APP_NAME} account`
-                    : `Create your ${APP_NAME} account`}
-            </p>
-          </div>
+                    : `Create your ${APP_NAME} account`
+            }
+          />
 
-          {error && (
-            <div className="mb-6 p-4 rounded-lg oc-error-surface">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-status-negative mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm text-status-negative mb-3">{error}</p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRetry}
-                      disabled={loading}
-                      className="text-status-negative border-status-negative-subtle hover:bg-status-negative/10"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Try Again
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearError}
-                      className="text-status-negative hover:bg-status-negative/10"
-                    >
-                      Dismiss
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Which side you are on, and the other one, before anything else:
+              the switch used to be a text link under the provider buttons,
+              below the fold on a phone. */}
+          {mode !== 'forgot' && (
+            <SegmentedControl
+              label="Sign in or create an account"
+              items={MODE_ITEMS}
+              value={mode}
+              onChange={next => {
+                setCodeMode(false);
+                switchMode(next);
+              }}
+              className="mb-6 max-[359px]:mb-3"
+            />
           )}
 
-          {success && (
-            <div className="mb-6 p-4 rounded-lg bg-status-positive-subtle border border-status-positive/20">
-              <div className="flex items-center space-x-3">
-                <CheckCircle2 className="w-5 h-5 text-status-positive" />
-                <p className="text-sm text-status-positive">{success}</p>
-              </div>
-            </div>
-          )}
+          <AuthNotices
+            error={error}
+            success={success}
+            retryable={retryable}
+            loading={loading}
+            onRetry={handleRetry}
+            onDismiss={handleClearError}
+          />
 
-          {/* Anonymous-first: the fastest way in is the lead CTA. Pseudonymous
-              by default is a core principle — let people start with zero friction
-              and add an email later. Email/social remain right below. */}
-          {/* Not when another app sent the person here: it needs an account
-              it can attribute, and an anonymous one would only be asked for
-              an email on the next screen. */}
-          {mode !== 'forgot' && !clientName && (
+          {/* Creating an account: the fastest way in leads. Pseudonymous by
+              default is a core principle — start with zero friction and add
+              an email later. Not when another app sent the person here: it
+              needs an account it can attribute. On the sign-in side the same
+              way in sits at the foot, as a quiet option (AnonymousEntry), so
+              the one orange button there is "Sign in" — the lead button no
+              longer creates a new account for someone who came back. */}
+          {mode === 'register' && !clientName && (
             <div className="mb-6 max-[359px]:mb-3">
-              <Button
-                type="button"
+              <AnonymousEntry
                 variant="accent"
-                disabled={loading}
+                label="Start instantly — no email"
+                loading={anonLoading}
+                disabled={loading || anonLoading}
                 onClick={handleAnonymousSignIn}
-                className="w-full h-12 font-semibold"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <Sparkles className="w-5 h-5" />
-                    Start instantly — no email
-                  </span>
-                )}
-              </Button>
-              <p className="mt-2 text-center text-xs text-fg-tertiary">
-                Explore pseudonymously. Add an email anytime to secure your account.
-              </p>
-              <AuthDivider
-                label={`or ${mode === 'login' ? 'sign in' : 'sign up'} with email`}
-                className="mt-5"
               />
+              <AuthDivider label="or sign up with email" className="mt-5" />
             </div>
           )}
 
@@ -228,7 +211,7 @@ export default function AuthPageClient({
             <>
               <AuthFormBody
                 mode={mode}
-                setMode={setMode}
+                setMode={switchMode}
                 formData={formData}
                 setFormData={setFormData}
                 showPassword={showPassword}
@@ -236,6 +219,8 @@ export default function AuthPageClient({
                 showConfirmPassword={showConfirmPassword}
                 setShowConfirmPassword={setShowConfirmPassword}
                 loading={loading}
+                busy={anonLoading}
+                fieldErrors={fieldErrors}
                 captchaEnabled={captchaEnabled}
                 turnstileSiteKey={turnstileSiteKey}
                 handleCaptchaSuccess={handleCaptchaSuccess}
@@ -252,7 +237,7 @@ export default function AuthPageClient({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={loading}
+                  disabled={loading || anonLoading}
                   onClick={() => setCodeMode(true)}
                   className="mt-3 h-12 w-full"
                 >
@@ -267,10 +252,23 @@ export default function AuthPageClient({
 
           <AuthSocialLogin
             mode={mode}
-            setMode={setMode}
-            loading={loading}
+            setMode={switchMode}
+            loading={loading || anonLoading}
             onOAuthSignIn={handleOAuthSignIn}
           />
+
+          {mode === 'login' && !clientName && (
+            <div className="mt-8 border-t border-default pt-6 max-[359px]:mt-4">
+              <p className="mb-3 text-center text-sm text-fg-secondary">New here?</p>
+              <AnonymousEntry
+                variant="outline"
+                label="Try it without an account"
+                loading={anonLoading}
+                disabled={loading || anonLoading}
+                onClick={handleAnonymousSignIn}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

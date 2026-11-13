@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { ThingRow } from '@/components/things/ThingRow';
 import { DashboardSection } from './DashboardSection';
@@ -32,18 +31,10 @@ interface DashboardProjectsProps {
 export function DashboardProjects({ projects, stats }: DashboardProjectsProps) {
   const meta = ENTITY_REGISTRY.project;
 
+  // No section at all while there are none: the door above already covers
+  // starting one, and an empty box singled out one of the many kinds.
   if (projects.length === 0) {
-    return (
-      <DashboardSection id="dashboard-projects" title="Your projects">
-        <div className="rounded-lg border border-default bg-surface-base p-4 text-sm text-fg-secondary">
-          No projects yet. Say what you want to fund above and your Cat drafts one — or{' '}
-          <Link href={meta.createPath} className="font-medium text-fg-primary hover:underline">
-            start one yourself
-          </Link>
-          .
-        </div>
-      </DashboardSection>
-    );
+    return null;
   }
 
   const shown = projects.slice(0, DASHBOARD_PROJECT_ROWS);

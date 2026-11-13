@@ -17,6 +17,7 @@ import {
 import { composeToday, localClock } from '@/services/cat/today-lines';
 import { STARTER_HOME, getStarterChips, CAT_HOME_MAX_CHIPS } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
+import { DOOR_EXAMPLES } from '@/config/cat-door';
 import type { FullUserContext } from '@/services/ai/document-context';
 
 vi.mock('@/services/cat/platform-llm', () => ({
@@ -113,13 +114,12 @@ beforeEach(() => {
 // ─── Starters are derived, not written ───────────────────────────────────────
 
 describe('starter chips', () => {
-  it('derives one chip per top business entity type in the registry', () => {
-    const business = getEntitiesByCategory().business.slice(0, 3);
+  it("offers a new person the door's own example sentences, not registry nouns", () => {
     const starters = getStarterChips();
-    expect(starters).toHaveLength(business.length);
-    business.forEach((meta, i) => {
-      expect(starters[i].toLowerCase()).toContain(meta.name.toLowerCase());
-    });
+    expect(starters).toEqual(DOOR_EXAMPLES.slice(0, 3));
+    for (const meta of getEntitiesByCategory().business) {
+      expect(starters).not.toContain(`Help me create my first ${meta.name.toLowerCase()}`);
+    }
   });
 });
 

@@ -195,7 +195,7 @@ export const loanConfig = createEntityConfig<LoanFormData>({
   colorTheme: 'tiffany',
   backUrl: ENTITY_REGISTRY['loan'].basePath,
   successUrl: `${ENTITY_REGISTRY['loan'].basePath}/[id]`,
-  pageTitle: 'Create Loan Listing',
+  pageTitle: 'Create Loan',
   pageDescription: 'List your loan needs and connect with peer-to-peer lenders.',
   formTitle: 'Loan Details',
   formDescription: 'Set the loan amount, interest rate, and repayment terms',

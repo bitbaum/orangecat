@@ -157,14 +157,16 @@ const defaultValues: CreateGroupSchemaType = {
 
 export const groupConfig = createEntityConfig<CreateGroupSchemaType>({
   entityType: 'group',
-  name: 'Group',
-  namePlural: 'Groups',
+  // The registry's names, so the chooser, the list and this form agree
+  // ("Organization"); the form used to say "Create Group".
+  name: ENTITY_REGISTRY['group'].name,
+  namePlural: ENTITY_REGISTRY['group'].namePlural,
   icon: Users,
   colorTheme: 'tiffany',
   backUrl: ENTITY_REGISTRY['group'].basePath,
   successUrl: `${ENTITY_REGISTRY['group'].publicBasePath}/[slug]`,
-  pageTitle: 'Create Group',
-  pageDescription: 'Start a new group, circle, or organization',
+  pageTitle: `Create ${ENTITY_REGISTRY['group'].name}`,
+  pageDescription: ENTITY_REGISTRY['group'].plain.what,
   formTitle: 'Create New Group',
   formDescription:
     "Choose a label and configure your group. Labels influence defaults but don't restrict capabilities.",

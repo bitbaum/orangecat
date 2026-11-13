@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import PriceDisplay from '@/components/public/PriceDisplay';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
+import { ownerOnlyStatus } from '@/components/public/public-entity-detail-config';
 import { ROUTES } from '@/config/routes';
 
 // user_products stores `price` in the entity's chosen `currency` (NOT price_btc —
@@ -11,6 +12,14 @@ const getPrice = (entity: Record<string, unknown>) => ({
   currency: (entity.currency as string) || 'CHF',
 });
 
+/** inventory_count -1 (or null) = unlimited, e.g. digital goods. */
+export function availabilityLabel(inventory: number | null | undefined): string {
+  if (inventory === null || inventory === undefined || inventory < 0) {
+    return 'In stock';
+  }
+  return inventory > 0 ? `${inventory} available` : 'Sold out';
+}
+
 /**
  * SSOT for the product detail page. Used by BOTH the public route
  * (/products/[id]) and the owner dashboard route (/dashboard/store/[id]) — one
@@ -19,8 +28,8 @@ const getPrice = (entity: Record<string, unknown>) => ({
 export const productDetailConfig: EntityDetailConfig = {
   entityType: 'product',
   ownerLabel: 'Seller',
+  statusBadge: ownerOnlyStatus,
   createdLabel: 'Listed',
-  descriptionTitle: 'About this product',
   getViewRoute: id => ROUTES.PRODUCTS.VIEW(id),
   getCoverImages: entity => {
     const images = Array.isArray(entity.images) ? (entity.images as string[]) : [];
@@ -36,55 +45,45 @@ export const productDetailConfig: EntityDetailConfig = {
       ? { offers: { '@type': 'Offer', priceCurrency: currency, price: amount } }
       : {};
   },
-  renderDetails: (entity, payable) => {
+  // Price and stock lead the page, where a phone's first screen reaches: they
+  // used to sit in a Details card under the description, with a second, orange
+  // "Buy now" beside the pay panel's own action. The one action is the pay
+  // panel (#pay), which the mobile sticky bar leads to with the price in it.
+  renderLead: entity => {
     const { amount, currency } = getPrice(entity);
     const hasPrice = Number.isFinite(amount) && amount > 0;
+    return (
+      <Card>
+        <CardContent className="flex flex-col gap-2 pt-6">
+          {hasPrice && (
+            <PriceDisplay
+              amount={amount}
+              currency={currency}
+              className="text-3xl font-bold text-fg-primary"
+            />
+          )}
+          <p className="mb-0 text-sm font-medium text-fg-secondary">
+            {availabilityLabel(entity.inventory_count as number | null | undefined)}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  },
+  renderDetails: entity => {
     const productType = entity.product_type as string | undefined;
-    const inventory = entity.inventory_count as number | null | undefined;
+    if (!productType) {
+      return null;
+    }
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {hasPrice && (
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-fg-secondary">Price</span>
-              <PriceDisplay
-                amount={amount}
-                currency={currency}
-                className="text-right text-xl font-bold text-fg-primary"
-              />
-            </div>
-          )}
-          {productType && (
-            <div className="flex items-center justify-between">
-              <span className="text-fg-secondary">Type</span>
-              <span className="font-medium capitalize">{productType}</span>
-            </div>
-          )}
           <div className="flex items-center justify-between">
-            <span className="text-fg-secondary">Availability</span>
-            <span className="font-medium">
-              {/* inventory_count -1 (or null) = unlimited, e.g. digital goods. */}
-              {inventory === null || inventory === undefined || inventory < 0
-                ? 'In stock'
-                : inventory > 0
-                  ? `${inventory} available`
-                  : 'Sold out'}
-            </span>
+            <span className="text-fg-secondary">Type</span>
+            <span className="font-medium capitalize">{productType}</span>
           </div>
-          {hasPrice && payable && (
-            // Anchors to the payment section (#pay) — the buyer's "Buy" is paying
-            // the seller direct in Bitcoin. Hidden when the seller has no wallet
-            // (payable=false), so the CTA never promises an impossible action.
-            <a
-              href="#pay"
-              className="mt-1 flex w-full items-center justify-center rounded-md bg-accent-warm px-4 py-2.5 font-medium text-on-accent transition-colors hover:bg-accent-warm/90"
-            >
-              Buy now
-            </a>
-          )}
         </CardContent>
       </Card>
     );

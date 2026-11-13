@@ -90,7 +90,11 @@ export function ReceiveScreen() {
   }, []);
 
   if (authLoading || loading) {
-    return <MoneyLoading />;
+    return (
+      <MoneyPage title={RECEIVE_COPY.title} subtitle={RECEIVE_COPY.subtitle}>
+        <MoneyLoading />
+      </MoneyPage>
+    );
   }
 
   if (failed) {

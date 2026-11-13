@@ -36,7 +36,6 @@ const contactListerHref = (isSignedIn: boolean, contactHref: string): string =>
 export const loanDetailConfig: EntityDetailConfig = {
   entityType: 'loan',
   ownerLabel: 'Listed By',
-  descriptionTitle: 'About this Loan',
   visibilityFilter: PUBLIC_VISIBILITY.loan,
   getViewRoute: id => ROUTES.LOANS.VIEW(id),
   showPaymentSection: false,

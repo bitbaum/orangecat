@@ -21,6 +21,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
+import { MoneyActionBar } from '@/components/money/MoneyActionBar';
+import { isAmountInRange } from '@/components/money/amount-draft';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { AmountField } from '@/components/money/AmountField';
 import { PeoplePicker } from '@/components/money/PeoplePicker';
@@ -140,7 +142,11 @@ export function RequestsScreen() {
   );
 
   if (authLoading || loading) {
-    return <MoneyLoading />;
+    return (
+      <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle}>
+        <MoneyLoading />
+      </MoneyPage>
+    );
   }
 
   if (sent) {
@@ -214,15 +220,22 @@ export function RequestsScreen() {
         {error && <p className="text-sm text-status-negative">{error}</p>}
         <p className="text-center text-xs text-fg-tertiary">{REQUEST_COPY.disclaimer}</p>
 
-        <Button
-          variant="primary"
-          className="w-full"
-          onClick={handleSubmit}
-          disabled={submitting || !isRequestablePayer(payerCheck) || amount <= 0}
-          isLoading={submitting}
-        >
-          {submitting ? REQUEST_COPY.submitting : REQUEST_COPY.submit}
-        </Button>
+        {/* Where Send's button is: kept reachable above the tab bar on a phone. */}
+        <MoneyActionBar>
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={handleSubmit}
+            disabled={
+              submitting ||
+              !isRequestablePayer(payerCheck) ||
+              !isAmountInRange(amount, PAY_MIN_BTC, PAY_MAX_BTC)
+            }
+            isLoading={submitting}
+          >
+            {submitting ? REQUEST_COPY.submitting : REQUEST_COPY.submit}
+          </Button>
+        </MoneyActionBar>
       </div>
 
       <RequestList

@@ -22,8 +22,10 @@ import { Button } from '@/components/ui/Button';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { PaymentQRCode } from '@/components/payment/PaymentQRCode';
 import { AmountField } from '@/components/money/AmountField';
+import { isAmountInRange } from '@/components/money/amount-draft';
 import { usePayFlow } from '@/components/payment/usePayFlow';
 import { useSendCapability } from '@/hooks/useSendCapability';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { SEND_COPY } from '@/config/send';
 import { TIP_COPY, TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
 
@@ -46,6 +48,12 @@ interface PayWords {
   payingFromWallet: string;
   confirming: string;
   walletDeclined: (reason: string) => string;
+  /**
+   * The one action's label once an amount is entered ("Pay CHF 20"), and
+   * before ("Enter an amount"). Omit both to keep `generate` throughout.
+   */
+  payAmount?: (amount: string) => string;
+  enterAmount?: string;
 }
 
 interface PayFlowProps {
@@ -106,6 +114,7 @@ export function PayFlow({
     onAmountChange,
   });
   const canPayFromWallet = useSendCapability();
+  const { formatAmountBtc } = useDisplayCurrency();
   const { invoice, settleState, reset } = flow;
 
   if (flow.checkingWallet) {
@@ -208,6 +217,17 @@ export function PayFlow({
     );
   }
 
+  // The field's own bounds: a button is never live under its red line.
+  const amountReady = isAmountInRange(flow.amount, TIP_MIN_BTC, TIP_MAX_BTC);
+  const notReady = flow.generating || !amountReady;
+  const generateLabel = flow.generating
+    ? words.generating
+    : !words.payAmount
+      ? words.generate
+      : amountReady
+        ? words.payAmount(formatAmountBtc(flow.amount))
+        : (words.enterAmount ?? words.generate);
+
   return (
     <div className="space-y-4">
       {noteSlot}
@@ -228,7 +248,7 @@ export function PayFlow({
             variant="primary"
             className="w-full"
             onClick={flow.payFromWallet}
-            disabled={flow.generating || flow.amount <= 0}
+            disabled={notReady}
           >
             {words.payFromWallet}
           </Button>
@@ -237,21 +257,23 @@ export function PayFlow({
             variant="outline"
             className="w-full"
             onClick={flow.generate}
-            disabled={flow.generating || flow.amount <= 0}
+            disabled={notReady}
             isLoading={flow.generating}
           >
             {flow.generating ? words.generating : words.generate}
           </Button>
         </>
       ) : (
+        // Orange only once it can act: the not-yet state is the monochrome
+        // disabled button, never a dimmed orange slab.
         <Button
-          variant="accent"
+          variant={amountReady ? 'accent' : 'primary'}
           className="w-full"
           onClick={flow.generate}
-          disabled={flow.generating || flow.amount <= 0}
+          disabled={notReady}
           isLoading={flow.generating}
         >
-          {flow.generating ? words.generating : words.generate}
+          {generateLabel}
         </Button>
       )}
     </div>

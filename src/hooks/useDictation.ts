@@ -90,6 +90,14 @@ export const CHAT_VOICE = {
   transcribe: transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE),
 } as const;
 
+/**
+ * The microphone for a visitor with no account. The transcribe route needs a
+ * session, so a signed-out take sent there came back 401. The browser's own
+ * recogniser costs nothing and needs no account; where a browser has none,
+ * chatkit says so in words rather than leaving a dead button.
+ */
+export const SIGNED_OUT_VOICE = { prefer: 'browser' } as const;
+
 export function useDictation({ endpoint, lang, onTranscript, onError }: UseDictationOptions) {
   const onErrorRef = useRef(onError);
   useEffect(() => {

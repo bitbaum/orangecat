@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { BookOpen, Plus } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useComposer } from '@/contexts/ComposerContext';
 import Loading from '@/components/Loading';
@@ -81,14 +81,12 @@ function TimelineContent() {
   return (
     <>
       <SocialTimeline
-        title="My Timeline"
+        title="Timeline"
         icon={BookOpen}
         mode="timeline"
         // The composer sits directly under the title, with its own Share
         // Update button. A second one in the header only scrolled to it.
-        showShareButton={showComposer}
-        shareButtonText={TIMELINE_COPY.shareUpdateButton}
-        shareButtonIcon={Plus}
+        showShareButton={false}
         defaultSort="recent"
         showSortingControls={false}
         showInlineComposer={!showComposer}

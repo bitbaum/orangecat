@@ -22,6 +22,8 @@ export interface TimelineLayoutProps {
   additionalHeaderContent?: React.ReactNode;
   /** A pick-one row for the feed (its sort order): its own line on a phone. */
   headerTabs?: React.ReactNode;
+  /** Which view of the feed this is (All · Following · Everyone): under the title. */
+  viewSwitch?: React.ReactNode;
   emptyState?: React.ReactNode;
   postComposer?: React.ReactNode;
   inlineComposer?: React.ReactNode;
@@ -45,6 +47,7 @@ export default function TimelineLayout({
   enableMultiSelect = false,
   additionalHeaderContent,
   headerTabs,
+  viewSwitch,
   emptyState,
   postComposer,
   inlineComposer,
@@ -70,6 +73,7 @@ export default function TimelineLayout({
             {additionalHeaderContent && (
               <div className="flex items-center gap-2">{additionalHeaderContent}</div>
             )}
+            {viewSwitch && <div className="w-full">{viewSwitch}</div>}
             {headerTabs && <div className="w-full sm:w-80">{headerTabs}</div>}
           </div>
 

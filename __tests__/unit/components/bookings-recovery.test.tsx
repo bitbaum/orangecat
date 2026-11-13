@@ -25,9 +25,11 @@ describe('booking recovery and view filters', () => {
     vi.stubGlobal('fetch', fetcher);
     render(<BookingsPage />);
     expect(await screen.findByRole('alert')).toHaveTextContent('Temporarily unavailable');
-    expect(screen.queryByText('No bookings found')).not.toBeInTheDocument();
+    expect(screen.queryByText('No requests waiting')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Retry loading bookings' }));
-    await screen.findByText('No bookings found');
+    await screen.findByText('No requests waiting');
+    // The empty list ends in the way to get bookings.
+    expect(screen.getByRole('link', { name: 'Create a service' })).toBeInTheDocument();
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
@@ -48,9 +50,9 @@ describe('booking recovery and view filters', () => {
     fireEvent.click(screen.getByRole('button', { name: 'History' }));
     await screen.findByText('No booking history yet');
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'completed' } });
-    fireEvent.click(screen.getByRole('button', { name: /Incoming Requests/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Requests/ }));
     await screen.findByText('Booking incoming-fixture');
-    expect(screen.getByRole('button', { name: /Incoming Requests/ })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /^Requests/ })).toHaveAttribute(
       'aria-pressed',
       'true'
     );

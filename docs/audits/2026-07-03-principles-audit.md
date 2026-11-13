@@ -8,18 +8,18 @@ Baseline: `origin/main` @ `48e2b5e9`. Live schema verified directly on the box
 
 ## Violation counts by category
 
-| Category | Found | Fixed | Deferred |
-| --- | ---: | ---: | ---: |
-| Live schema drift breaking production (P1 bugs) | 2 | 2 | 0 |
-| Stale `scripts/db/live-schema.json` snapshot (audit:schema false alarms) | 5 | 5 | 0 |
-| Arbitrary hex in className (`grep -rn '\[#' src/`) | 0 | — | 0 |
-| Inline-style hex (`style={{…#`) | 0 | — | 0 |
-| Hardcoded table names in `.from('…')` outside SSOT | 0 | — | 0 |
-| Hardcoded page routes outside `src/config/routes.ts` | 10 | 9 | 1 (prose in Cat system prompt — not code) |
-| Hardcoded `fetch('/api/…')` outside `src/config/api-routes.ts` | 5 | 5 | 0 |
-| Stale tests asserting retired `SATS` currency (failing on main) | 3 | 3 | 0 |
-| Components > 300 lines (`*.tsx`, excl. tests) | 17 | 0 | 17 |
-| Duplicated code (jscpd, exact clones) | 468 clones / 3.25% lines | 0 | 468 |
+| Category                                                                 |                    Found | Fixed |                                  Deferred |
+| ------------------------------------------------------------------------ | -----------------------: | ----: | ----------------------------------------: |
+| Live schema drift breaking production (P1 bugs)                          |                        2 |     2 |                                         0 |
+| Stale `scripts/db/live-schema.json` snapshot (audit:schema false alarms) |                        5 |     5 |                                         0 |
+| Arbitrary hex in className (`grep -rn '\[#' src/`)                       |                        0 |     — |                                         0 |
+| Inline-style hex (`style={{…#`)                                          |                        0 |     — |                                         0 |
+| Hardcoded table names in `.from('…')` outside SSOT                       |                        0 |     — |                                         0 |
+| Hardcoded page routes outside `src/config/routes.ts`                     |                       10 |     9 | 1 (prose in Cat system prompt — not code) |
+| Hardcoded `fetch('/api/…')` outside `src/config/api-routes.ts`           |                        5 |     5 |                                         0 |
+| Stale tests asserting retired `SATS` currency (failing on main)          |                        3 |     3 |                                         0 |
+| Components > 300 lines (`*.tsx`, excl. tests)                            |                       17 |     0 |                                        17 |
+| Duplicated code (jscpd, exact clones)                                    | 468 clones / 3.25% lines |     0 |                                       468 |
 
 Gates after this pass: `type-check` 0 errors · `lint` clean · `jest` 957/957
 green · `audit:routes` clean · `audit:schema` clean.
@@ -97,18 +97,18 @@ locale formatting; project fixture uses `CHF`.
 
 Top offenders — split as touched, per the migration-as-touched convention:
 
-| Lines | File |
-| ---: | --- |
-| 460 | `src/components/search/CommandPalette.tsx` |
-| 432 | `src/components/entity/EntityDashboardPage.tsx` |
-| 402 | `src/components/public/PublicEntityDetailPage.tsx` |
-| 377 | `src/components/groups/GroupWallets.tsx` |
-| 375 | `src/app/(authenticated)/dashboard/bookings/[id]/page.tsx` |
-| 373 | `src/components/dashboard/TasksSection.tsx` |
-| 342 | `src/app/groups/[slug]/settings/page.tsx` |
-| 339 | `src/app/(public)/faq/page.tsx` |
-| 338 | `src/components/groups/GroupMembers.tsx` |
-| 333 | `src/components/profile/ProfileOverviewTab.tsx` |
+| Lines | File                                                       |
+| ----: | ---------------------------------------------------------- |
+|   460 | `src/components/search/CommandPalette.tsx`                 |
+|   432 | `src/components/entity/EntityDashboardPage.tsx`            |
+|   402 | `src/components/public/PublicEntityDetailPage.tsx`         |
+|   377 | `src/components/groups/GroupWallets.tsx`                   |
+|   375 | `src/app/(authenticated)/dashboard/bookings/[id]/page.tsx` |
+|   373 | `src/components/dashboard/TasksSection.tsx`                |
+|   342 | `src/app/groups/[slug]/settings/page.tsx`                  |
+|   339 | `src/app/(public)/faq/page.tsx`                            |
+|   338 | `src/components/groups/GroupMembers.tsx`                   |
+|   333 | `src/components/profile/ProfileOverviewTab.tsx`            |
 
 …plus 7 more in the 300–315 range. Several are near-threshold content pages
 (faq, docs, blog) where splitting adds indirection without value — judge per

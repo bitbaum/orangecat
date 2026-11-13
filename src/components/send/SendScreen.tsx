@@ -20,9 +20,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
+import { isAmountInRange } from '@/components/money/amount-draft';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { StatusNote } from '@/components/money/StatusNote';
 import { AmountField } from '@/components/money/AmountField';
@@ -31,6 +31,8 @@ import { OptionalNoteField } from '@/components/money/OptionalNoteField';
 import { RecipientStatus } from '@/components/send/RecipientStatus';
 import { SendDestinationField } from '@/components/send/SendDestinationField';
 import { SendReviewStep } from '@/components/send/SendReviewStep';
+import { SendUnavailablePrompt } from '@/components/send/SendUnavailablePrompt';
+import { SendUnconfirmedNotice } from '@/components/send/SendUnconfirmedNotice';
 import { useRecipientCheck } from '@/components/send/useRecipientCheck';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { usePeopleFinder } from '@/hooks/usePeopleFinder';
@@ -48,7 +50,6 @@ import { classifyDestination } from '@/lib/payments/send-destination';
 import { haptic } from '@/lib/haptics';
 import { SEND_COPY, SEND_NOTE_MAX_LENGTH } from '@/config/send';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
-import { ROUTES } from '@/config/routes';
 
 export function SendScreen() {
   const { isLoading: authLoading } = useRequireAuth();
@@ -154,25 +155,18 @@ export function SendScreen() {
   }, [destination, recipientHandle, amount, memo]);
 
   if (authLoading || !capability) {
-    return <MoneyLoading />;
+    return (
+      <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
+        <MoneyLoading />
+      </MoneyPage>
+    );
   }
 
-  // Nothing on this screen can work without a wallet to spend from, so say so
-  // instead of rendering a form that ends in a refusal. "Connect a wallet" is
-  // the right ask only when the wallet is the problem; when our key is missing,
-  // sending them to set one up blames them for our outage.
+  // Without a wallet to spend from, no form — see SendUnavailablePrompt.
   if (!capability.canSend) {
-    const oursNotTheirs = capability.reason === 'sending_unavailable';
     return (
-      <MoneyPage
-        title={oursNotTheirs ? SEND_COPY.unavailableTitle : SEND_COPY.noWalletTitle}
-        subtitle={capability.message ?? SEND_COPY.noWalletBody}
-      >
-        {!oursNotTheirs && (
-          <Button variant="primary" href={ROUTES.DASHBOARD.WALLETS}>
-            {SEND_COPY.noWalletCta}
-          </Button>
-        )}
+      <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
+        <SendUnavailablePrompt capability={capability} />
       </MoneyPage>
     );
   }
@@ -180,20 +174,7 @@ export function SendScreen() {
   if (unconfirmed) {
     return (
       <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
-        <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <Clock className="h-14 w-14 text-status-warning" aria-hidden="true" />
-          <div className="space-y-1">
-            <p className="font-heading tracking-display text-2xl font-bold text-fg-primary">
-              {SEND_COPY.unconfirmedTitle}
-            </p>
-            <p className="mx-auto max-w-xs text-sm text-fg-secondary">
-              {SEND_COPY.unconfirmedBody}
-            </p>
-          </div>
-          <Button variant="primary" onClick={reset}>
-            {SEND_COPY.unconfirmedDone}
-          </Button>
-        </div>
+        <SendUnconfirmedNotice onDone={reset} />
       </MoneyPage>
     );
   }
@@ -217,7 +198,9 @@ export function SendScreen() {
     );
   }
 
-  const canReview = isInvoice ? invoiceIsPayable : recipientCheck.payable && amount > 0;
+  const canReview = isInvoice
+    ? invoiceIsPayable
+    : recipientCheck.payable && isAmountInRange(amount, PAY_MIN_BTC, PAY_MAX_BTC);
 
   return (
     <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>

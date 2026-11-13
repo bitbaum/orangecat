@@ -29,11 +29,11 @@ export const HEADER_ICON_BUTTON = {
     'disabled:pointer-events-none disabled:opacity-50'
   ),
   variants: {
-    ghost: 'text-fg-secondary hover:text-fg-primary hover:bg-surface-raised',
+    ghost: 'text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay',
     inverse: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong',
   },
   active: {
-    ghost: 'bg-surface-raised text-fg-primary',
+    ghost: 'bg-surface-overlay text-fg-primary',
     inverse: 'bg-muted-strong',
   },
 } as const;

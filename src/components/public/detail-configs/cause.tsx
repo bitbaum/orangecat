@@ -3,6 +3,7 @@ import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
 import EntityOpenLedger from '@/components/public/EntityOpenLedger';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
+import { ownerOnlyStatus } from '@/components/public/public-entity-detail-config';
 import { ROUTES } from '@/config/routes';
 
 // user_causes stores goal_amount in its chosen `currency` (causes can be BTC OR CHF),
@@ -18,7 +19,7 @@ const causeFunding = (entity: Record<string, unknown>) => ({
 export const causeDetailConfig: EntityDetailConfig = {
   entityType: 'cause',
   ownerLabel: 'Organized By',
-  descriptionTitle: 'About this Cause',
+  statusBadge: ownerOnlyStatus,
   metadataSelect: 'title, description',
   getViewRoute: id => ROUTES.CAUSES.VIEW(id),
   // What the cause is for ("Education", "Animal Welfare"). Discover's old

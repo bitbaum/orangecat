@@ -103,6 +103,15 @@ function byLayerThenName(a: FleetTile, b: FleetTile): number {
 }
 
 /**
+ * Whether a project can stand on a public page as a product: it is live, and
+ * the map says what it is. A tile with no line under its name read as a
+ * scratch entry, and was one more often than not.
+ */
+function isPresentable(project: StudioMapProject): boolean {
+  return project.status === 'live' && !!project.what?.trim();
+}
+
+/**
  * The home page's selection: the studio's own products that are live, the
  * three pillars first, then the rest by name. Client work and demos belong
  * to their owners and stay off the front page.
@@ -112,12 +121,32 @@ export function selectHomeFleet(map: StudioMapSummary | null): FleetTile[] {
     return [];
   }
   return map.projects
-    .filter(p => p.status === 'live' && STUDIO_LAYERS.includes(p.layer))
+    .filter(p => isPresentable(p) && STUDIO_LAYERS.includes(p.layer))
     .map(toTile)
     .sort(byLayerThenName);
 }
 
-/** Every project in the map, grouped by layer in the order the stack is told. */
+/** How many products the home page shows before "All N live products". */
+export const HOME_FLEET_PREVIEW = 6;
+
+/**
+ * The home page's grid: the pillars already have their own row above it, so
+ * the grid shows the products built on them, a handful only. Every live tile
+ * on a phone was about 4,100px of scrolling; the rest are one link away.
+ */
+export function homeFleetPreview(tiles: readonly FleetTile[]): FleetTile[] {
+  return tiles.filter(tile => !tile.pillar).slice(0, HOME_FLEET_PREVIEW);
+}
+
+/** Layers /ecosystem shows: the studio's products and the client work on the stack. */
+const STACK_PAGE_LAYERS: readonly string[] = [...STUDIO_LAYERS, 'client'];
+
+/**
+ * What /ecosystem shows, grouped by layer in the order the stack is told:
+ * live projects with a line saying what they are. It used to be every entry
+ * in the map — prospects, demos and "next" ideas, named by sentence-casing
+ * their slug, some with no description and no link — published as products.
+ */
 export function groupFleetByLayer(map: StudioMapSummary | null): Array<{
   layer: string;
   tiles: FleetTile[];
@@ -126,7 +155,8 @@ export function groupFleetByLayer(map: StudioMapSummary | null): Array<{
     return [];
   }
   const groups = new Map<string, FleetTile[]>();
-  for (const tile of map.projects.map(toTile).sort(byLayerThenName)) {
+  const shown = map.projects.filter(p => isPresentable(p) && STACK_PAGE_LAYERS.includes(p.layer));
+  for (const tile of shown.map(toTile).sort(byLayerThenName)) {
     const list = groups.get(tile.layer) ?? [];
     list.push(tile);
     groups.set(tile.layer, list);

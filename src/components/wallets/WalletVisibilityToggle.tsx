@@ -81,7 +81,7 @@ export function WalletVisibilityToggle({
               className={cn(
                 'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
                 active
-                  ? 'border-accent-warm bg-accent-warm/5'
+                  ? 'border-fg-primary bg-surface-raised'
                   : 'border-default hover:bg-surface-raised',
                 pending && !isPending && 'opacity-60'
               )}
@@ -89,7 +89,7 @@ export function WalletVisibilityToggle({
               <span
                 className={cn(
                   'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                  active ? 'border-accent-warm bg-accent-warm text-on-accent' : 'border-default'
+                  active ? 'border-fg-primary bg-fg-primary text-fg-inverted' : 'border-default'
                 )}
               >
                 {isPending ? (

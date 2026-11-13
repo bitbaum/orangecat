@@ -88,4 +88,25 @@ export function presetAllows(preset: PermissionPreset, category: string): boolea
   return ['context', 'entities', 'communication'].includes(category);
 }
 
+/** What each preset is called and does, in the order a person reads them. */
+export const PERMISSION_PRESET_META: Record<
+  PermissionPreset,
+  { label: string; description: string }
+> = {
+  none: { label: 'Off', description: 'Cat only talks.' },
+  minimal: { label: 'Minimal', description: 'Cat only keeps its memory and notes.' },
+  creator: {
+    label: 'Creator',
+    description: 'Also creates your listings and posts or messages for you.',
+  },
+  power: { label: 'Power', description: 'Everything except payments.' },
+};
+
+export const PERMISSION_PRESET_ORDER: readonly PermissionPreset[] = [
+  'none',
+  'minimal',
+  'creator',
+  'power',
+];
+
 export const CAT_PERMISSIONS_CHANGED_EVENT = 'cat-permissions-changed';

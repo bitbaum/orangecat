@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
+import { DictationButton } from '@/components/ui/DictationButton';
+import { useAuth } from '@/hooks/useAuth';
 import Input from '@/components/ui/Input';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { API_ROUTES } from '@/config/api-routes';
@@ -25,6 +27,8 @@ const MAX_MESSAGE_CHARS = 2000;
  * stack up on the page like a conversation so follow-up questions feel natural.
  */
 export function FeedbackClient() {
+  // Transcription is a signed-in endpoint; a visitor types.
+  const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
@@ -95,7 +99,7 @@ export function FeedbackClient() {
     <div className="min-h-screen bg-surface-page">
       <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:py-16">
         <div className="text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent-warm/10 text-accent-warm">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-raised text-fg-secondary">
             <BrandMarkIcon className="h-6 w-6" aria-hidden />
           </span>
           <PageHeading className="mt-4">Ask the Cat anything</PageHeading>
@@ -115,7 +119,7 @@ export function FeedbackClient() {
                 </div>
                 {ex.answer ? (
                   <div className="flex max-w-[95%] items-start gap-3">
-                    <span className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-accent-warm/10 text-accent-warm">
+                    <span className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised text-fg-secondary">
                       <BrandMarkIcon className="h-4 w-4" aria-hidden />
                     </span>
                     <div className="rounded-lg border border-default bg-surface-base px-4 py-3 text-sm leading-relaxed text-fg-primary whitespace-pre-line">
@@ -175,12 +179,19 @@ export function FeedbackClient() {
           )}
 
           <div className="flex items-center justify-between gap-4">
-            <span className="text-xs text-fg-tertiary">
+            <span className="flex items-center gap-2 text-xs text-fg-secondary">
+              {user && (
+                <DictationButton
+                  ariaLabel="Say it instead"
+                  disabled={isSubmitting}
+                  onTranscript={t => setMessage(prev => (prev ? `${prev} ${t}` : t))}
+                />
+              )}
               {message.length}/{MAX_MESSAGE_CHARS}
             </span>
             <Button
               type="submit"
-              variant="accent"
+              variant="primary"
               size="lg"
               disabled={!canSubmit}
               isLoading={isSubmitting}

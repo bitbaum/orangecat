@@ -105,7 +105,7 @@ export default function ImageGeneratePanel({
         placeholder="Describe the image you want…"
         aria-label="Image prompt"
         disabled={busy}
-        className="w-full rounded-md border border-default bg-surface-page px-3 py-2 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-accent-warm focus:outline-none disabled:opacity-50"
+        className="w-full rounded-md border border-default bg-surface-page px-3 py-2 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-fg-primary focus:outline-none disabled:opacity-50"
       />
       <div className="flex items-center gap-2">
         <button
@@ -132,7 +132,7 @@ export default function ImageGeneratePanel({
                     href={topUpUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-fg-primary underline underline-offset-4 hover:text-accent-warm"
+                    className="font-medium text-fg-primary underline underline-offset-4 hover:text-fg-secondary"
                   >
                     Top up your {provider?.name} balance →
                   </a>

@@ -4,12 +4,16 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### funnel#2 · medium · A first-time visitor who taps the hero action or any 'Start' is greeted with 'Welcome back, sign in'
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /, /what-you-can-do, /how-it-works, /pricing (both, both themes)
 - **What a person meets:** The two orange buttons in the first viewport open two different forms, and the one the hero promotes addresses a newcomer as a returning user at the conversion step. The 'Start instantly, no email' button softens it, but the heading tells the person they are in the wrong place.
 - **Cause:** src/components/home/sections/HeroSection.tsx:52, src/components/home/sections/ProblemsSection.tsx:39, src/middleware.ts:93 and :121
 - **Fix:** Ship now: HeroSection.tsx:52 and ProblemsSection.tsx:39 use href={ROUTES.AUTH_REGISTER} (the constant exists at routes.ts:387). Separate change, coordinated with the auth surface: in middleware.ts compute once 'const hadSession = request.cookies.getAll().some(c => /^sb-.+-auth-token(\.\d+)?$/.test(c.name));' and at :93 and :121 set mode to hadSession ? 'login' : 'register'; from= untouched. Add two cases to **tests**/unit/middleware.auth.test.ts (no cookie gives mode=register; an sb-x-auth-token cookie with no valid user gives mode=login). Known cost to state to the owner: a returning person who signed out (cookie cleared) sees 'Get started' with 'Already have an account?' under the form.
 
 ### funnel#3 · medium · Home on a phone: 4,112px of other studio products sit between the hero and what OrangeCat does for you
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** / (phone, both themes)
 - **What a person meets:** The hero promises ways to earn; the next six screens are a directory of unrelated products such as a pet-care platform and a clinic portal. The concrete answer ('Tell your Cat what you can do. It writes the service page, sets a price and gives you one link to share') is reached only by people who scroll past all of it.
@@ -19,6 +23,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### funnel#4 · medium · 'How it works' never says how it works, and half of it repeats another page
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /how-it-works (both, both themes)
 - **What a person meets:** The visitor who asked for an explanation gets filler, then a second copy of the capability catalogue, and reaches the sign-up action after about eleven screens. The page does not answer its own title.
 - **Cause:** src/app/(public)/how-it-works/page.tsx:1, :52-62, :76, :118, :145, :171-199 and src/config/landing-page.ts:280
@@ -26,6 +32,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** Replacing &lt;CapabilityMap compact /> contradicts the intent documented at CapabilityMap.tsx:6-7; an accent sign-up band here must not render for signed-in visitors (AGENTS.md One orange: in-app actions are monochrome).
 
 ### funnel#6 · medium · Pricing: orange is a border, a 'not open yet' badge and three buttons, and the warm action is on the wrong plan
+
+**Status:** Fixed (fourth pull request).
 
 Status: Partly (#1634): the card and badge are neutral; the action on the wrong plan is open.
 
@@ -47,6 +55,8 @@ Status: Partly (#1634): the card and badge are neutral; the action on the wrong 
 
 ### funnel#8 · medium · One action, six names; closing bands differ and one page ends by sending the visitor to another product
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /, /how-it-works, /what-you-can-do, /pricing, /about (both, both themes)
 - **What a person meets:** The visitor cannot tell whether these are one action or six, and the page built for people without an account ends by sending them to a different product.
 - **Cause:** src/app/(public)/how-it-works/page.tsx:171-178, src/app/(public)/about/page.tsx:86-103, src/components/home/sections/ProblemsSection.tsx:33-47 (no shared, auth-aware closing band)
@@ -55,12 +65,16 @@ Status: Partly (#1634): the card and badge are neutral; the action on the wrong 
 
 ### funnel#9 · medium · What you can do: two identical rows of wrapping pills do different things, and their labels sit off-centre
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /what-you-can-do (both, both themes)
 - **What a person meets:** The first thing under the input looks unfinished, and a tap on a pill either jumps down the page or leaves it with nothing to tell the two apart. The fleet rule names this shape: never pills in a wrapping box.
 - **Cause:** src/components/map/TheDoor.tsx:58 and src/app/(public)/what-you-can-do/page.tsx:33 use flex flex-wrap. The anchors are 'inline-block ... py-1.5' (TheDoor.tsx:63, page.tsx:38 and :48) and the global a { min-height: 44px } (globals.css:130-133) stretches the box without centring the text. check:choice-rows only matches aria-pressed, radio and tab, so links escape it. src/components/dashboard/DashboardIntent.tsx:49-54 carries the same markup.
 - **Fix:** Extract src/components/map/DoorExamples.tsx (the &lt;ul> + links) and use it in TheDoor.tsx:57-70 and DashboardIntent.tsx:48-61. ul: 'no-scrollbar flex gap-2 overflow-x-auto' (no negative margin in the shared component; DashboardIntent sits in other paddings); li: 'shrink-0'; a: 'inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-default px-3 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary'. what-you-can-do/page.tsx:33: ul 'no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4'; anchors at :38 and :48 become plain links 'inline-flex min-h-11 shrink-0 items-center whitespace-nowrap text-sm text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline' so the on-page index no longer looks like the submitting examples. The trailing ArrowRight on examples is optional; skip it.
 
 ### funnel#10 · medium · Capability cards: the action is a 51x36 text link, and 'See yours' is offered to people who have nothing yet
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /what-you-can-do, /how-it-works (phone, both themes)
 - **What a person meets:** On a phone the committing action of each of 19 cards is under the 44px minimum and visually weaker than the description above it; the second link leads a visitor to a sign-in for a list they do not have.
@@ -69,12 +83,16 @@ Status: Partly (#1634): the card and badge are neutral; the action on the wrong 
 
 ### funnel#11 · medium · The stack page publishes internal scratch entries as products
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /ecosystem, / (both, both themes)
 - **What a person meets:** The page whose job is proof shows test fixtures and internal notes to someone deciding whether to trust this platform with money.
 - **Cause:** src/app/(public)/ecosystem/page.tsx:72 and :179-186 render groupFleetByLayer, which is every project in the fleet map including the 'next' and 'demo' layers and non-live statuses (src/components/ecosystem/studio-fleet.ts:121-135). studio-fleet.ts:48-55 builds the name by sentence-casing the slug. src/components/ecosystem/StudioFleetGrid.tsx:53 renders a tile with no description and :60-62 renders a tile with no link.
 - **Fix:** src/components/ecosystem/studio-fleet.ts: add 'export function groupFleetWithDoors(map)' = groupFleetByLayer restricted to projects where projectHref(p).href !== null (reuse the existing helper; add a case to **tests**/unit/components/studio-fleet.test.ts). ecosystem/page.tsx:72 calls it; :175-177 text -> 'Every project in the studio that has a door: what it is, whether it is live, and when it last moved.' Add a STATUS_LABELS map next to LAYER_LABELS ('not live' -> 'Not live', validating -> 'Validating', prospect -> 'Prospect', demo -> 'Demo') and use it at StudioFleetGrid.tsx:46. Do not hide tiles with what === null (Morulia is a live product); fix BiasLens's text, Morulia's missing line and the revamp-info/Hirnli name in Loki's map, which is the source.
 
 ### funnel#12 · low · The public 'What do you want to do?' box has no microphone; the signed-in one does
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /what-you-can-do (both, both themes)
 - **What a person meets:** The person this page is for, someone without an account who may not know what to type, gets the weaker of two inputs for the same question, and the page promises speech it does not offer.
@@ -83,6 +101,8 @@ Status: Partly (#1634): the card and badge are neutral; the action on the wrong 
 - **Mind:** As proposed (DashboardIntent for everyone) it breaks fleet 'No dead ends': a microphone that returns 401 to signed-out visitors, and it drops the documented no-JS path.
 
 ### funnel#13 · low · About does not say who builds OrangeCat or how to check
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /about (both, both themes)
 - **What a person meets:** A visitor who opens About before trusting a platform with money learns nothing about who is behind it or where to verify the claims, although the answers exist elsewhere on the site.

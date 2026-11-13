@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertCircle, Loader2, Key, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Card from '@/components/ui/Card';
 import supabase from '@/lib/supabase/browser';
 import { ROUTES } from '@/config/routes';
+import { AuthTitle } from '../AuthTitle';
+import { BackToSignIn } from './BackToSignIn';
 
 /**
  * Recovery via the 6-digit code the reset email always contains. This is the
@@ -52,23 +53,18 @@ export function OtpForm({
   };
 
   return (
-    <Card className="max-w-md w-full p-8 shadow-sm">
-      <div className="text-center mb-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-surface-base border border-default mb-6">
-          <Key className="h-8 w-8 text-fg-primary" />
-        </div>
-        <h1 className="text-2xl font-bold text-fg-primary mb-2">Enter Your Reset Code</h1>
-        <p className="text-fg-secondary">
-          Your reset email contains a 6-digit code — enter it with your email address to continue.
-        </p>
-      </div>
+    <>
+      <AuthTitle
+        title="Enter your reset code"
+        lede="Your reset email contains a 6-digit code. Enter it with your email address to continue."
+      />
 
       {error && (
         <div className="oc-error-surface mb-6">
           <div className="flex">
             <AlertCircle className="h-5 w-5 mt-0.5" />
             <div className="ml-3">
-              <p className="text-sm font-medium">{error}</p>
+              <p className="mb-0 text-sm font-medium">{error}</p>
             </div>
           </div>
         </div>
@@ -83,25 +79,25 @@ export function OtpForm({
           onChange={e => setEmail(e.target.value)}
           placeholder="Your email address"
           disabled={isLoading}
-          className="w-full"
+          className="h-12 w-full"
           autoComplete="email"
         />
         <Input
-          label="Reset code"
+          label="6-digit code"
           type="text"
           required
           value={code}
           onChange={e => setCode(e.target.value)}
-          placeholder="6-digit code from the email"
+          placeholder="From the reset email"
           disabled={isLoading}
-          className="w-full"
+          className="h-12 w-full"
           inputMode="numeric"
           autoComplete="one-time-code"
         />
         <Button
           type="submit"
           variant="primary"
-          className="w-full"
+          className="h-12 w-full"
           disabled={isLoading || !email || !code}
         >
           {isLoading ? (
@@ -116,8 +112,8 @@ export function OtpForm({
       </form>
 
       <div className="mt-6 space-y-3">
-        <Button onClick={onRequestNewReset} variant="outline" className="w-full">
-          Request New Reset Email
+        <Button onClick={onRequestNewReset} variant="outline" className="h-12 w-full">
+          Send a new reset email
         </Button>
         <div className="text-center">
           <Link
@@ -127,16 +123,8 @@ export function OtpForm({
             Can&apos;t get to your email?
           </Link>
         </div>
-        <div className="text-center">
-          <Link
-            href={`${ROUTES.AUTH}?mode=login`}
-            className="inline-flex items-center text-sm text-fg-secondary hover:text-fg-primary transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Login
-          </Link>
-        </div>
+        <BackToSignIn />
       </div>
-    </Card>
+    </>
   );
 }

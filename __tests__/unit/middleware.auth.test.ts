@@ -170,6 +170,44 @@ describe('middleware auth protection', () => {
     expect(location.searchParams.get('from')).toBe('/dashboard/cat?q=Throw%20a%20party');
   });
 
+  it('shows a first-time visitor the register form, not "Welcome back"', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const res = await middleware(buildRequest('/dashboard/cat') as any);
+
+    const location = new URL(res?.headers.get('location') ?? '');
+    expect(location.searchParams.get('mode')).toBe('register');
+    expect(location.searchParams.get('from')).toBe('/dashboard/cat');
+  });
+
+  it('shows the sign-in form for any other protected page, even on a first visit', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    for (const path of ['/dashboard', '/settings', '/timeline']) {
+      const res = await middleware(buildRequest(path) as any);
+      const location = new URL(res?.headers.get('location') ?? '');
+      expect(location.searchParams.get('mode'), path).toBe('login');
+      expect(location.searchParams.get('from'), path).toBe(path);
+    }
+  });
+
+  it('shows the sign-in form to a browser that has signed in here before', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const res = await middleware(
+      buildRequest('/dashboard', { 'sb-test-auth-token': 'expired' }) as any
+    );
+
+    const location = new URL(res?.headers.get('location') ?? '');
+    expect(location.searchParams.get('mode')).toBe('login');
+  });
+
   it('allows a protected route through when @supabase/ssr returns a user', async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';

@@ -87,7 +87,7 @@ const AI_ERRORS: Record<AiErrorCode, (ctx: AiErrorContext) => { title: string; f
     permission_denied: ctx => {
       const label = ctx.category ? ACTION_CATEGORIES[ctx.category].name.toLowerCase() : 'this';
       return {
-        title: `Cat isn't allowed to handle ${label} actions yet.`,
+        title: `Cat isn't allowed to act on ${label} yet.`,
         fix: {
           label: 'Allow it',
           // Deep-link to the exact category card, not the top of a long page:

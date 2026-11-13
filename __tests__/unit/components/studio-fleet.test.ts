@@ -10,6 +10,8 @@
 import {
   displayName,
   groupFleetByLayer,
+  HOME_FLEET_PREVIEW,
+  homeFleetPreview,
   projectHref,
   selectHomeFleet,
   toTile,
@@ -20,7 +22,7 @@ import type { StudioMapProject, StudioMapSummary } from '@/services/ai/studio-ma
 function project(overrides: Partial<StudioMapProject> & { slug: string }): StudioMapProject {
   return {
     name: overrides.slug,
-    what: null,
+    what: 'Does a thing',
     layer: 'product',
     status: 'live',
     owner: 'bitbaum',
@@ -105,16 +107,49 @@ describe('selectHomeFleet', () => {
   });
 });
 
-describe('groupFleetByLayer', () => {
-  it('groups every project in stack order', () => {
-    const groups = groupFleetByLayer(
+describe('selectHomeFleet: a tile with nothing to say is not a product', () => {
+  it('drops a live project the map does not describe', () => {
+    const tiles = selectHomeFleet(
+      map([project({ slug: 'alpha' }), project({ slug: 'scratch', what: null })])
+    );
+    expect(tiles.map(t => t.slug)).toEqual(['alpha']);
+  });
+});
+
+describe('homeFleetPreview', () => {
+  it('leaves the pillars to their own row and shows a handful', () => {
+    const tiles = selectHomeFleet(
       map([
-        project({ slug: 'b', layer: 'next', status: 'prospect' }),
-        project({ slug: 'a', layer: 'client' }),
+        project({ slug: 'orangecat', layer: 'economic' }),
         project({ slug: 'loki', layer: 'execution' }),
+        ...Array.from({ length: 10 }, (_, i) => project({ slug: `p${i}` })),
       ])
     );
-    expect(groups.map(g => g.layer)).toEqual(['execution', 'client', 'next']);
+    const preview = homeFleetPreview(tiles);
+    expect(preview).toHaveLength(HOME_FLEET_PREVIEW);
+    expect(preview.every(t => t.pillar === null)).toBe(true);
+  });
+});
+
+describe('groupFleetByLayer', () => {
+  it('groups live products and client work in stack order', () => {
+    const groups = groupFleetByLayer(
+      map([project({ slug: 'a', layer: 'client' }), project({ slug: 'loki', layer: 'execution' })])
+    );
+    expect(groups.map(g => g.layer)).toEqual(['execution', 'client']);
+  });
+
+  it('keeps prospects, demos, "next" ideas and undescribed entries off the page', () => {
+    const groups = groupFleetByLayer(
+      map([
+        project({ slug: 'idea', layer: 'next', status: 'prospect' }),
+        project({ slug: 'demo-site', layer: 'demo' }),
+        project({ slug: 'half-built', layer: 'product', status: 'building' }),
+        project({ slug: 'scratch', layer: 'product', what: null }),
+        project({ slug: 'alpha', layer: 'product' }),
+      ])
+    );
+    expect(groups.flatMap(g => g.tiles.map(t => t.slug))).toEqual(['alpha']);
   });
 });
 

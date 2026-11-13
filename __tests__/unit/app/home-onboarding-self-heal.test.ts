@@ -87,13 +87,15 @@ describe('/ for a signed-in person who never finished onboarding', () => {
     expect(profileUpdates).toEqual([{ table: 'profiles', row: { onboarding_completed: true } }]);
   });
 
-  it('owning nothing still goes to onboarding', async () => {
+  it('owning nothing goes to the Cat welcome, the first screen every way in shares', async () => {
     const { url, profileUpdates } = await landOnHome([
       // someone else's product
       { table: 'user_products', column: 'actor_id', owner: 'actor-2' },
     ]);
 
-    expect(url).toBe(ROUTES.ONBOARDING.INTELLIGENT);
+    // Not the onboarding form: the logo opened it on every visit (auth-firstrun
+    // #1). The welcome links to it.
+    expect(url).toBe(ROUTES.DASHBOARD.CAT_WELCOME);
     expect(profileUpdates).toEqual([]);
   });
 });

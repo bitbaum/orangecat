@@ -8,6 +8,9 @@ import { useGroupDetail } from './useGroupDetail';
 import { GroupDetailSidebar } from './GroupDetailSidebar';
 import { GroupDetailTabs } from './GroupDetailTabs';
 import { GroupMembersOnly } from './GroupMembersOnly';
+import { GroupJoinButton } from './GroupJoinButton';
+import { groupIsOpenToJoin } from '@/services/groups/utils/joining';
+import { PUBLIC_BREADCRUMB_ROOT } from '@/components/ui/Breadcrumb';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import LokiBuildCta from '@/components/integrations/LokiBuildCta';
@@ -85,12 +88,22 @@ export function GroupDetail({ groupSlug, canReceive }: GroupDetailProps) {
 
   // SSOT edit convention: createPath?edit=<id> (the old
   // /groups/[slug]/settings route never existed — dead link).
+  // A visitor lands on the Overview tab, so Join sits in the header, not only
+  // inside the Members tab where nobody arriving from a link would look.
   const headerActions = isOwner ? (
     <Button href={`${ENTITY_REGISTRY['group'].createPath}?edit=${group.id}`} variant="outline">
       <Settings className="h-4 w-4 mr-2" />
       Edit Group
     </Button>
-  ) : null;
+  ) : (
+    <GroupJoinButton
+      groupId={group.id}
+      groupSlug={groupSlug}
+      openToJoin={groupIsOpenToJoin(group)}
+      isMember={!!viewerRole}
+      onJoined={() => void loadGroupData()}
+    />
+  );
 
   // A group's wallets are readable by its members only (RLS group_wallets_select),
   // so anyone else gets an empty list whatever the group holds. Printing that as
@@ -111,6 +124,10 @@ export function GroupDetail({ groupSlug, canReceive }: GroupDetailProps) {
 
   return (
     <EntityDetailLayout
+      breadcrumbRoot={PUBLIC_BREADCRUMB_ROOT}
+      breadcrumbItems={[
+        { label: ENTITY_REGISTRY.group.namePlural, href: ROUTES.DISCOVER_TYPE('groups') },
+      ]}
       title={group.name}
       subtitle={group.description || undefined}
       headerActions={headerActions}
@@ -140,6 +157,7 @@ export function GroupDetail({ groupSlug, canReceive }: GroupDetailProps) {
             labelConfig={labelConfig}
             governanceConfig={governanceConfig}
             LabelIcon={LabelIcon}
+            isOwner={isOwner}
           />
           <EntityShare
             entityType="group"

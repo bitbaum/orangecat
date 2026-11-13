@@ -181,34 +181,41 @@ export default function ProfileLayout({
     },
   ];
 
-  const filteredTabs = tabs.filter(tab => {
-    if (isOwnProfile) {
+  // The owner sees the same has-content filter a visitor does: nine tabs of
+  // empty states taught a new account nothing. Overview, Timeline and Info stay,
+  // and Overview carries the first steps.
+  const OWNER_ALWAYS = new Set(['overview', 'timeline', 'info']);
+  const filteredTabs = tabs
+    .filter(tab => {
+      if (isOwnProfile && OWNER_ALWAYS.has(tab.id)) {
+        return true;
+      }
+      // Info is the owner's field-by-field view (with "Not filled out yet" rows);
+      // what a visitor needs from it is in the header line and on Overview.
+      if (tab.id === 'info') {
+        return false;
+      }
+      if (ENTITY_TAB_IDS.has(tab.id)) {
+        return (tab.badge || 0) > 0;
+      }
+      if (tab.id === 'projects') {
+        return (stats?.projectCount || 0) > 0;
+      }
+      if (tab.id === 'articles') {
+        return (articles?.length || 0) > 0;
+      }
+      if (tab.id === 'people') {
+        return (stats?.followerCount || 0) + (stats?.followingCount || 0) > 0;
+      }
+      if (tab.id === 'wallets') {
+        return (
+          (stats?.walletCount || 0) > 0 || !!profile.bitcoin_address || !!profile.lightning_address
+        );
+      }
       return true;
-    }
-    // Info is the owner's field-by-field view (with "Not filled out yet" rows);
-    // what a visitor needs from it is in the header line and on Overview.
-    if (tab.id === 'info') {
-      return false;
-    }
-    if (ENTITY_TAB_IDS.has(tab.id)) {
-      return (tab.badge || 0) > 0;
-    }
-    if (tab.id === 'projects') {
-      return (stats?.projectCount || 0) > 0;
-    }
-    if (tab.id === 'articles') {
-      return (articles?.length || 0) > 0;
-    }
-    if (tab.id === 'people') {
-      return (stats?.followerCount || 0) + (stats?.followingCount || 0) > 0;
-    }
-    if (tab.id === 'wallets') {
-      return (
-        (stats?.walletCount || 0) > 0 || !!profile.bitcoin_address || !!profile.lightning_address
-      );
-    }
-    return true;
-  });
+    })
+    // A zero is not a badge.
+    .map(tab => ('badge' in tab ? { ...tab, badge: tab.badge || undefined } : tab));
 
   return (
     <div className={cn('min-h-screen bg-surface-page', className)}>

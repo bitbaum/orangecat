@@ -24,9 +24,9 @@ export function SettingsPasswordSection({
   onSubmit,
 }: Props) {
   return (
-    <div className="border-t border-subtle pt-10">
-      <h3 className="text-lg font-semibold text-fg-primary mb-4">Change Password</h3>
-      <p className="text-fg-secondary mb-6">
+    <div>
+      <h3 className="mb-2 text-lg font-semibold text-fg-primary">Change password</h3>
+      <p className="mb-4 max-w-prose text-fg-secondary">
         Choose a strong password to keep your account secure.
       </p>
       <form onSubmit={onSubmit} className="space-y-4">
@@ -55,13 +55,13 @@ export function SettingsPasswordSection({
             type="button"
             variant="ghost"
             onClick={() => setShowPassword(!showPassword)}
-            className="text-sm px-0"
+            className="min-h-11 px-0 text-sm"
           >
             {showPassword ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
             {showPassword ? 'Hide' : 'Show'} passwords
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="px-6 py-2">
-            {isSubmitting ? 'Updating...' : 'Update Password'}
+          <Button type="submit" variant="outline" disabled={isSubmitting} className="min-h-11">
+            {isSubmitting ? 'Updating…' : 'Update password'}
           </Button>
         </div>
       </form>

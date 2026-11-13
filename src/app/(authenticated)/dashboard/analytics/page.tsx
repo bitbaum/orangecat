@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useProjectStore } from '@/stores/projectStore';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import EntityListShell from '@/components/entity/EntityListShell';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
@@ -15,6 +16,19 @@ import ProjectPerformanceTable from './components/ProjectPerformanceTable';
 import type { ProjectPerformance } from './components/ProjectPerformanceTable';
 import AnalyticsInsights from './components/AnalyticsInsights';
 
+// One header frame (EntityListShell → PageHeader) in every state: the page
+// used to hand-build its own breadcrumb and a smaller <h1> three times.
+const ANALYTICS_TITLE = 'Project Analytics';
+const ANALYTICS_DESCRIPTION = 'Track your fundraising performance and insights';
+
+type TimeRange = '7d' | '30d' | '90d' | 'all';
+const TIME_RANGES: readonly { value: TimeRange; label: string }[] = [
+  { value: '7d', label: '7D' },
+  { value: '30d', label: '30D' },
+  { value: '90d', label: '90D' },
+  { value: 'all', label: 'All Time' },
+];
+
 export default function AnalyticsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
   const {
@@ -23,7 +37,7 @@ export default function AnalyticsPage() {
     isLoading: projectLoading,
     error: projectsError,
   } = useProjectStore();
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [selectedProject, setSelectedProject] = useState<string>('all');
 
   useEffect(() => {
@@ -39,8 +53,7 @@ export default function AnalyticsPage() {
   // Fetch failed — show a real error surface instead of rendering zeros as data.
   if (projectsError) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Breadcrumb items={[{ label: 'Analytics' }]} className="mb-4" />
+      <EntityListShell title={ANALYTICS_TITLE} description={ANALYTICS_DESCRIPTION}>
         <div className="oc-error-surface">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -53,19 +66,14 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </EntityListShell>
     );
   }
 
   // No projects at all — zero metrics would be fake insight, so say so honestly.
   if (projects.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Breadcrumb items={[{ label: 'Analytics' }]} className="mb-4" />
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-fg-primary">Project Analytics</h1>
-          <p className="text-fg-secondary mt-1">Track your fundraising performance and insights</p>
-        </div>
+      <EntityListShell title={ANALYTICS_TITLE} description={ANALYTICS_DESCRIPTION}>
         <EmptyState
           icon={BarChart3}
           title="No activity to analyze yet"
@@ -76,7 +84,7 @@ export default function AnalyticsPage() {
             </Button>
           }
         />
-      </div>
+      </EntityListShell>
     );
   }
 
@@ -162,54 +170,36 @@ export default function AnalyticsPage() {
   const projectPerformance = getProjectPerformance();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <Breadcrumb items={[{ label: 'Analytics' }]} className="mb-4" />
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-fg-primary">Project Analytics</h1>
-            <p className="text-fg-secondary mt-1">
-              Track your fundraising performance and insights
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex bg-surface-raised rounded-lg p-1">
-              {(['7d', '30d', '90d', 'all'] as const).map(range => (
-                <button
-                  key={range}
-                  onClick={() => setTimeRange(range)}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    timeRange === range
-                      ? 'bg-surface-base text-fg-primary shadow-sm'
-                      : 'text-fg-secondary hover:text-fg-primary'
-                  }`}
-                >
-                  {range === 'all' ? 'All Time' : range.toUpperCase()}
-                </button>
-              ))}
-            </div>
-
-            <select
-              value={selectedProject}
-              onChange={e => setSelectedProject(e.target.value)}
-              className="border border-strong dark:bg-surface-raised dark:text-fg-primary rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:border-interactive"
-            >
-              <option value="all">All Projects</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.title || 'Untitled Project'}
-                </option>
-              ))}
-            </select>
-          </div>
+    <EntityListShell
+      title={ANALYTICS_TITLE}
+      description={ANALYTICS_DESCRIPTION}
+      headerActions={
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SegmentedControl
+            label="Time range"
+            items={TIME_RANGES}
+            value={timeRange}
+            onChange={setTimeRange}
+          />
+          <select
+            value={selectedProject}
+            onChange={e => setSelectedProject(e.target.value)}
+            aria-label="Project"
+            className="min-h-11 rounded-lg border border-strong bg-surface-base px-3 py-2 text-sm text-fg-primary focus:border-interactive focus:ring-2 focus:ring-ring"
+          >
+            <option value="all">All Projects</option>
+            {projects.map(project => (
+              <option key={project.id} value={project.id}>
+                {project.title || 'Untitled Project'}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-
+      }
+    >
       <AnalyticsMetricsGrid metrics={metrics} />
       <ProjectPerformanceTable projects={projectPerformance} />
       <AnalyticsInsights projects={filteredProjects} />
-    </div>
+    </EntityListShell>
   );
 }

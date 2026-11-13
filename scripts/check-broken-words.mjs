@@ -119,7 +119,12 @@ async function signIn(context, attempt = 1) {
     await page.goto(`${BASE_URL}/auth?mode=login`, { waitUntil: 'domcontentloaded' });
     await page.getByLabel('Email address').fill(EMAIL);
     await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    // The form's own button: the page also has a "Sign in | Create account" switch.
+    await page
+      .locator('form')
+      .filter({ has: page.getByRole('textbox', { name: 'Password' }) })
+      .getByRole('button', { name: 'Sign in', exact: true })
+      .click();
     // Leaving /auth establishes authentication. Each audited page settles its
     // own assets: a slow image must not hold this on the full load event.
     await page.waitForURL(url => !url.pathname.startsWith('/auth'), {

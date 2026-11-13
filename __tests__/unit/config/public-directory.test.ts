@@ -18,6 +18,9 @@ describe('public-directory', () => {
     expect(isFixtureDisplayName('E2E Reset User')).toBe(true);
     expect(isFixtureDisplayName('User')).toBe(true);
     expect(isFixtureDisplayName('Adelina')).toBe(false);
+    // A QA run's profile, named for the run.
+    expect(isFixtureDisplayName('QA Grok A')).toBe(true);
+    expect(isFixtureDisplayName('Qadir')).toBe(false);
   });
 
   it('hides audit/ephemeral groups', () => {

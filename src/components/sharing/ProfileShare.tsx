@@ -47,7 +47,7 @@ export default function ProfileShare({
       url={profileUrl}
       onClose={onClose}
       className={className}
-      titleText="Share Profile"
+      titleText="Share profile"
     />
   );
 }

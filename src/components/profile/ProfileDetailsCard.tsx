@@ -1,6 +1,7 @@
 'use client';
 
 import { User, MapPin, Globe, Calendar, Mail, Info, Clock, Phone } from 'lucide-react';
+import Link from 'next/link';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { SocialLinksDisplay } from './SocialLinksDisplay';
 import { SocialLink } from '@/types/social';
@@ -181,14 +182,26 @@ export function ProfileDetailsCard({
                 icon={Mail}
                 label="Registration Email (private)"
                 value={
-                  <div>
-                    <div className="font-medium text-fg-primary break-all">
-                      {profile.email || userEmail || 'Unknown'}
+                  profile.email || userEmail ? (
+                    <div>
+                      <div className="font-medium text-fg-primary break-all">
+                        {profile.email || userEmail}
+                      </div>
+                      <p className="mb-0 mt-1 text-xs text-fg-secondary">
+                        Used for account login. Not shown on public profile.
+                      </p>
                     </div>
-                    <p className="mt-1 text-xs text-fg-secondary">
-                      Used for account login. Not shown on public profile.
-                    </p>
-                  </div>
+                  ) : (
+                    <div>
+                      <div className="font-medium text-fg-primary">None yet</div>
+                      <Link
+                        href={ROUTES.SETTINGS}
+                        className="inline-flex min-h-11 items-center text-sm text-fg-primary underline underline-offset-2"
+                      >
+                        Add an email
+                      </Link>
+                    </div>
+                  )
                 }
                 isOwnProfile={isOwnProfile}
               />

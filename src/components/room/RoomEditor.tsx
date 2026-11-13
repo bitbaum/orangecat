@@ -79,7 +79,7 @@ export function RoomEditor({ projectId, initial, saved, buildRecordUrl }: RoomEd
         <h2 className="font-heading text-xl font-semibold tracking-display text-fg-primary">
           What the room says
         </h2>
-        <Button variant="accent" onClick={save} isLoading={busy} disabled={!dirty}>
+        <Button variant="primary" onClick={save} isLoading={busy} disabled={!dirty}>
           {dirty ? 'Save' : 'Saved'}
         </Button>
       </div>

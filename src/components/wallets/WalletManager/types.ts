@@ -22,6 +22,8 @@ export interface WalletManagerProps {
    * wallet is ready to receive.
    */
   unusableConnectionWalletIds?: string[];
+  /** Open the add form straight away, for this purpose (Send's "Connect a wallet"). */
+  openFor?: 'send';
 }
 
 export interface WalletCardProps {
@@ -45,6 +47,13 @@ export interface WalletFormProps {
   onCancel?: () => void;
   cancelLabel?: string;
   submitLabel?: string;
+  /**
+   * The save button's look. Inside an entity form it is `outline`, so the
+   * form keeps one filled button (its own Create).
+   */
+  submitVariant?: 'primary' | 'outline';
+  /** The box heading. It used to be derived from submitLabel. */
+  title?: string;
   /** Used when the name field is left blank. */
   defaultLabel?: string;
   /** Parent already asked the question, so the form heading would repeat it. */
@@ -55,6 +64,16 @@ export interface WalletFormProps {
    * browser). An empty input then means "keep it", not "clear it".
    */
   hasSavedConnection?: boolean;
+  /**
+   * The host page is already the surface (first run on /receive), so the form
+   * drops its own border, background and padding: one object, one surface.
+   */
+  bare?: boolean;
+  /**
+   * Why the person is here. 'send' came from Send's "Connect a wallet": the
+   * connection field is the one they need, so it opens visible and focused.
+   */
+  purpose?: 'receive' | 'send';
 }
 
 export interface WalletManagerState {

@@ -190,7 +190,7 @@ export default function ImageSuggestPicker({
                 }}
                 placeholder="Search free images…"
                 aria-label="Search images"
-                className="w-full rounded-md border border-default bg-surface-page py-1.5 pl-8 pr-3 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-accent-warm focus:outline-none"
+                className="w-full rounded-md border border-default bg-surface-page py-1.5 pl-8 pr-3 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-fg-primary focus:outline-none"
               />
             </div>
             <button
@@ -241,7 +241,7 @@ export default function ImageSuggestPicker({
                     type="button"
                     onClick={() => onPick(img)}
                     className={cn(
-                      'group block w-full overflow-hidden rounded-md border border-subtle transition-colors hover:border-accent-warm'
+                      'group block w-full overflow-hidden rounded-md border border-subtle transition-colors hover:border-fg-primary'
                     )}
                     title={img.creator ? `${img.title} · ${img.creator}` : img.title}
                   >

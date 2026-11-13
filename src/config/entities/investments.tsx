@@ -6,12 +6,9 @@
 
 import { EntityConfig } from '@/types/entity';
 import { Investment } from '@/types/investments';
-import Button from '@/components/ui/Button';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
-import { ROUTES } from '@/config/routes';
-import { GRADIENTS } from '@/config/gradients';
 
 export const investmentEntityConfig: EntityConfig<Investment> = {
   name: ENTITY_REGISTRY['investment'].name,
@@ -78,11 +75,6 @@ export const investmentEntityConfig: EntityConfig<Investment> = {
   emptyState: {
     title: 'No investments yet',
     description: 'Create your first investment opportunity to connect with potential investors.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.INVESTMENTS_CREATE} className={GRADIENTS.brandGreen}>
-        Create Investment
-      </Button>
-    ),
   },
 
   gridCols: {

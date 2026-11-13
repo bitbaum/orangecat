@@ -24,7 +24,6 @@ const invFmt = (entity: Record<string, unknown>, amount: unknown) =>
 export const investmentDetailConfig: EntityDetailConfig = {
   entityType: 'investment',
   ownerLabel: 'Offered By',
-  descriptionTitle: 'About this Investment',
   metadataSelect: 'title, description',
   // Live as open, funded or active — the same set the public list shows.
   visibilityFilter: { column: 'status', value: INVESTMENT_PUBLIC_STATUSES },

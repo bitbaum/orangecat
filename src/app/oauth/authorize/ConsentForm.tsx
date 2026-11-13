@@ -201,7 +201,7 @@ export function ConsentForm({
           <ul className="mt-2 space-y-3">
             {routine.map(s => (
               <li key={s.name} className="flex gap-3 text-sm">
-                <Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-warm" />
+                <Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-fg-secondary" />
                 <span className="text-fg-primary">{s.description}</span>
               </li>
             ))}

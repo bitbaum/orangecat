@@ -11,6 +11,8 @@ import { ROUTES } from '@/config/routes';
 import { TAX_ESTIMATE_COPY } from '@/config/tax-estimates';
 import type { PersonalFinances as Finances } from '@/domain/finances/service';
 import { APP_LOCALE } from '@/utils/locale';
+import { MoneyFigure } from '@/components/money/MoneyFigure';
+import { FINANCE_CARD_ACTION as CARD_ACTION, FINANCE_SECTION_LABEL } from './finance-styles';
 
 function money(amount: number, currency: string): string {
   return new Intl.NumberFormat(APP_LOCALE, {
@@ -23,7 +25,7 @@ function money(amount: number, currency: string): string {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-lg border border-default bg-surface-base p-5">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-fg-secondary">{title}</h2>
+      <h2 className={FINANCE_SECTION_LABEL}>{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
   );
@@ -35,17 +37,27 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <Block title={FINANCES_PAGE.income.title}>
         {income.payments === 0 ? (
-          <p className="text-sm text-fg-secondary">{FINANCES_PAGE.income.empty}</p>
+          <>
+            <p className="mb-0 text-sm text-fg-secondary">{FINANCES_PAGE.income.empty}</p>
+            <Link href={ROUTES.RECEIVE} className={CARD_ACTION}>
+              {FINANCES_PAGE.income.emptyCta}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          </>
         ) : (
           <>
-            <p className="font-heading text-3xl text-fg-primary">
-              {income.total === null ? `${income.totalBtc} BTC` : money(income.total, currency)}
-            </p>
-            <p className="mt-1 text-sm text-fg-tertiary">
+            <MoneyFigure
+              size="lg"
+              className="justify-start"
+              label={
+                income.total === null ? `${income.totalBtc} BTC` : money(income.total, currency)
+              }
+            />
+            <p className="mb-0 mt-1 text-sm text-fg-tertiary">
               {FINANCES_PAGE.income.hint(income.windowDays)} {income.totalBtc.toFixed(8)} BTC.
             </p>
             {income.valuedAtToday > 0 && (
-              <p className="mt-1 text-sm text-fg-tertiary">
+              <p className="mb-0 mt-1 text-sm text-fg-tertiary">
                 {FINANCES_PAGE.income.valuedAtToday(income.valuedAtToday)}
               </p>
             )}
@@ -55,7 +67,7 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
 
       <Block title={FINANCES_PAGE.debts.title}>
         {debts.length === 0 ? (
-          <p className="text-sm text-fg-secondary">{FINANCES_PAGE.debts.empty}</p>
+          <p className="mb-0 text-sm text-fg-secondary">{FINANCES_PAGE.debts.empty}</p>
         ) : (
           <ul className="space-y-2">
             {debts.map(debt => (
@@ -107,11 +119,8 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
           </>
         ) : (
           <>
-            <p className="text-sm text-fg-secondary">{FINANCES_PAGE.civic.empty}</p>
-            <Link
-              href={ROUTES.DASHBOARD.CIVIC_SPLIT}
-              className="mt-3 inline-flex min-h-9 pointer-coarse:min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
-            >
+            <p className="mb-0 text-sm text-fg-secondary">{FINANCES_PAGE.civic.empty}</p>
+            <Link href={ROUTES.DASHBOARD.CIVIC_SPLIT} className={CARD_ACTION}>
               {FINANCES_PAGE.civic.cta}
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
@@ -122,9 +131,9 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
       <Block title={TAX_ESTIMATE_COPY.title}>
         {tax ? (
           <>
-            <p className="font-heading text-3xl text-fg-primary">
-              ≈ {money(tax.total, tax.table.currency)}
-              <span className="ml-2 text-base text-fg-tertiary">
+            <p className="mb-0 flex flex-wrap items-baseline gap-x-2">
+              <MoneyFigure size="lg" label={`≈ ${money(tax.total, tax.table.currency)}`} />
+              <span className="text-base text-fg-tertiary">
                 {(tax.effectiveRate * 100).toFixed(1)}% of {money(tax.taxableIncome, currency)}
               </span>
             </p>
@@ -136,7 +145,7 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
                 {money(tax.cantonalAndCommunal, currency)}
               </dd>
             </dl>
-            <p className="mt-3 text-xs leading-relaxed text-fg-tertiary">
+            <p className="mb-0 mt-3 text-xs leading-relaxed text-fg-tertiary">
               {TAX_ESTIMATE_COPY.caveat} Table: {tax.table.label}, {tax.table.year}.{' '}
               {tax.table.assumptions.join('; ')}.
             </p>
@@ -156,11 +165,20 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
             </ul>
           </>
         ) : (
-          <p className="text-sm text-fg-secondary">
-            {civicSplit
-              ? TAX_ESTIMATE_COPY.noTable(`${civicSplit.locality}, ${civicSplit.region}`)
-              : TAX_ESTIMATE_COPY.noPlace}
-          </p>
+          <>
+            <p className="mb-0 text-sm text-fg-secondary">
+              {civicSplit
+                ? TAX_ESTIMATE_COPY.noTable(`${civicSplit.locality}, ${civicSplit.region}`)
+                : TAX_ESTIMATE_COPY.noPlace}
+            </p>
+            {/* The estimate is built for the declared place: the way to it is here too. */}
+            {!civicSplit && (
+              <Link href={ROUTES.DASHBOARD.CIVIC_SPLIT} className={CARD_ACTION}>
+                {FINANCES_PAGE.civic.cta}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            )}
+          </>
         )}
       </Block>
     </div>

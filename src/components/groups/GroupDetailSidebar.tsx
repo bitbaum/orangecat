@@ -18,6 +18,8 @@ interface GroupDetailSidebarProps {
   labelConfig: (typeof GROUP_LABELS)[GroupLabel] | null;
   governanceConfig: (typeof GOVERNANCE_PRESETS)[GovernancePreset] | null;
   LabelIcon: ElementType;
+  /** Label, visibility and listing are the owner's settings, not a visitor's facts. */
+  isOwner?: boolean;
 }
 
 export function GroupDetailSidebar({
@@ -27,6 +29,7 @@ export function GroupDetailSidebar({
   labelConfig,
   governanceConfig,
   LabelIcon,
+  isOwner = false,
 }: GroupDetailSidebarProps) {
   return (
     <div className="space-y-6">
@@ -39,10 +42,14 @@ export function GroupDetailSidebar({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="text-fg-secondary">Label</div>
-            <div className="font-medium">
-              <Badge variant="secondary">{labelConfig?.name || group.label}</Badge>
-            </div>
+            {isOwner && (
+              <>
+                <div className="text-fg-secondary">Label</div>
+                <div className="font-medium">
+                  <Badge variant="secondary">{labelConfig?.name || group.label}</Badge>
+                </div>
+              </>
+            )}
 
             {group.tags && group.tags.length > 0 && (
               <>
@@ -57,28 +64,32 @@ export function GroupDetailSidebar({
               </>
             )}
 
-            <div className="text-fg-secondary">Visibility</div>
-            <div className="font-medium flex items-center gap-1">
-              {group.visibility === 'public' ? (
-                <>
-                  <Globe className="h-4 w-4" />
-                  Public
-                </>
-              ) : group.visibility === 'members_only' ? (
-                <>
-                  <Eye className="h-4 w-4" />
-                  Members Only
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4" />
-                  Private
-                </>
-              )}
-            </div>
+            {isOwner && (
+              <>
+                <div className="text-fg-secondary">Visibility</div>
+                <div className="font-medium flex items-center gap-1">
+                  {group.visibility === 'public' ? (
+                    <>
+                      <Globe className="h-4 w-4" />
+                      Public
+                    </>
+                  ) : group.visibility === 'members_only' ? (
+                    <>
+                      <Eye className="h-4 w-4" />
+                      Members Only
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      Private
+                    </>
+                  )}
+                </div>
 
-            <div className="text-fg-secondary">Listed</div>
-            <div className="font-medium">{group.is_public ? 'Yes' : 'No'}</div>
+                <div className="text-fg-secondary">Listed</div>
+                <div className="font-medium">{group.is_public ? 'Yes' : 'No'}</div>
+              </>
+            )}
 
             <div className="text-fg-secondary">Governance</div>
             <div className="font-medium">{governanceConfig?.name || group.governance_preset}</div>
@@ -133,12 +144,16 @@ export function GroupDetailSidebar({
           <div className={`grid gap-4 ${wallets ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <div className="text-center">
               <div className="text-2xl font-bold text-fg-primary">{members.length}</div>
-              <div className="text-sm text-fg-secondary">Members</div>
+              <div className="text-sm text-fg-secondary">
+                {members.length === 1 ? 'Member' : 'Members'}
+              </div>
             </div>
             {wallets && (
               <div className="text-center">
                 <div className="text-2xl font-bold text-fg-primary">{wallets.length}</div>
-                <div className="text-sm text-fg-secondary">Wallets</div>
+                <div className="text-sm text-fg-secondary">
+                  {wallets.length === 1 ? 'Wallet' : 'Wallets'}
+                </div>
               </div>
             )}
           </div>

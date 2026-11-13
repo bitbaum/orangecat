@@ -14,8 +14,10 @@ import {
   fromAutonomyLevel,
   CAT_PERMISSIONS_CHANGED_EVENT,
   type AutonomyLevel,
+  PERMISSION_PRESET_META,
   type PermissionPreset,
 } from '@/config/cat-autonomy';
+import { initiallyExpanded } from './permission-view';
 import type { PermissionData } from './types';
 
 export function useCatPermissionsData(enabled: boolean) {
@@ -32,11 +34,15 @@ export function useCatPermissionsData(enabled: boolean) {
     }
     fetch(API_ROUTES.CAT.PERMISSIONS)
       .then(res => res.json())
-      .then(json =>
-        json.success
-          ? setData(json.data)
-          : setError(apiErrorMessage(json.error, 'Couldn’t load what Cat may do.'))
-      )
+      .then(json => {
+        if (!json.success) {
+          setError(apiErrorMessage(json.error, 'Couldn’t load what Cat may do.'));
+          return;
+        }
+        setData(json.data);
+        // A partly-on category opens, so what is on is visible without a tap.
+        setExpanded(initiallyExpanded(json.data.summary.categories));
+      })
       .catch(() => setError('Failed to load permissions'))
       .finally(() => setLoading(false));
   }, [enabled]);
@@ -57,9 +63,9 @@ export function useCatPermissionsData(enabled: boolean) {
       optimistic: (prev: PermissionData) => PermissionData,
       granted: boolean,
       body: Record<string, unknown>
-    ) => {
+    ): Promise<boolean> => {
       if (inFlight.current) {
-        return;
+        return false;
       }
       inFlight.current = true;
       setSaving(key);
@@ -84,9 +90,11 @@ export function useCatPermissionsData(enabled: boolean) {
           window.dispatchEvent(
             new CustomEvent(CAT_PERMISSIONS_CHANGED_EVENT, { detail: snapshot.data })
           );
+          return true;
         } else {
           setData(previous);
           toast.error(json.error?.message || 'Failed to update permission');
+          return false;
         }
       } catch {
         setData(persisted ? null : previous);
@@ -100,6 +108,7 @@ export function useCatPermissionsData(enabled: boolean) {
             ? 'Permissions saved; reload to see the current state'
             : 'Failed to update permission'
         );
+        return false;
       } finally {
         inFlight.current = false;
         setSaving(null);
@@ -146,7 +155,11 @@ export function useCatPermissionsData(enabled: boolean) {
     );
   };
 
-  const applyPreset = (preset: PermissionPreset) => write('preset', prev => prev, true, { preset });
+  const applyPreset = async (preset: PermissionPreset) => {
+    if (await write('preset', prev => prev, true, { preset })) {
+      toast.success(`Cat is now on ${PERMISSION_PRESET_META[preset].label}`);
+    }
+  };
 
   const toggleExpanded = (categoryId: string) =>
     setExpanded(prev => {

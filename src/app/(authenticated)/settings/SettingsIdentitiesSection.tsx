@@ -127,12 +127,12 @@ export function SettingsIdentitiesSection() {
   const atLimit = max > 0 && identityCount >= max;
 
   return (
-    <div className="border-t border-default pt-10">
-      <h3 className="mb-4 flex items-center text-lg font-semibold text-fg-primary">
+    <div>
+      <h3 className="mb-2 flex items-center text-lg font-semibold text-fg-primary">
         <Users className="mr-2 h-6 w-6" />
         {IDENTITIES_COPY.title}
       </h3>
-      <p className="mb-6 text-fg-secondary">{IDENTITIES_COPY.intro}</p>
+      <p className="mb-6 max-w-prose text-fg-secondary">{IDENTITIES_COPY.intro}</p>
 
       {loadFailed ? (
         <div className="flex flex-wrap items-center gap-3" role="alert">

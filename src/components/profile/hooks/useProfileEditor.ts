@@ -108,9 +108,6 @@ export function useProfileEditor({
     },
   });
 
-  const watchedUsername = form.watch('username');
-  const watchedDisplayName = form.watch('name');
-
   const [locationMode, setLocationMode] = useState<LocationMode>(
     () => parseLocationContext(profile.location_context || '').mode
   );
@@ -118,12 +115,6 @@ export function useProfileEditor({
     const parsed = parseLocationContext(profile.location_context || '');
     return parsed.groupLabel || '';
   });
-
-  useEffect(() => {
-    if (watchedUsername && !watchedDisplayName) {
-      form.setValue('name', watchedUsername);
-    }
-  }, [watchedUsername, watchedDisplayName, form]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

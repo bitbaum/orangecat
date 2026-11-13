@@ -1,111 +1,14 @@
 'use client';
 
-import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { useState } from 'react';
-import { Share2, Mail, Copy, Check, X } from 'lucide-react';
+import { Share2, Copy, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GRADIENTS } from '@/config/gradients';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { APP_NAME } from '@/config/brand';
-import { shareIntentUrl } from '@/config/share';
+import { SHARE_PLATFORMS, type SharePlatform } from './sharePlatforms';
 
-// Real brand marks. lucide-react dropped brand icons in 0.400+ and the
-// replacement here was `const Facebook = Globe; const Linkedin = Globe;` — two
-// buttons rendering the SAME generic globe, plus lucide's multiply glyph
-// standing in for X inside a panel whose close button is also a multiply glyph.
-// See BrandIcons.tsx for why these are inline SVG rather than a dependency.
-import { XBrandIcon, FacebookBrandIcon, LinkedInBrandIcon, WhatsAppBrandIcon } from './BrandIcons';
-
-export interface SharePlatform {
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bgColor: string;
-  action: (url: string, title: string, description?: string) => void;
-}
-
-export const SHARE_PLATFORMS: SharePlatform[] = [
-  // Our own network first. A share panel on an OrangeCat page that offered X,
-  // Facebook and LinkedIn and not OrangeCat was the platform forgetting it is
-  // one (operator, 2026-10-10). Same door Loki's Thoughts and every fleet site
-  // use: /share?url&title opens the composer prefilled.
-  {
-    name: APP_NAME,
-    icon: BrandMarkIcon,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
-    action: (shareUrl, shareTitle) => {
-      window.location.href = shareIntentUrl(window.location.origin, {
-        url: shareUrl,
-        title: shareTitle,
-      });
-    },
-  },
-  {
-    name: 'X',
-    icon: XBrandIcon,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
-    action: (shareUrl, shareTitle, shareDescription) => {
-      const text = `${shareTitle}\n\n${shareDescription}\n\n#Bitcoin #${APP_NAME}`;
-      window.open(
-        `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
-        '_blank',
-        'width=550,height=420'
-      );
-    },
-  },
-  {
-    name: 'Facebook',
-    icon: FacebookBrandIcon,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised/40 hover:bg-surface-raised',
-    action: (shareUrl, shareTitle) => {
-      window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareTitle)}`,
-        '_blank',
-        'width=550,height=420'
-      );
-    },
-  },
-  {
-    name: 'LinkedIn',
-    icon: LinkedInBrandIcon,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised/40 hover:bg-surface-raised',
-    action: (shareUrl, shareTitle, shareDescription) => {
-      window.open(
-        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle)}&summary=${encodeURIComponent(shareDescription || '')}`,
-        '_blank',
-        'width=550,height=420'
-      );
-    },
-  },
-  {
-    name: 'WhatsApp',
-    icon: WhatsAppBrandIcon,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
-    action: (shareUrl, shareTitle) => {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${shareTitle} ${shareUrl}`)}`,
-        '_blank'
-      );
-    },
-  },
-  {
-    name: 'Email',
-    icon: Mail,
-    color: 'text-fg-secondary',
-    bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
-    action: (shareUrl, shareTitle, shareDescription) => {
-      const subject = encodeURIComponent(`Check out ${shareTitle}`);
-      const body = encodeURIComponent(`${shareDescription}\n\n${shareUrl}`);
-      window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    },
-  },
-];
+export { SHARE_PLATFORMS, type SharePlatform } from './sharePlatforms';
 
 export interface ShareContentProps {
   title: string;
@@ -189,16 +92,30 @@ export default function ShareContent({
   const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   // Modern share UI - Modal on mobile, dropdown on desktop
+  // In the phone dialog, DialogContent is the one frame and owns the one close
+  // button; the card drawing its own border, shadow and X inside it made two.
+  const inDialog = isMobile && !!onClose;
   const shareContent = (
     <div
-      className={`bg-surface-base rounded-lg shadow-sm border border-default dark:border-default/50 backdrop-blur-xl p-5 sm:p-6 w-full max-w-md mx-auto ${className}`}
-      style={{
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      }}
+      className={
+        inDialog
+          ? `w-full ${className}`
+          : `bg-surface-base rounded-lg shadow-sm border border-default dark:border-default/50 backdrop-blur-xl p-5 sm:p-6 w-full max-w-md mx-auto ${className}`
+      }
+      style={
+        inDialog
+          ? undefined
+          : {
+              boxShadow:
+                '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }
+      }
       onClick={e => e.stopPropagation()}
     >
       {showTitle && (
-        <div className="flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b border-subtle">
+        <div
+          className={`flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b border-subtle ${inDialog ? 'pr-12' : ''}`}
+        >
           <h3 className="font-semibold text-fg-primary flex items-center gap-2 text-lg">
             <div
               className={`w-8 h-8 rounded-full ${GRADIENTS.brandOrange} flex items-center justify-center`}
@@ -207,7 +124,7 @@ export default function ShareContent({
             </div>
             {titleText}
           </h3>
-          {onClose && (
+          {onClose && !inDialog && (
             <button
               onClick={onClose}
               className="text-fg-tertiary hover:text-fg-primary transition-colors p-2 hover:bg-surface-raised rounded-full touch-manipulation min-h-11 min-w-11 flex items-center justify-center"
@@ -231,7 +148,7 @@ export default function ShareContent({
       )}
 
       {/* Social Platforms - Modern grid with icons */}
-      <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 sm:gap-4 mb-5">
+      <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-5">
         {SHARE_PLATFORMS.map(platform => {
           const Icon = platform.icon;
           return (
@@ -272,7 +189,7 @@ export default function ShareContent({
         ) : (
           <>
             <Copy className="w-5 h-5" />
-            <span>Copy Link</span>
+            <span>Copy link</span>
           </>
         )}
       </button>
@@ -280,7 +197,7 @@ export default function ShareContent({
   );
 
   // On mobile, show as modal overlay; on desktop, show as dropdown
-  if (isMobile && onClose) {
+  if (inDialog) {
     // Mobile: Dialog modal
     return (
       <Dialog open onOpenChange={open => !open && onClose()}>

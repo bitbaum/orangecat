@@ -49,7 +49,7 @@ export default function HeroSection() {
         <p className="oc-public-hero-lede">{HERO_COPY.lede}</p>
 
         <div className="oc-public-hero-actions">
-          <Button href={ROUTES.AUTH} variant="accent" size="xl">
+          <Button href={ROUTES.AUTH_REGISTER} variant="accent" size="xl">
             {CTA_LABELS.primaryAction}
             <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
           </Button>

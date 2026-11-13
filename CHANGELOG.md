@@ -12,6 +12,12 @@ to the map, sub-bullets stay here for the human reader.
 ## 2026-11-13
 
 - **Reply, react and ask for money in a conversation.** Hold a message (or right-click it) to answer that one message or put an emoji on it; an answer shows the line it answers, and tapping it takes you there. In a conversation with one person, the "+" now offers "Request money" (a card with the amount and a Pay button, marked paid when it is) and "Send money" (their pay page). {#messenger-reply} {#messenger-reactions} {#messenger-money}
+- **Signing up is one clear step.** Sign-in and sign-up each have one highlighted button, a mistake shows under the field it belongs to, and wherever you sign in from you land in the same place: the Cat if you are new, your dashboard if you are back.
+- **The phone app is easier to move around.** The menu closes when you pick a page and stays closed after a reload, Create lists what you can make in plain words with the page's own kind first, and the money tab is called "Money" everywhere.
+- **Paying and getting paid say what is happening.** The pay page shows who you are paying, buttons wait until the amount is within the limits, and Send takes you straight to connecting a wallet when you need one.
+- **Listings always offer a next step.** When the owner has not added a wallet yet, you can ask them how to pay; prices and the book button sit at the top of the page.
+- **The Cat's permissions read like sentences.** Each row says what the Cat may do in plain words, a new account is no longer shown payments as on, and spending limits are entered in your own currency.
+- **Settings are easier to find.** Account is split into sections, and currency, date format and theme have their own Preferences page.
 - **An article can go on your projects' walls too.** Under "Who can read this?" in the article editor, "Also post on a project" offers your own projects, the same list a short post cross-posts to, and the article appears on each one you choose as well as on your profile. A sister product can link straight to the editor with the article and the project already chosen (`/articles/new?import=…&project=solon`); a project that is not yours is not chosen, and the editor says so. Signing in on the way keeps both.
   - Project walls now also show what their owners cross-posted there. Those posts were recorded and never shown.
 

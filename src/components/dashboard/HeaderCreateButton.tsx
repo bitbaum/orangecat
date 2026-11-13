@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HeaderIconButton } from '@/components/layout/HeaderIconButton';
-import { CREATE_OPTIONS, shouldShowDivider } from '@/config/create-options';
+import { CreateOptionList } from '@/components/create/CreateOptionList';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
 import {
   DropdownMenu,
@@ -13,7 +12,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 export function HeaderCreateButton() {
@@ -39,22 +37,17 @@ export function HeaderCreateButton() {
       >
         <DropdownMenuLabel>Create new</DropdownMenuLabel>
         <VoiceCreate onNavigate={() => setIsOpen(false)} />
-        {CREATE_OPTIONS.map((option, index) => (
-          <div key={option.href}>
-            <DropdownMenuItem asChild className="min-h-11 gap-3 px-3 py-2.5">
-              <Link href={option.href}>
-                <div className="oc-icon-tile h-9 w-9 shrink-0">
-                  <option.icon className={cn('h-4 w-4', option.color)} aria-hidden />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-fg-primary">{option.name}</div>
-                  <div className="text-xs text-fg-secondary">{option.description}</div>
-                </div>
-              </Link>
+        {/* The same list as /create and the phone's sheet. Each row is a
+            menu item, so arrow keys still move between them. */}
+        <CreateOptionList
+          className="mt-2"
+          onNavigate={() => setIsOpen(false)}
+          wrapRow={(row, key) => (
+            <DropdownMenuItem key={key} asChild className="rounded-none">
+              {row}
             </DropdownMenuItem>
-            {shouldShowDivider(option, CREATE_OPTIONS[index + 1]) && <DropdownMenuSeparator />}
-          </div>
-        ))}
+          )}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

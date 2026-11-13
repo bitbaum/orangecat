@@ -61,7 +61,7 @@ describe('task list filters', () => {
     fireEvent.change(screen.getByLabelText('Type'), {
       target: { value: TASK_TYPES.RECURRING_SCHEDULED },
     });
-    await screen.findByText('No tasks found');
+    await screen.findByText('No tasks match these filters');
     await act(async () =>
       finishOld({
         ok: true,
@@ -69,7 +69,7 @@ describe('task list filters', () => {
       })
     );
     expect(screen.queryByText('Outdated task')).not.toBeInTheDocument();
-    expect(screen.getByText('No tasks found')).toBeInTheDocument();
+    expect(screen.getByText('No tasks match these filters')).toBeInTheDocument();
   });
 
   it('offers a working retry after a failed list request', async () => {
@@ -80,7 +80,11 @@ describe('task list filters', () => {
     vi.stubGlobal('fetch', fetcher);
     render(<TasksPage />);
     fireEvent.click(await screen.findByRole('button', { name: 'Retry loading tasks' }));
-    await screen.findByText('No tasks found');
+    await screen.findByText('No tasks yet');
     expect(fetcher).toHaveBeenCalledTimes(2);
+    // The empty list offers the way to make one,
+    // instead of four zero stat cards.
+    expect(screen.getAllByRole('link', { name: /Create Task/ }).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Needs attention')).not.toBeInTheDocument();
   });
 });

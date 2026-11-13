@@ -10,7 +10,7 @@ interface DoorExamplesProps {
 
 /**
  * The example sentences under a Cat door ("What do you want to do?"), shared
- * by the signed-in door (DashboardIntent) and the public one (TheDoor).
+ * by every Cat door (TheDoor), signed in or not.
  *
  * A suggestion must not look like the field above it: no outline, a quiet
  * fill and an arrow, because tapping one goes to the Cat with the sentence

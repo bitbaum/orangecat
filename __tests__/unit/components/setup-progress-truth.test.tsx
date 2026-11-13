@@ -82,7 +82,9 @@ it('shows a brand-new account the tasks left, not a half-full setup bar', async 
   // The dashboard's own props (DashboardJourney).
   const { container } = render(<TasksSection showQuestions maxTasks={2} quietWhenDone />);
 
-  expect(await screen.findByText('4 tasks remaining')).toBeVisible();
+  // Let the Cat set you up, and add a name. Bio and photo open the same form
+  // as the name, so they are one row and wait until the name is there.
+  expect(await screen.findByText('2 tasks remaining')).toBeVisible();
   expect(container.textContent).not.toMatch(/%/);
   expect(container.querySelector('[style*="width"]')).toBeNull();
 });

@@ -130,7 +130,7 @@ export function CatInterestsManager() {
           maxLength={80}
           placeholder="e.g. longevity research"
           aria-label="Add an interest"
-          className="min-w-0 flex-1 rounded-md border border-default bg-surface-raised px-3 py-2 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-accent-warm focus:outline-none"
+          className="min-w-0 flex-1 rounded-md border border-default bg-surface-raised px-3 py-2 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-fg-primary focus:outline-none"
         />
         <Button
           onClick={() => void handleAdd()}

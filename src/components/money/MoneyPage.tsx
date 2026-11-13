@@ -26,9 +26,36 @@ export function MoneyPage({ title, subtitle, children }: MoneyPageProps) {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-6">
       <PageHeading>{title}</PageHeading>
-      {subtitle && <p className="mt-1 text-sm text-fg-secondary">{subtitle}</p>}
+      {subtitle && <p className="mb-0 mt-1 text-sm text-fg-secondary">{subtitle}</p>}
       <MoneyTabs className="mt-5" />
       <div className="mt-6">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * A state that stands in for the form (first run, no wallet): one question as
+ * the heading, one sentence, then whatever leads on. Same frame as the form,
+ * so the page title and tabs never change under the person's thumb.
+ */
+export function MoneyPrompt({
+  heading,
+  body,
+  children,
+}: {
+  heading: string;
+  body?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <h2 className="mb-0 font-heading text-lg font-semibold tracking-display text-fg-primary">
+          {heading}
+        </h2>
+        {body && <p className="mb-0 text-sm text-fg-secondary">{body}</p>}
+      </div>
+      {children}
     </div>
   );
 }

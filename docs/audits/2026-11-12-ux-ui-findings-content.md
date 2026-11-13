@@ -4,6 +4,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### content#3 · medium · Blog index: a wall of 71 filter pills comes before the first post on desktop
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /blog, /study-bitcoin, /studio (both, both themes)
 - **What a person meets:** Someone who clicks 'Blog' in the header on a laptop sees a tag cloud and no article; a comment in the code records that this exact problem was fixed for phones only. The pills are under the 44px target, the selected one is not announced to a screen reader, and the orphaned last choice is the pattern the owner has asked to stop.
 - **Cause:** src/components/blog/BlogFilters.tsx:55,62,95 and useBlogFilters.ts:54-70; src/app/(public)/study-bitcoin/page.tsx:68; src/components/studio/CreativeStudio.tsx:82.
@@ -12,6 +14,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### content#4 · medium · A blog post and a community article are the same kind of page with two frames, and the title does not line up with its text
 
+**Status:** Fixed (fourth pull request).
+
 - **Where:** /blog/orangecat-vision-future, /blog, /articles, /articles/&lt;slug> (both, both themes)
 - **What a person meets:** The two places a person reads long text on OrangeCat feel like two products; the blog's line is too long for comfortable reading on a desktop, the ragged left edge reads as a layout bug on a phone, and a reader who finishes a post is sent back to the index instead of to the next thing.
 - **Cause:** src/app/(public)/blog/[slug]/page.tsx:107-175 (header max-w-4xl, body centred by bip-kit) and :125 (no font-heading); src/app/(public)/articles/[slug]/page.tsx:115,134,189; node_modules/@bitbaum/bip-kit/styles.css:314-331 (unlayered padding-inline: 1rem under 720px); src/components/blog/BlogPostCard.tsx:17; src/components/legal/LegalDocumentPage.tsx:16.
@@ -19,6 +23,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** Fleet 'The experience belongs to the package': the reader page belongs to @bitbaum/writingkit/react (installed, ^0.2.0); a shared local frame is the interim, not a third hand-built reader.
 
 ### content#5 · medium · Changelog loses every entry's headline and is 50 phone screens of grey paragraphs
+
+**Status:** Fixed (fourth pull request).
 
 - **Where:** /changelog (both, both themes)
 - **What a person meets:** A person who wants to know what changed cannot scan: there is nothing to read first in each entry, the newest week looks the same as last spring, and the timeline marks look misplaced. The page that is meant to show momentum reads as a log file.
@@ -36,6 +42,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### content#7 · medium · On a phone the page title is the same size as the section headings under it
 
+**Status:** Already fixed on main.
+
 - **Where:** /docs, /security, /status, /blog, /roadmap, /changelog, … (phone, both themes)
 - **What a person meets:** The first thing on the page does not read as the title; with a 20px lead directly under a 24px title the top of nine pages is one flat block, and people have to read to find out where they are.
 - **Cause:** Section headings: src/app/(public)/docs/page.tsx:54,88,119,164,213,235,258; security/page.tsx:100,125; status/page.tsx:98; whitepaper/page.tsx:36; study-bitcoin/page.tsx:49,64,93,107,130. Leads: docs/page.tsx:43, security/page.tsx:93, status/page.tsx:89, blog/page.tsx:44.
@@ -43,6 +51,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** The original fix overrides the documented PageHeading scale and silently resizes the money surface, the repo's 'One shape per kind' reference.
 
 ### content#8 · medium · The three public 'say it in one box' entry points have no microphone and a washed-out orange disabled button
+
+**Status:** Partly (fourth pull request): the microphone shows to signed-in people only; opening transcription to visitors is a cost decision.
 
 - **Where:** /raise, /feedback, /studio (both, both themes)
 - **What a person meets:** These are top-of-funnel screens whose whole promise is 'just say it'. On a phone the person has to type, and the first thing the brand colour says is a button that looks faded or broken; the fleet rule names both (a microphone wherever a person types words; orange is never a disabled state).
@@ -52,6 +62,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### content#9 · low · Links inside running text are invisible or styled three ways, and the legal pages end without a single link
 
+**Status:** Fixed (fourth pull request).
+
 Status: Partly (#1634): links in sentences are underlined; legal pages still end without a link.
 
 - **Where:** /changelog, /roadmap, /governance, /privacy, /terms (both, both themes)
@@ -60,6 +72,8 @@ Status: Partly (#1634): links in sentences are underlined; legal pages still end
 - **Fix:** globals.css, in the components layer beside .oc-card-link: '.oc-text-link { @apply text-fg-primary underline decoration-fg-tertiary underline-offset-4 hover:decoration-fg-primary; }' (underline 2.83/4.36:1 today, 4.97/6.18:1 after finding 2). Apply to links inside sentences: changelog/page.tsx:54,106,110; roadmap/page.tsx:67,74; RoadmapSteps.tsx:76,85; governance/page.tsx:62,112,133,137,144. For the standalone rows (changelog/page.tsx:23, RoadmapSteps.tsx:49) keep text-fg-secondary and add 'underline decoration-fg-tertiary'. LegalDocumentPage: split each paragraph on CONTACT_EMAIL and render &lt;a className="oc-text-link" href={`mailto:${CONTACT_EMAIL}`}>; after the sections add one line: 'A question about this? Ask the Cat' linking ROUTES.FEEDBACK.
 
 ### content#13 · low · Placeholder and duplicate pages are still reachable, and two footer links mislead
+
+**Status:** Partly (fourth pull request): /channel is kept (it has a live waitlist); its links and words are fixed.
 
 - **Where:** /channel, /pages, /technology, /company/about, /company/careers, /builders (both, both themes)
 - **What a person meets:** Few people arrive, but those who do meet promises the product does not keep (streaming, a waiting list), a sign-in wall on a public address, buttons that do not do what their section says, and a 'Product' link that silently leaves the product. The footer also lists Security twice.

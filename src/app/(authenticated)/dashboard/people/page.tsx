@@ -26,6 +26,8 @@ export default function PeoplePage() {
     followers,
     allUsers,
     isLoading,
+    loadError,
+    reload,
     followingLoading,
     handleFollow,
     handleUnfollow,
@@ -71,10 +73,12 @@ export default function PeoplePage() {
         ? 'No one has connected with you yet. Share your profile to get started!'
         : 'No users found yet.';
 
+  // The page's one primary action, in the header only: it used to appear in
+  // the header, the invite card and the empty state at once.
   const discoverButton = (
-    <Button href={`${ROUTES.DISCOVER}?section=people`}>
+    <Button href={ROUTES.DISCOVER_TYPE('people')} variant="primary">
       <Search className="w-4 h-4 mr-2" />
-      Discover People
+      Discover people
     </Button>
   );
 
@@ -104,13 +108,17 @@ export default function PeoplePage() {
         onSearchChange={setSearchTerm}
       />
 
-      {connections.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No connections yet"
-          description={emptyMessage}
-          action={discoverButton}
-        />
+      {loadError ? (
+        <div className="space-y-3 rounded-lg border border-default bg-surface-base p-4">
+          <p role="status" className="mb-0 text-sm text-fg-secondary">
+            People could not be loaded.
+          </p>
+          <Button variant="outline" size="sm" onClick={reload}>
+            Try again
+          </Button>
+        </div>
+      ) : connections.length === 0 ? (
+        <EmptyState icon={Users} title="No connections yet" description={emptyMessage} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {connections.map(connection => (

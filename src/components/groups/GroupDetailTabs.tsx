@@ -3,7 +3,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from 'lucide-react';
 import type { Group, GroupMember } from '@/types/group';
 import type { User } from '@supabase/supabase-js';
 import type { GroupLabel } from '@/config/group-labels';
@@ -58,10 +57,7 @@ export function GroupDetailTabs({
         <TabsTrigger value="wallets">
           {wallets ? `Wallets (${wallets.length})` : 'Wallets'}
         </TabsTrigger>
-        <TabsTrigger value="events">
-          <Calendar className="h-4 w-4 mr-1" />
-          Events
-        </TabsTrigger>
+        <TabsTrigger value="events">Events</TabsTrigger>
         {hasGovernanceFeatures && <TabsTrigger value="proposals">Proposals</TabsTrigger>}
         <TabsTrigger value="activity">Activity</TabsTrigger>
       </TabsList>
@@ -78,7 +74,8 @@ export function GroupDetailTabs({
           </CardContent>
         </Card>
 
-        {labelConfig?.suggestedFeatures && labelConfig.suggestedFeatures.length > 0 && (
+        {/* Advice to the owner about what to set up; a visitor has no use for it. */}
+        {isOwner && labelConfig?.suggestedFeatures && labelConfig.suggestedFeatures.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Suggested Features</CardTitle>

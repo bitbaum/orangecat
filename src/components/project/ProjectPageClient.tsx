@@ -1,10 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import Button from '@/components/ui/Button';
-import { ArrowLeft } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { Breadcrumb, PUBLIC_BREADCRUMB_ROOT } from '@/components/ui/Breadcrumb';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import { useState, type ReactNode } from 'react';
 import { getStatusInfo } from '@/config/status-config';
@@ -101,7 +100,6 @@ export default function ProjectPageClient({
   productRecord,
   openLedgerWalletId,
 }: ProjectPageClientProps) {
-  const router = useRouter();
   const { user } = useAuth();
   const [showShareDialog, setShowShareDialog] = useState(false);
 
@@ -117,25 +115,16 @@ export default function ProjectPageClient({
       className={`bg-surface-page min-h-screen ${showMobileFundBar ? 'oc-mobile-action-stack-padding' : ''}`}
     >
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header with Back Button */}
-        <div className="mb-6">
-          <Button
-            onClick={() => router.back()}
-            variant="ghost"
-            size="sm"
-            className="mb-6"
-            aria-label="Go back to previous page"
-            onKeyDown={e => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                router.back();
-              }
-            }}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-            Back
-          </Button>
-        </div>
+        {/* The same way back every public listing has: a trail from Discover,
+            not a Back button that leaves the site for a visitor who arrived
+            from a shared link. */}
+        <Breadcrumb
+          root={PUBLIC_BREADCRUMB_ROOT}
+          items={[
+            { label: ENTITY_REGISTRY.project.namePlural, href: ROUTES.DISCOVER_TYPE('projects') },
+          ]}
+          className="mb-6"
+        />
 
         {/* Layout: main + rail */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -218,6 +207,7 @@ export default function ProjectPageClient({
               }}
               settledRaisedBtc={project.settled_raised_btc || 0}
               isOwner={isOwner}
+              payable={!!sellerReceive}
             />
 
             <ProjectEvidence

@@ -1,5 +1,6 @@
 import { Globe, Lock, Users, type LucideIcon } from 'lucide-react';
 import type { TimelineVisibility } from '@/types/timeline';
+import { ROUTES } from '@/config/routes';
 
 export const TIMELINE_CONTENT_LIMITS = {
   post: 500,
@@ -22,6 +23,29 @@ export const TIMELINE_COPY = {
   savedPost: 'Post shared',
   addImageUnavailable: 'Image upload is not available yet',
   loadingProjects: 'Loading projects',
+} as const;
+
+/**
+ * The feed's three views. They were three pages with three names ("Home",
+ * "My Timeline", "Community") and nothing linking one to the next; /home was
+ * linked from nowhere. Now each page carries one pick-one row naming all three,
+ * under one title. A view is still its own address, so a link keeps working.
+ */
+export type FeedView = 'timeline' | 'following' | 'community';
+
+export const FEED_TITLE = 'Timeline';
+
+export const FEED_VIEWS: ReadonlyArray<{ value: FeedView; label: string; href: string }> = [
+  { value: 'timeline', label: 'All', href: ROUTES.TIMELINE },
+  { value: 'following', label: 'Following', href: ROUTES.FEED },
+  { value: 'community', label: 'Everyone', href: ROUTES.COMMUNITY },
+];
+
+/** The following feed with nothing in it: say why, and the one way forward. */
+export const FOLLOWING_EMPTY = {
+  title: 'Nobody you follow has posted yet.',
+  action: 'Find people',
+  href: ROUTES.DISCOVER_TYPE('profiles'),
 } as const;
 
 export type TimelineVisibilityOption = {

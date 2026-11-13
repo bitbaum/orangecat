@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { Switch } from '@/components/ui/switch';
+import { SettingToggleRow } from '@/components/ui/SettingToggleRow';
 import {
   CIVIC_LEVELS,
   CIVIC_SPLIT_CAVEAT,
@@ -207,25 +207,20 @@ export function CivicSplitScreen() {
                 onChange={e => set('note', e.target.value)}
               />
 
-              <label className="flex items-start gap-3 rounded-lg border border-default bg-surface-raised p-4">
-                <Switch
-                  checked={form.is_public}
-                  onCheckedChange={checked => set('is_public', checked)}
-                  aria-label={CIVIC_SPLIT_COPY.publicLabel}
-                />
-                <span className="text-sm">
-                  <span className="block font-medium text-fg-primary">
-                    {CIVIC_SPLIT_COPY.publicLabel}
-                  </span>
-                  <span className="block text-fg-tertiary">{CIVIC_SPLIT_COPY.publicHint}</span>
-                </span>
-              </label>
+              <SettingToggleRow
+                className="rounded-lg border border-default bg-surface-raised px-4"
+                label={CIVIC_SPLIT_COPY.publicLabel}
+                detail={CIVIC_SPLIT_COPY.publicHint}
+                checked={form.is_public}
+                onCheckedChange={checked => set('is_public', checked)}
+              />
 
               <p className="text-xs leading-relaxed text-fg-tertiary">{CIVIC_SPLIT_CAVEAT}</p>
 
               <div className="flex flex-wrap items-center gap-3">
                 <Button
-                  variant="accent"
+                  variant="primary"
+                  className="min-h-11"
                   onClick={handleSave}
                   disabled={!canSave || isSaving}
                   isLoading={isSaving}
@@ -233,11 +228,22 @@ export function CivicSplitScreen() {
                   {saved ? 'Update my split' : 'Declare my split'}
                 </Button>
                 {saved && (
-                  <Button variant="ghost" onClick={handleWithdraw} disabled={isSaving}>
+                  <Button
+                    variant="ghost"
+                    className="min-h-11"
+                    onClick={handleWithdraw}
+                    disabled={isSaving}
+                  >
                     Withdraw
                   </Button>
                 )}
               </div>
+              {/* A disabled button says why, so declaring is never a dead end. */}
+              {!canSave && (
+                <p className="mb-0 text-sm text-fg-secondary">
+                  Add your country, region and locality to declare.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
