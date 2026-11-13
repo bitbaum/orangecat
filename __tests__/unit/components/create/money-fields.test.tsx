@@ -148,7 +148,7 @@ describe('switching a form’s currency', () => {
 });
 
 describe('on the form', () => {
-  it("moving Loan Amount's switch converts Remaining Balance with it", () => {
+  it("moving Loan Amount's switch converts Still owed with it", () => {
     withRates();
     render(<Form config={loanConfig} groups={['loan_terms']} />);
     const amount = type('original_amount', '10000');
@@ -161,8 +161,7 @@ describe('on the form', () => {
     expect(amount.value).toBe('0.16666667');
     expect(balance.value).toBe('0.13333333');
     expect(
-      (screen.getByRole('combobox', { name: 'Remaining Balance currency' }) as HTMLSelectElement)
-        .value
+      (screen.getByRole('combobox', { name: 'Still owed currency' }) as HTMLSelectElement).value
     ).toBe('BTC');
   });
 
@@ -259,7 +258,26 @@ describe('required money fields', () => {
       (loan.error?.issues ?? []).map(i => [String(i.path[0]), i.message])
     );
     expect(messages.original_amount).toBe('Enter the loan amount');
-    expect(messages.remaining_balance).toBe('Enter the remaining balance');
+    // A new loan owes all of it: "Still owed" is not asked, and not required.
+    expect(messages.remaining_balance).toBeUndefined();
+  });
+});
+
+describe('what is still owed', () => {
+  const field = loanConfig.fieldGroups
+    .flatMap(g => g.fields ?? [])
+    .find(f => f.name === 'remaining_balance');
+
+  it('is asked only of a loan being refinanced', () => {
+    expect(field?.showWhen).toEqual({ field: 'loan_type', value: 'existing_refinance' });
+    expect(field?.required).toBeFalsy();
+  });
+
+  it('is cleared when the loan type changes, so a hidden balance is never sent', () => {
+    const loanType = loanConfig.fieldGroups
+      .flatMap(g => g.fields ?? [])
+      .find(f => f.name === 'loan_type');
+    expect(loanType?.clearOnChange).toContain('remaining_balance');
   });
 });
 

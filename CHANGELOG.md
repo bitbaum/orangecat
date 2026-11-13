@@ -11,6 +11,10 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **You can speak instead of type without an account.** The microphone on "What do you want to do?", raising money, feedback and the studio now works for visitors too, in every browser.
+  - A visitor gets twelve takes in ten minutes and about four minutes per take; signing in lifts both.
+- **Organizations are called Organizations everywhere.** The switcher, the list and the join button no longer say "Groups" for the same thing.
+- **A new loan no longer asks what is still owed.** It owes the full amount, so that is filled in for you; only a loan you are refinancing asks "Still owed".
 - **Reply, react and ask for money in a conversation.** Hold a message (or right-click it) to answer that one message or put an emoji on it; an answer shows the line it answers, and tapping it takes you there. In a conversation with one person, the "+" now offers "Request money" (a card with the amount and a Pay button, marked paid when it is) and "Send money" (their pay page). {#messenger-reply} {#messenger-reactions} {#messenger-money}
 - **Signing up is one clear step.** Sign-in and sign-up each have one highlighted button, a mistake shows under the field it belongs to, and wherever you sign in from you land in the same place: the Cat if you are new, your dashboard if you are back.
 - **The phone app is easier to move around.** The menu closes when you pick a page and stays closed after a reload, Create lists what you can make in plain words with the page's own kind first, and the money tab is called "Money" everywhere.

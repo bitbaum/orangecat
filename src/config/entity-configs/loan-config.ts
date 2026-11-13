@@ -35,6 +35,9 @@ const fieldGroups: FieldGroup[] = [
         options: LOAN_TYPES,
         hint: 'Select the type of loan listing you want to create',
         colSpan: 2,
+        // "Still owed" is asked only of a loan being refinanced; switching
+        // back must not carry a hidden balance into the submit.
+        clearOnChange: ['remaining_balance'],
       },
     ],
   },
@@ -119,12 +122,14 @@ const fieldGroups: FieldGroup[] = [
         hint: 'The total amount you want to borrow',
       },
       {
+        // A new loan owes all of it, so it is not asked (the server sets it to
+        // the loan amount). A loan being refinanced may be part paid.
         name: 'remaining_balance',
-        label: 'Remaining Balance',
+        label: 'Still owed',
         type: 'currency',
-        placeholder: '10000',
-        required: true,
-        hint: 'Usually same as loan amount for new loans',
+        placeholder: '8000',
+        showWhen: { field: 'loan_type', value: 'existing_refinance' },
+        hint: 'What is left to repay today. Leave it empty if nothing has been repaid yet.',
       },
       {
         name: 'interest_rate',

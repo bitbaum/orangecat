@@ -214,10 +214,10 @@ const ROUTE_CONFIGS: RouteConfig[] = [
   {
     matches: p => p.startsWith('/groups') || p.startsWith(ENTITY_REGISTRY['group'].basePath),
     icon: Building,
-    title: 'Groups',
+    title: ENTITY_REGISTRY['group'].namePlural,
     subtitle: 'Build communities and governance',
     actions: [
-      { icon: Plus, text: 'Create new organizations' },
+      { icon: Plus, text: `Start an ${ENTITY_REGISTRY['group'].name.toLowerCase()}` },
       { icon: Users, text: 'Manage team members' },
       { icon: Target, text: 'Set collective goals' },
       { icon: CheckCircle, text: 'Vote on decisions' },

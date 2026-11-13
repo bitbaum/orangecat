@@ -10,7 +10,8 @@ export interface CreateLoanInput {
   description?: string;
   loan_category_id?: string | null;
   original_amount: number;
-  remaining_balance: number;
+  /** What is still owed. Empty on a new loan, which owes all of it. */
+  remaining_balance?: number | null;
   interest_rate?: number | null;
   bitcoin_address?: string | null;
   lightning_address?: string | null;
@@ -54,7 +55,7 @@ export async function createLoan(
       loan_type: loanInput.loan_type || 'new_request',
       // New schema fields
       original_amount: loanInput.original_amount,
-      remaining_balance: loanInput.remaining_balance,
+      remaining_balance: loanInput.remaining_balance ?? loanInput.original_amount,
       interest_rate: normalizeToNull(loanInput.interest_rate),
       loan_category_id: normalizeToNull(loanInput.loan_category_id),
       bitcoin_address: normalizeToNull(loanInput.bitcoin_address),

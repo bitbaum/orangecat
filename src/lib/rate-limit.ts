@@ -112,6 +112,12 @@ const mcpLimiter = slidingWindow({ limit: 120, windowMs: 60_000 });
 // so a person gets a handful per ten minutes — plenty for real use, flat for a
 // script (or a thread trying to make someone's Cat do a hundred things).
 const catPostInstructionLimiter = slidingWindow({ limit: 10, windowMs: 10 * 60_000 });
+// Dictation for a visitor with no account (/api/cat/transcribe). Each take is a
+// paid speech-to-text call made for someone we cannot name, so it gets the same
+// treatment as Ask-Cat: a per-IP budget on top of the general limiter. Twelve
+// takes in ten minutes covers a person filling a box by voice and correcting
+// themselves; it is flat for a script turning the route into free transcription.
+const dictationLimiter = slidingWindow({ limit: 12, windowMs: 10 * 60_000 });
 
 // ==================== RATE LIMIT FUNCTIONS ====================
 //
@@ -231,6 +237,14 @@ export async function rateLimitL402Verify(paymentIntentId: string): Promise<Rate
  */
 export async function rateLimitAskCat(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(askCatLimiter.check(`ask-cat:${clientIpKey(request)}`));
+}
+
+/**
+ * Rate limit dictation by a signed-out visitor, per IP: 12 takes per 10 minutes.
+ * Apply IN ADDITION to the general per-IP `rateLimit`.
+ */
+export async function rateLimitDictation(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(dictationLimiter.check(`dictation:${clientIpKey(request)}`));
 }
 
 /**
