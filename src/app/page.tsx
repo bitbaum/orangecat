@@ -37,10 +37,11 @@ export default async function Home() {
           ownedType,
         });
       } else {
-        // Land directly in the Cat-first flow. The previous /onboarding
-        // route's first step was a tile-button to /onboarding/intelligent
-        // anyway — collapse the indirection.
-        redirect(ROUTES.ONBOARDING.INTELLIGENT);
+        // The same first screen every way in leads to (lib/auth/landing.ts):
+        // the Cat's welcome. The logo used to open the onboarding form here,
+        // every time, for anyone who had not filled it in. The form is still
+        // one tap away from the welcome ("Tell Cat who you are").
+        redirect(ROUTES.DASHBOARD.CAT_WELCOME);
       }
     }
     // Cat-first: an already-onboarded visitor landing on "/" (or the brand
