@@ -12,7 +12,7 @@ vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 vi.mock('@/utils/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn() } }));
 
 const rpc = vi.fn();
-vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: () => ({ rpc }) }));
+vi.mock('@/lib/supabase/public', () => ({ createPublicClient: () => ({ rpc }) }));
 
 import { corrections, createVocabulary, evaluate, typoCases, words } from '@bitbaum/searchkit';
 import { findPublic, rankFound } from '@/services/search/find';

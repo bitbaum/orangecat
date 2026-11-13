@@ -56,7 +56,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     if (!draft) {
       return apiError(
-        'The AI writer is busy right now. Try again in a moment, or add your own free Groq key in Settings → AI.',
+        'Writing assistance is temporarily unavailable. Try again, or continue writing in the editor.',
         'AI_UNAVAILABLE',
         503
       ) as NextResponse;

@@ -36,15 +36,14 @@ import {
   thingItems,
   typeHeading,
 } from './command-palette-items';
-import { GROUP_HEADING, PaletteGroup, PaletteRow } from './PaletteRows';
+import { GROUP_HEADING, PaletteGroup, PaletteRow, PaletteSearchFailure } from './PaletteRows';
 import { logSearch } from './search-log';
 import { forgetRecents, readRecents, rememberRecent, type RecentEntry } from './recent-searches';
 import { ROUTES } from '@/config/routes';
-import { API_ROUTES } from '@/config/api-routes';
 import { CAT_QUERY_PARAM } from '@/config/cat-door';
+import { useOwnSearchThings } from '@/hooks/useOwnSearchThings';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { cn } from '@/lib/utils';
-import type { Thing } from '@/domain/things/service';
 
 /** Rows per local group: enough to see the right one, few enough to scan. */
 const GROUP_LIMIT = { things: 5, pages: 6, create: 5 } as const;
@@ -60,7 +59,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [recents, setRecents] = useState<RecentEntry[]>([]);
   const typed = query.trim();
   const searching = open && typed.length > 1;
-  const { results: hits, total, loading } = useGlobalSearch(query, searching);
+  const { results: hits, total, loading, error, retry } = useGlobalSearch(query, searching);
+  const {
+    things,
+    loading: thingsLoading,
+    error: thingsError,
+    retry: retryThings,
+  } = useOwnSearchThings(open);
 
   // Fresh on every open: an empty field and this browser's latest recents.
   useEffect(() => {
@@ -70,23 +75,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       setQuery('');
     }
   }, [open]);
-
-  // Your things, fetched once per page load on first open. Signed out (401)
-  // or failed: an empty list, never an error in a search box.
-  const [things, setThings] = useState<Thing[] | null>(null);
-  useEffect(() => {
-    if (!open || things !== null) {
-      return;
-    }
-    let live = true;
-    fetch(API_ROUTES.THINGS)
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => live && setThings(d?.data?.things ?? []))
-      .catch(() => live && setThings([]));
-    return () => {
-      live = false;
-    };
-  }, [open, things]);
 
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
 
@@ -112,7 +100,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const pages = useMemo(() => buildPages(), []);
   const creates = useMemo(() => buildCreateItems(), []);
-  const mine = useMemo(() => thingItems(things ?? []), [things]);
+  const mine = useMemo(() => thingItems(things), [things]);
   const shownThings = typed ? rankItems(mine, typed, GROUP_LIMIT.things) : [];
   const shownPages = rankItems(pages, typed, GROUP_LIMIT.pages);
   const shownCreates = rankItems(creates, typed, GROUP_LIMIT.create);
@@ -123,6 +111,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const nothingPublic =
     searching &&
     !loading &&
+    !thingsLoading &&
+    !error &&
+    !thingsError &&
     hits.length === 0 &&
     shownThings.length + shownPages.length + shownCreates.length === 0;
 
@@ -236,6 +227,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
         {searching && loading && hits.length === 0 && (
           <div className="px-3 py-2 text-xs text-fg-tertiary">Searching…</div>
+        )}
+        {error && (
+          <PaletteSearchFailure message={error} label="Retry public search" onRetry={retry} />
+        )}
+        {thingsError && (
+          <PaletteSearchFailure
+            message={thingsError}
+            label="Retry your items"
+            onRetry={retryThings}
+          />
         )}
         {!pagesLead && (
           <PaletteGroup heading="Jump to" items={shownPages} query={typed} onPick={navigateTo} />

@@ -82,3 +82,10 @@ describe('safeImageUrl', () => {
     }
   });
 });
+
+it('lets interactive callers distinguish unavailable search from zero matches', async () => {
+  const rpc = vi.fn().mockResolvedValue({ data: null, error: { message: 'unavailable' } });
+  await expect(
+    searchPublic({ rpc } as never, { query: 'cato', throwOnError: true })
+  ).rejects.toThrow('unavailable');
+});

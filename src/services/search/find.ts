@@ -26,7 +26,7 @@ import {
   type Range,
   type Vocabulary,
 } from '@bitbaum/searchkit';
-import { getAdminClient } from '@/lib/supabase/admin';
+import { createPublicClient } from '@/lib/supabase/public';
 import {
   publicSearchText,
   searchPublic,
@@ -61,7 +61,7 @@ const MAX_CORRECTIONS = 24;
 const cachedWordCounts = unstable_cache(
   async (): Promise<Array<[string, number]>> => {
     const counts = new Map<string, number>();
-    for (const text of await publicSearchText(getAdminClient())) {
+    for (const text of await publicSearchText(createPublicClient(), { throwOnError: true })) {
       for (const word of words(text)) {
         counts.set(word, (counts.get(word) ?? 0) + 1);
       }
@@ -116,8 +116,9 @@ export async function findPublic(
   const terms = corrections(typed, vocab).slice(0, MAX_CORRECTIONS);
   // Ask for more than will be shown: the database ranks roughly, searchkit
   // decides, and the best answer may sit just past a tight limit.
-  const page = await searchPublic(getAdminClient(), {
+  const page = await searchPublic(createPublicClient(), {
     query: typed,
+    throwOnError: true,
     types,
     perType,
     terms,
