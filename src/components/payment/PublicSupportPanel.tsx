@@ -12,6 +12,7 @@ import {
   type ContributionBoundsBtc,
 } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useOpeningAmountBtc } from '@/components/money/useOpeningAmountBtc';
 import { usePublicPayment } from '@/hooks/usePublicPayment';
 import { PublicPaymentProgress } from './PublicPaymentProgress';
 import type { EntityType } from '@/config/entity-registry';
@@ -84,7 +85,10 @@ export function PublicSupportPanel({
 }: PublicSupportPanelProps) {
   const words = supportCardWords(entityType, entityTitle, recipientName);
   const range = contributionRange(bounds);
-  const [amountBtc, setAmountBtc] = useState<number>(range.defaultBtc);
+  const opening = useOpeningAmountBtc(range.defaultBtc, range.maxBtc);
+  // null until the payer chooses: the opening follows the rate as it lands.
+  const [chosenBtc, setAmountBtc] = useState<number | null>(null);
+  const amountBtc = chosenBtc ?? opening;
   const { formatAmountBtc } = useDisplayCurrency();
   const payment = usePublicPayment();
   const statedTerms = [
