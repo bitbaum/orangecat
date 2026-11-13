@@ -44,7 +44,7 @@ import {
   UserPlus,
   Landmark,
 } from 'lucide-react';
-import { ECOSYSTEM_PILLARS } from './ecosystem';
+import { ECOSYSTEM, ECOSYSTEM_PILLARS } from './ecosystem';
 
 /**
  * Counter source identifier for nav items showing a live numeric badge.
@@ -471,7 +471,8 @@ export const footerNavigation = {
     { name: 'Get paid', href: ROUTES.PAY_LANDING },
     { name: 'How it works', href: ROUTES.HOW_IT_WORKS },
     { name: 'What you can do', href: ROUTES.WHAT_YOU_CAN_DO },
-    { name: 'Builders', href: ROUTES.BUILDERS },
+    // /builders only redirects to bitbaum; say so in the link itself.
+    { name: 'Builders', href: ECOSYSTEM.studio.buildersUrl, external: true },
     { name: 'Roadmap', href: ROUTES.ROADMAP },
     { name: 'Changelog', href: ROUTES.CHANGELOG },
     { name: 'Cat plans', href: ROUTES.PRICING },
