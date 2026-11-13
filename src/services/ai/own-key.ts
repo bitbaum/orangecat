@@ -10,7 +10,9 @@
  * people straight back to the same failure.
  *
  * The rule is the Cat's own (cat/provider-resolver): the person's valid keys
- * in the order they saved them, the first one this app can call.
+ * in the order they saved them, the first one this app can call. When none is
+ * saved here, a key the person keeps on Loki and switched on for their bots
+ * counts as theirs too; it is called through Loki and never copied.
  *
  * This file only LOOKS a key up. It imports no model client, because a page
  * load reads it (the routine's settings row asks whether the bot can run),
@@ -22,7 +24,16 @@ import { PLATFORM_GROQ_MODEL } from '@/services/ai/groq-models';
 
 export interface OwnKey {
   provider: string;
+  /** Empty for a key that stays on Loki (see `lokiActorId`). */
   key: string;
+  /**
+   * Set when the key is not here at all: the person keeps it on Loki and
+   * switched it on for their bots, and Loki makes the call for this actor
+   * (services/loki/shared-keys.ts). There is no secret on this side.
+   */
+  lokiActorId?: string;
+  /** For a key on Loki: the model the person chose for it there. */
+  model?: string;
 }
 
 /** Where a key of this provider is called and with which model, or null when
@@ -40,7 +51,9 @@ export function directRuntime(provider: string): { baseUrl: string; model: strin
 export function pickOwnKey(keys: ReadonlyArray<OwnKey>): OwnKey | null {
   return (
     keys.find(
-      k => !!k.key && (k.provider === 'openrouter' || directRuntime(k.provider) !== null)
+      k =>
+        !!k.lokiActorId ||
+        (!!k.key && (k.provider === 'openrouter' || directRuntime(k.provider) !== null))
     ) ?? null
   );
 }
@@ -52,12 +65,18 @@ export function pickOwnKey(keys: ReadonlyArray<OwnKey>): OwnKey | null {
  */
 export async function readOwnKey(
   keys: { listDecryptedKeysOrdered(userId: string): Promise<OwnKey[]> },
-  userId: string
+  userId: string,
+  /** The person's switched-on keys on Loki; asked only when no key is saved here. */
+  onLoki?: () => Promise<OwnKey[]>
 ): Promise<{ hasByok: boolean; userKey: string | null; directKey: OwnKey | null }> {
-  const own = pickOwnKey(await keys.listDecryptedKeysOrdered(userId));
+  const own =
+    pickOwnKey(await keys.listDecryptedKeysOrdered(userId)) ??
+    (onLoki ? pickOwnKey(await onLoki().catch(() => [])) : null);
+  // A key on Loki is called through Loki whatever its provider, OpenRouter included.
+  const routed = own?.provider === 'openrouter' && !own.lokiActorId;
   return {
     hasByok: !!own,
-    userKey: own?.provider === 'openrouter' ? own.key : null,
-    directKey: own && own.provider !== 'openrouter' ? own : null,
+    userKey: own && routed ? own.key : null,
+    directKey: own && !routed ? own : null,
   };
 }

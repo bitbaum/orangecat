@@ -101,6 +101,8 @@ export const LOKI_ENDPOINTS = {
   siteWalk: '/api/orangecat/site-walk',
   /** One step in a bot's own browser: open, click, type, look — signed, per actor and bot. */
   browser: '/api/orangecat/browser',
+  /** The person's keys held on Loki: list, switch on for bots, answer on one — signed, per actor. */
+  model: '/api/orangecat/model',
   /** Every studio project: identity, roadmap, changelog, links — public, cached 5 min. */
   fleetMap: '/api/fleet/map',
 } as const;

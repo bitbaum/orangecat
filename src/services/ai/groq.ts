@@ -376,11 +376,7 @@ export class GroqService {
         if (!this.isByok) {
           recordGroqRefusal(model, error.error?.message ?? null, retryAfterSeconds(response));
         }
-        throw new GroqAPIError(
-          error.error?.message || 'Rate limit exceeded',
-          'rate_limit',
-          429
-        );
+        throw new GroqAPIError(error.error?.message || 'Rate limit exceeded', 'rate_limit', 429);
       }
       // Size, not speed: the request is bigger than one minute's budget. It
       // is never fixed by waiting, so it must not read as a rate limit.

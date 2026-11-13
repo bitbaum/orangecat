@@ -5,11 +5,16 @@
  */
 import { createOpenAICompatibleServiceWithByok } from '@/services/ai/openai-compat';
 
+import { lokiKeyService } from './loki-key-service';
 import { directRuntime, type OwnKey } from './own-key';
 import type { AiService } from './types';
 
 /** The client and model for a key that is not OpenRouter's, or null. */
 export function directKeyService(own: OwnKey): { service: AiService; model: string } | null {
+  if (own.lokiActorId) {
+    // The key stays on Loki. No model named here means the one chosen there.
+    return { service: lokiKeyService(own.lokiActorId, own.provider), model: own.model ?? '' };
+  }
   const runtime = directRuntime(own.provider);
   if (!runtime) {
     return null;

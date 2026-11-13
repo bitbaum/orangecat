@@ -23,7 +23,14 @@ export type ModelChoices =
   /** No key of their own: the shared pool picks. */
   | { source: 'pool' }
   /** Their own key; `fallback` is what a turn uses when nothing is chosen. */
-  | { source: 'own'; provider: string; fallback: string; models: ModelChoice[] };
+  | {
+      source: 'own';
+      provider: string;
+      fallback: string;
+      models: ModelChoice[];
+      /** The key is not here: the person keeps it on Loki. */
+      heldOn?: 'loki';
+    };
 
 /** A model id as providers write them: no spaces, nothing that is not a name. */
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,119}$/;
@@ -68,10 +75,26 @@ export function chosenModel(requested: string | undefined, fallback: string): st
 
 export async function listOwnModels(
   own: OwnKey | null,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  /** For a key that stays on Loki: Loki reads the provider's list. */
+  onLoki?: (
+    actorId: string,
+    provider: string
+  ) => Promise<{ chosen: string | null; models: string[] }>
 ): Promise<ModelChoices> {
   if (!own) {
     return { source: 'pool' };
+  }
+  if (own.lokiActorId) {
+    const listed = onLoki
+      ? await onLoki(own.lokiActorId, own.provider).catch(() => ({ chosen: null, models: [] }))
+      : { chosen: null, models: [] };
+    const fallback = listed.chosen ?? own.model ?? '';
+    let models = chatModelsFrom({ data: listed.models.map(id => ({ id })) });
+    if (fallback && !models.some(m => m.id === fallback)) {
+      models = [{ id: fallback, name: fallback }, ...models];
+    }
+    return { source: 'own', provider: own.provider, fallback, models, heldOn: 'loki' };
   }
   if (own.provider === 'openrouter') {
     const models = getAvailableModels().map(m => ({ id: m.id, name: m.name }));

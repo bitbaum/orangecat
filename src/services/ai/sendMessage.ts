@@ -17,6 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createApiKeyService } from './api-key-service';
 import { readOwnKey } from './own-key';
+import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import { getAdminClient } from '@/lib/supabase/admin';
 import {
   computeCreatorChargeBtc,
@@ -100,7 +101,10 @@ export async function sendAiMessage(
   const keyService = createApiKeyService(supabase);
   // The person's own key, whichever provider it is from (own-key.ts): asked
   // first, so their bots answer whatever the shared pool does.
-  const { hasByok, userKey: userOpenRouterKey, directKey } = await readOwnKey(keyService, userId);
+  // With none saved here, a key they keep on Loki and switched on for their bots.
+  const onLoki = () => sharedLokiOwnKeys(supabase, userId);
+  const own = await readOwnKey(keyService, userId, onLoki);
+  const { hasByok, userKey: userOpenRouterKey, directKey } = own;
 
   // 4. Check platform usage limits (non-BYOK users)
   if (!hasByok) {

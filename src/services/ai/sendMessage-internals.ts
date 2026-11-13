@@ -281,7 +281,8 @@ export async function generateReply(params: {
       return {
         response: { ...whole, costBtc: whole.costBtc ?? 0 },
         chatService: direct.service,
-        modelLabel: getModelMetadata(directModel)?.name || directModel,
+        // A key on Loki with nothing chosen here: the name is the one Loki answered on.
+        modelLabel: getModelMetadata(directModel)?.name || directModel || whole.model,
       };
     } catch (aiError: unknown) {
       logger.error('AI API error (own key)', aiError, 'AIMessagesService');

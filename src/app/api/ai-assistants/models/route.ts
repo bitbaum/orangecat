@@ -10,6 +10,7 @@ import { apiInternalError, apiSuccess } from '@/lib/api/standardResponse';
 import { createApiKeyService } from '@/services/ai/api-key-service';
 import { pickOwnKey } from '@/services/ai/own-key';
 import { listOwnModels } from '@/services/ai/own-models';
+import { listLokiModels, sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import { logger } from '@/utils/logger';
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
@@ -17,7 +18,10 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const keys = await createApiKeyService(request.supabase).listDecryptedKeysOrdered(
       request.user.id
     );
-    const choices = await listOwnModels(pickOwnKey(keys));
+    const own =
+      pickOwnKey(keys) ??
+      pickOwnKey(await sharedLokiOwnKeys(request.supabase, request.user.id).catch(() => []));
+    const choices = await listOwnModels(own, fetch, listLokiModels);
     return apiSuccess(choices, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     logger.error('model choices could not be read', error, 'BotModels');
