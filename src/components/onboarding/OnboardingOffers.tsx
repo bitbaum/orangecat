@@ -68,7 +68,9 @@ export function OnboardingOffers({ offers, health, isRedirecting, onChat }: Onbo
             {offer.rationale && <p className="mb-4 text-xs text-fg-tertiary">{offer.rationale}</p>}
             <Button
               href={href}
-              variant="accent"
+              // In-app actions are primary, and one per screen: the first
+              // offer's; the others are there to compare, so outline.
+              variant={i === 0 ? 'primary' : 'outline'}
               size="sm"
               className="w-full sm:w-auto"
               data-testid="offer-create"

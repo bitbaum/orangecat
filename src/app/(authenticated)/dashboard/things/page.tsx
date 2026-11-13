@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import Button from '@/components/ui/Button';
 import { redirect } from 'next/navigation';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { MyThingsList } from '@/components/things/MyThingsList';
@@ -34,12 +34,11 @@ export default async function MyThingsPage() {
             <PageHeading>{THINGS_PAGE.title}</PageHeading>
             <p className="mt-1 text-sm text-fg-secondary">{THINGS_PAGE.lede}</p>
           </div>
-          <Link
-            href={ROUTES.CREATE}
-            className="inline-flex min-h-11 items-center rounded-lg bg-accent-warm px-4 text-sm font-semibold text-on-accent"
-          >
+          {/* In-app action: primary, not the warm accent (that is for the
+              top-of-funnel step that brings someone in). */}
+          <Button href={ROUTES.CREATE} className="shrink-0">
             Create
-          </Link>
+          </Button>
         </header>
         <MyThingsList things={things} />
       </div>
