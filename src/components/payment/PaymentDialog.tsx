@@ -30,7 +30,7 @@ import {
   type ContributionBoundsBtc,
 } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { useOpeningAmountBtc } from '@/components/money/useOpeningAmountBtc';
+import { useChosenAmountBtc } from '@/components/money/useOpeningAmountBtc';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface PaymentDialogProps {
@@ -71,19 +71,13 @@ export function PaymentDialog({
 
   const { state, initiate, confirmPaid, reset, isLoading } = usePaymentFlow();
 
-  // Contribution-specific state
-  const opening = useOpeningAmountBtc(range.defaultBtc, range.maxBtc);
-  // null until chosen: the opening follows the rate as it lands.
-  const [chosenAmount, setContributionAmount] = useState<number | null>(defaultAmount ?? null);
-  const contributionAmount = chosenAmount ?? opening;
-  // Sync the picker when a new defaultAmount arrives (e.g. user clicked a
-  // different wishlist tier on the parent). Initial-state seeding only
-  // catches the first mount.
+  const [contributionAmount, setContributionAmount] = useChosenAmountBtc(range, defaultAmount);
+  // A new defaultAmount (another wishlist tier picked on the parent) re-seeds the picker.
   useEffect(() => {
     if (defaultAmount !== undefined) {
       setContributionAmount(defaultAmount);
     }
-  }, [defaultAmount]);
+  }, [defaultAmount, setContributionAmount]);
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   // Message + anonymous are optional — keep them one tap away so the default

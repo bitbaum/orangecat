@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
 
@@ -45,4 +46,17 @@ export function useOpeningAmountBtc(btc: number, maxBtc: number): number {
     b => convertFromBTC(b, currency),
     f => convertToBTC(f, currency)
   );
+}
+
+/**
+ * An amount field's value: what the payer chose, else the opening amount.
+ * Held as null until they choose, so the opening follows the rate as it lands.
+ */
+export function useChosenAmountBtc(
+  range: { defaultBtc: number; maxBtc: number },
+  initial?: number | null
+) {
+  const opening = useOpeningAmountBtc(range.defaultBtc, range.maxBtc);
+  const [chosen, setChosen] = useState<number | null>(initial ?? null);
+  return [chosen ?? opening, setChosen] as const;
 }
