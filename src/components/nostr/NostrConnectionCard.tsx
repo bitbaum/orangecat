@@ -239,6 +239,7 @@ export function NostrConnectionCard() {
               <div className="space-y-2">
                 <Input
                   placeholder="npub1..."
+                  aria-label="Your Nostr public key (npub)"
                   value={npubInput}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setNpubInput(e.target.value)

@@ -7,6 +7,7 @@ import { IDENTITIES_COPY } from '@/config/identities';
 import { fetchIdentityCircle } from '@/lib/identities/client';
 import { MFASetup } from '@/components/auth/MFASetup';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
   showMFASetup: boolean;
@@ -28,9 +29,16 @@ export function SettingsModals({
   const description = useDeleteDescription(deleteAccountConfirm);
   return (
     <>
-      {showMFASetup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="max-w-md w-full">
+      {/* The shared dialog, not a hand-rolled overlay: it is announced as a
+          dialog, takes focus and gives it back, closes on Escape, and scrolls
+          inside a 320px screen so Cancel stays reachable. */}
+      <Dialog open={showMFASetup} onOpenChange={setShowMFASetup}>
+        <DialogContent
+          className="max-w-md border-0 bg-transparent p-0 shadow-none"
+          aria-describedby={undefined}
+        >
+          <DialogTitle className="sr-only">Two-factor authentication</DialogTitle>
+          {showMFASetup && (
             <MFASetup
               onSetupComplete={() => {
                 toast.success('Two-factor authentication enabled!');
@@ -38,9 +46,9 @@ export function SettingsModals({
               }}
               onCancel={() => setShowMFASetup(false)}
             />
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         isOpen={deleteAccountConfirm}
