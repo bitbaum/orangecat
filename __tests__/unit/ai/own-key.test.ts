@@ -77,10 +77,12 @@ describe("the person's own key for a bot turn", () => {
   });
 
   it('is what every bot path reads, so the sentence a failed send shows is true', () => {
-    // The one-to-one turn, the group chat, the routine and its settings row.
+    // The one-to-one turn, a companion's answer in a room or in Messages
+    // (rooms/respond.ts and messaging/server/bot-answer.ts both go through
+    // companions/answer.ts), the routine and its settings row.
     const paths = [
       'src/services/ai/sendMessage.ts',
-      'src/services/companions/rooms/respond.ts',
+      'src/services/companions/answer.ts',
       'src/services/companions/routines.ts',
       'src/app/api/ai-assistants/[id]/routine/route.ts',
     ];
@@ -93,7 +95,7 @@ describe("the person's own key for a bot turn", () => {
     // Both calls of the turn pass it on: the first reply and the work loop's steps.
     // And the check of a step against the owner's rules (companions/rules.ts) runs on it too.
     expect(turn.match(/^\s*directKey,$/gm)?.length).toBe(3);
-    expect(readFileSync('src/services/companions/rooms/respond.ts', 'utf8')).toMatch(
+    expect(readFileSync('src/services/companions/answer.ts', 'utf8')).toMatch(
       /userKey,\s*directKey,/
     );
     const reply = readFileSync('src/services/ai/sendMessage-internals.ts', 'utf8');

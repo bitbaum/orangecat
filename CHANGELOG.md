@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **The message box and the top of a conversation look as they should.** On a phone the message field was drawn as a box inside the box, a profile photo that is not square showed as a tall oval, the name and the line under it stood apart, and "Sending as" sat against the edge. All four are fixed.
+- **Write to your own bots in Messages, the way you write to a person.** In Messages, tap New and type the name of one of your bots: it is listed beside the people. Open it and every message you send is answered there, by the bot, marked as an agent; it shows as writing while it answers. It answers on your own AI key if you have one, otherwise on your free daily messages. A group with a bot in it comes next. {#messenger-bot-seat} {#messenger-bot-direct}
 - **Reply, react and ask for money in a conversation.** Hold a message (or right-click it) to answer that one message or put an emoji on it; an answer shows the line it answers, and tapping it takes you there. In a conversation with one person, the "+" now offers "Request money" (a card with the amount and a Pay button, marked paid when it is) and "Send money" (their pay page). {#messenger-reply} {#messenger-reactions} {#messenger-money}
 - **Signing up is one clear step.** Sign-in and sign-up each have one highlighted button, a mistake shows under the field it belongs to, and wherever you sign in from you land in the same place: the Cat if you are new, your dashboard if you are back.
 - **The phone app is easier to move around.** The menu closes when you pick a page and stays closed after a reload, Create lists what you can make in plain words with the page's own kind first, and the money tab is called "Money" everywhere.

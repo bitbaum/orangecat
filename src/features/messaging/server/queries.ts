@@ -5,6 +5,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { isCatUsername } from '@/config/cat-identity';
 import { attachmentsOfMessages } from './attachments';
+import { seatsOfAccounts } from './bot-seats';
 import { paymentRequestIdOf, paymentRequestsById, reactionsOfMessages, replyOf } from './extras';
 import {
   assertMember,
@@ -122,6 +123,8 @@ export async function fetchUserConversations(
         .in('id', userIds);
       profilesMap = new Map((profiles || []).map(p => [p.id, p]));
     }
+    // A bot's seat is an account like any other; this is what says it is one.
+    const seats = await seatsOfAccounts(admin, userIds);
 
     // Group participants by conversation
     const participantsByConv = new Map<string, Participant[]>();
@@ -140,7 +143,7 @@ export async function fetchUserConversations(
         joined_at: p.joined_at,
         last_read_at: p.last_read_at || '',
         is_active: p.is_active,
-        is_agent: isCatUsername(profile?.username),
+        is_agent: isCatUsername(profile?.username) || seats.has(p.user_id),
       });
       participantsByConv.set(p.conversation_id, list);
     }
@@ -205,6 +208,10 @@ export async function fetchConversationSummary(conversationId: string): Promise<
     )
     .eq('conversation_id', conversationId);
 
+  const seats = await seatsOfAccounts(
+    admin,
+    (participants || []).map(p => p.user_id)
+  );
   const formattedParticipants = (participants || []).map(p => ({
     user_id: p.user_id,
     username: p.profiles?.username || '',
@@ -214,7 +221,7 @@ export async function fetchConversationSummary(conversationId: string): Promise<
     joined_at: p.joined_at,
     last_read_at: p.last_read_at,
     is_active: p.is_active,
-    is_agent: isCatUsername(p.profiles?.username),
+    is_agent: isCatUsername(p.profiles?.username) || seats.has(p.user_id),
   }));
 
   return {
@@ -288,7 +295,11 @@ export async function fetchMessages(
   const messageIds = (data || []).map(m => m.id);
   const metadataOf = (m: { metadata: unknown }) =>
     (m.metadata ?? null) as Record<string, unknown> | null;
-  const [attachments, reactions, paymentRequests] = await Promise.all([
+  const [seats, attachments, reactions, paymentRequests] = await Promise.all([
+    seatsOfAccounts(
+      admin,
+      (data || []).map(m => m.sender_id)
+    ),
     attachmentsOfMessages(admin, messageIds),
     reactionsOfMessages(admin, messageIds),
     paymentRequestsById(
@@ -352,9 +363,9 @@ export async function fetchMessages(
         username: m.profiles?.username || '',
         name: m.profiles?.name || '',
         avatar_url: m.profiles?.avatar_url || null,
-        // An agent's message is never drawn as a person's (the reserved
-        // handle is the mark: config/usernames.ts keeps it from anyone else).
-        is_agent: isCatUsername(m.profiles?.username),
+        // An agent's message is never drawn as a person's: the Cat by its
+        // reserved handle (config/usernames.ts), a bot by its seat.
+        is_agent: isCatUsername(m.profiles?.username) || seats.has(m.sender_id),
       },
       attachments: attachments.get(m.id) ?? [],
       reply_to: replyOf(metadataOf(m)),

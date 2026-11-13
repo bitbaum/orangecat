@@ -13,6 +13,8 @@
 
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { openOrCreateConversation, VALIDATION } from '@/features/messaging/lib';
+import { foreignSeatAmong, seatOwnCompanions } from '@/features/messaging/server/bot-seats';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimitAction, rateLimitHeaders, retryAfterSeconds } from '@/lib/rate-limit';
 import {
   apiSuccess,
@@ -62,8 +64,27 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       (id): id is string => typeof id === 'string' && id.trim().length > 0
     );
 
+    // Bots (ADR-0015): the caller's own companions, each by its seat. For now
+    // a bot is written to on its own; a group with one waits for the bots to
+    // answer when named there.
+    const assistantIds = Array.isArray(body?.assistantIds)
+      ? body.assistantIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+      : [];
+    const admin = createAdminClient();
+    if (assistantIds.length > 0 && (assistantIds.length > 1 || validParticipantIds.length > 0)) {
+      return apiValidationError('For now, write to a bot on its own. Groups with bots come next.');
+    }
+    const seats = await seatOwnCompanions(admin, user.id, assistantIds);
+    if (!seats || (await foreignSeatAmong(admin, user.id, validParticipantIds))) {
+      return apiValidationError('That bot cannot be written to from here.');
+    }
+
     // Open or create conversation
-    const result = await openOrCreateConversation(user.id, validParticipantIds, title);
+    const result = await openOrCreateConversation(
+      user.id,
+      [...validParticipantIds, ...seats.map(seat => seat.userId)],
+      title
+    );
 
     const response = apiSuccess({
       conversationId: result.conversationId,

@@ -228,3 +228,86 @@ describe('finding people', () => {
     expect(people).toEqual([{ id: 'ada', name: 'Ada Okafor', handle: 'ada', avatarUrl: null }]);
   });
 });
+
+describe('bots beside people (ADR-0015)', () => {
+  const json = (data: unknown) => new Response(JSON.stringify({ success: true, data }));
+
+  it('offers the viewer’s own bots whose name matches, before the people', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json([{ id: 'ada', username: 'ada', name: 'Ada Okafor' }]))
+      .mockResolvedValueOnce(
+        json([
+          { id: 'b1', title: 'Ada the Accountant', avatar_url: '/a.svg' },
+          { id: 'b2', title: 'Chef', avatar_url: null },
+        ])
+      );
+    const people = await transport().people!('ada', {});
+    expect(fetchMock.mock.calls[1]![0]).toBe('/api/ai-assistants?limit=50&user_id=me');
+    expect(people.map(p => p.id)).toEqual(['bot:b1', 'ada']);
+    expect(people[0]).toMatchObject({ name: 'Ada the Accountant', kind: 'agent' });
+  });
+
+  it('opens a conversation with a bot by its companion, never as a person', async () => {
+    fetchMock.mockResolvedValueOnce(ok({ conversationId: 'c9' })).mockResolvedValueOnce(
+      ok({
+        conversation: {
+          id: 'c9',
+          last_message_at: null,
+          last_message_preview: null,
+          unread_count: 0,
+          participants: [],
+        },
+      })
+    );
+    await transport().open!(['bot:b1']);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('/api/messages/open');
+    expect(JSON.parse(init.body)).toEqual({ participantIds: [], assistantIds: ['b1'] });
+  });
+
+  it('says the bot is writing from the moment a message is sent to it', async () => {
+    const seat = (user_id: string, is_agent = false) => ({
+      user_id,
+      username: user_id,
+      name: user_id,
+      avatar_url: null,
+      role: 'member',
+      joined_at: '2026-11-13T10:00:00Z',
+      last_read_at: '',
+      is_active: true,
+      is_agent,
+    });
+    fetchMock
+      .mockResolvedValueOnce(
+        ok({
+          conversation: {
+            id: 'c1',
+            last_message_at: null,
+            last_message_preview: null,
+            unread_count: 0,
+            participants: [seat('me'), seat('seat-1', true)],
+          },
+        })
+      )
+      .mockResolvedValueOnce(ok({ id: 'srv-1', attachments: [] }, 201));
+    const t = transport();
+    const events: Array<{ type: string; actorId?: string; typing?: boolean }> = [];
+    const stop = t.subscribe!({ conversationId: null }, e => events.push(e as never));
+    await t.conversation!('c1', {});
+    await t.send('c1', { clientId: 'tmp-1', body: 'hello', attachments: [] });
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'typing', actorId: 'seat-1', typing: true })
+    );
+    stop();
+  });
+
+  it('says nothing of the kind in a conversation with a person', async () => {
+    fetchMock.mockResolvedValueOnce(ok({ id: 'srv-1', attachments: [] }, 201));
+    const t = transport();
+    const events: Array<{ type: string }> = [];
+    const stop = t.subscribe!({ conversationId: null }, e => events.push(e));
+    await t.send('c2', { clientId: 'tmp-1', body: 'hello', attachments: [] });
+    expect(events.filter(e => e.type === 'typing')).toEqual([]);
+    stop();
+  });
+});
