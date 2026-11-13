@@ -10,11 +10,14 @@
 
 import type {
   MessengerAttachment,
+  MessengerCard,
   MessengerConversationJson,
   MessengerMessageJson,
 } from '@bitbaum/chatkit/messenger';
+import { buildPayUrl } from '@/config/pay';
+import { formatBTC, formatCurrency } from '@/services/currency/formatting';
 import type { MessageAttachmentDto } from '../server/attachments';
-import type { Conversation, Message, Participant } from '../types';
+import type { Conversation, Message, MessagePaymentRequestDto, Participant } from '../types';
 
 /** Where the client id of an optimistic message rides (messages.metadata). */
 export const CLIENT_ID_KEY = 'client_id';
@@ -34,7 +37,62 @@ export function toMessengerAttachment(a: MessageAttachmentDto): MessengerAttachm
   };
 }
 
-export function toMessengerMessage(message: Message): MessengerMessageJson {
+/** What a payment request asks for, in the unit it was asked in. */
+export function paymentRequestAmount(request: MessagePaymentRequestDto): string {
+  return request.ask_amount !== null && request.ask_currency
+    ? formatCurrency(request.ask_amount, request.ask_currency)
+    : formatBTC(request.amount_btc);
+}
+
+/** Card kind of a payment request in a conversation. */
+export const PAYMENT_REQUEST_CARD = 'payment_request';
+
+/**
+ * A payment request as the card THIS reader sees. The person asked gets the
+ * one thing they can do (pay it, on the pay page, tied to the request so it is
+ * marked paid); the person asking is told where it stands. Nobody is offered
+ * to pay a request that is no longer open.
+ */
+export function toPaymentRequestCard(
+  request: MessagePaymentRequestDto,
+  viewerId: string | undefined,
+  requesterUsername: string | undefined
+): MessengerCard {
+  const amount = paymentRequestAmount(request);
+  const card: MessengerCard = {
+    kind: PAYMENT_REQUEST_CARD,
+    title: 'Payment request',
+    amount,
+    ...(request.note ? { note: request.note } : {}),
+  };
+  switch (request.status) {
+    case 'paid':
+      return { ...card, status: 'Paid', tone: 'positive' };
+    case 'declined':
+      return { ...card, status: 'Declined', tone: 'negative' };
+    case 'cancelled':
+      return { ...card, status: 'Cancelled', tone: 'negative' };
+    case 'pending':
+      if (viewerId === request.payer_id && requesterUsername) {
+        const url = new URL(
+          buildPayUrl('https://orangecat.invalid', requesterUsername, {
+            amountBtc: request.amount_btc,
+            note: request.note ?? undefined,
+            requestId: request.id,
+          })
+        );
+        return {
+          ...card,
+          tone: 'pending',
+          action: { label: `Pay ${amount}`, href: `${url.pathname}${url.search}` },
+        };
+      }
+      return { ...card, status: 'Waiting to be paid', tone: 'pending' };
+  }
+}
+
+/** `viewerId` decides what a card offers; without it a card only informs. */
+export function toMessengerMessage(message: Message, viewerId?: string): MessengerMessageJson {
   const meta = message.metadata ?? {};
   const clientId = meta[CLIENT_ID_KEY];
   const requestedBy = meta.requested_by;
@@ -50,6 +108,28 @@ export function toMessengerMessage(message: Message): MessengerMessageJson {
     ...(typeof requestedBy === 'string' && requestedBy ? { onBehalfOf: requestedBy } : {}),
     ...(message.attachments && message.attachments.length > 0
       ? { attachments: message.attachments.map(toMessengerAttachment) }
+      : {}),
+    ...(message.reply_to
+      ? {
+          replyTo: {
+            id: message.reply_to.id,
+            authorId: message.reply_to.sender_id,
+            body: message.reply_to.body,
+            ...(message.reply_to.kinds ? { attachments: message.reply_to.kinds } : {}),
+          },
+        }
+      : {}),
+    ...(message.reactions && message.reactions.length > 0
+      ? { reactions: message.reactions.map(r => ({ emoji: r.emoji, actorIds: r.user_ids })) }
+      : {}),
+    ...(message.payment_request
+      ? {
+          card: toPaymentRequestCard(
+            message.payment_request,
+            viewerId,
+            message.sender?.username || undefined
+          ),
+        }
       : {}),
   };
 }

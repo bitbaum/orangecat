@@ -12,7 +12,7 @@ import { MESSAGE_TYPES, VALIDATION } from './constants';
 
 export const sendMessageSchema = z
   .object({
-    // Words, or files, or both: a photo needs no caption.
+    // Words, or files, or a payment request, or several: a photo needs no caption.
     content: z.string().max(VALIDATION.MESSAGE_MAX_LENGTH),
     /** Uploads to put on the message (POST /api/messages/attachments made them). */
     attachmentIds: z
@@ -27,11 +27,18 @@ export const sendMessageSchema = z
      *  rather than rendering a duplicate. */
     clientId: z.string().min(1).max(128).optional(),
     senderActorId: z.string().guid().optional(),
+    /** The message this one answers. The server re-reads it; one that is not
+     *  in this conversation is ignored, never an error. */
+    replyToId: z.string().guid().optional(),
+    /** The sender's own payment request (POST /api/payment-requests made it),
+     *  shown in the conversation as a card. */
+    paymentRequestId: z.string().guid().optional(),
   })
   .refine(
     body =>
       body.content.trim().length >= VALIDATION.MESSAGE_MIN_LENGTH ||
-      (body.attachmentIds?.length ?? 0) > 0,
+      (body.attachmentIds?.length ?? 0) > 0 ||
+      Boolean(body.paymentRequestId),
     { message: 'A message needs words or a file', path: ['content'] }
   );
 

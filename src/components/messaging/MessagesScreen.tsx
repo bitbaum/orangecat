@@ -17,6 +17,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Messenger, type MessengerAgent } from '@bitbaum/chatkit/messenger';
 import '@bitbaum/chatkit/styles/messenger.css';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
@@ -33,9 +35,11 @@ import { ROUTES } from '@/config/routes';
 import { useMessagingActors } from '@/features/messaging/hooks/useMessagingActors';
 import { takeMessageDraft } from '@/features/messaging/lib/draft';
 import { createMessengerTransport } from '@/features/messaging/messenger-transport';
+import { moneyActions } from '@/features/messaging/money-actions';
 import { CHAT_VOICE } from '@/hooks/useDictation';
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete';
 import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
+import { useUserCurrency } from '@/hooks/useUserCurrency';
 import { cn } from '@/lib/utils';
 import { announceMessagesRead } from '@/hooks/useUnreadMessagesSync';
 import { MessageActorSelector } from './MessageActorSelector';
@@ -74,6 +78,21 @@ export default function MessagesScreen({
         onUnreadMayHaveChanged: announceMessagesRead,
       }),
     [userId]
+  );
+
+  // Money in the conversation: OrangeCat's own pay page and payment requests,
+  // offered where the person they are for already is.
+  const router = useRouter();
+  const currency = useUserCurrency();
+  const actions = useMemo(
+    () =>
+      moneyActions({
+        viewerId: userId,
+        currency,
+        navigate: href => router.push(href),
+        onError: message => toast.error(message),
+      }),
+    [userId, currency, router]
   );
 
   const agents = useMemo<MessengerAgent[]>(
@@ -163,6 +182,7 @@ export default function MessagesScreen({
           viewer={{ id: userId }}
           transport={transport}
           agents={agents}
+          actions={actions}
           agentMark={<BrandMarkIcon size={16} />}
           conversationId={conversationId}
           onConversationChange={onConversationChange}

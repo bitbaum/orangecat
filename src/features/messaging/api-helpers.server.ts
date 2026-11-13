@@ -20,6 +20,13 @@ import {
 import type { Message, Pagination } from './types';
 import { attachmentSummary } from '@bitbaum/chatkit';
 import {
+  PAYMENT_REQUEST_KEY,
+  REPLY_KEY,
+  claimablePaymentRequest,
+  replySnapshot,
+  withoutServerKeys,
+} from './server/extras';
+import {
   attachToMessage,
   claimableAttachments,
   toAttachmentDto,
@@ -229,7 +236,11 @@ export interface SendMessageInput {
   attachmentIds?: string[];
   messageType: string;
   metadata?: Record<string, unknown>;
+  /** Echoed on the stored row so the sender's bubble is not drawn twice. */
+  clientId?: string;
   senderActorId?: string;
+  replyToId?: string;
+  paymentRequestId?: string;
 }
 
 /**
@@ -245,7 +256,14 @@ export async function postConversationMessage(
   input: SendMessageInput
 ): Promise<
   | { ok: true; id: string; attachments: MessageAttachmentDto[] }
-  | { ok: false; code: 'forbidden' | 'attachments_invalid' | 'attachments_not_uploaded' }
+  | {
+      ok: false;
+      code:
+        | 'forbidden'
+        | 'attachments_invalid'
+        | 'attachments_not_uploaded'
+        | 'payment_request_invalid';
+    }
 > {
   const admin = createAdminClient();
 
@@ -270,16 +288,40 @@ export async function postConversationMessage(
   }
   const kinds = claim.rows.map(row => row.kind);
 
+  // Server-owned metadata: whatever a client put under these keys is dropped,
+  // and each is written only from a row this request was allowed to name.
+  const metadata = withoutServerKeys(input.metadata);
+  if (input.clientId) {
+    metadata.client_id = input.clientId;
+  }
+  if (input.replyToId) {
+    const quoted = await replySnapshot(admin, conversationId, input.replyToId);
+    if (quoted) {
+      metadata[REPLY_KEY] = quoted;
+    }
+  }
+  let requestPreview: string | undefined;
+  if (input.paymentRequestId) {
+    if (!(await claimablePaymentRequest(admin, userId, conversationId, input.paymentRequestId))) {
+      return { ok: false, code: 'payment_request_invalid' };
+    }
+    metadata[PAYMENT_REQUEST_KEY] = input.paymentRequestId;
+    requestPreview = 'Payment request';
+  }
+
   const id = await svcSendMessage(
     conversationId,
     userId,
     input.content,
     // What older readers of `message_type` expect of a message with files.
     kinds.length === 0 ? input.messageType : kinds.every(k => k === 'image') ? 'image' : 'file',
-    input.metadata || null,
+    Object.keys(metadata).length > 0 ? metadata : null,
     input.senderActorId || null,
-    // The list's second line for a message of only files ("Photo", "2 photos").
-    input.content ? undefined : attachmentSummary(kinds, ATTACHMENT_PREVIEW_LABELS)
+    // The list's second line for a message without words: what it carries
+    // ("Photo", "2 photos", "Payment request").
+    input.content
+      ? undefined
+      : requestPreview || attachmentSummary(kinds, ATTACHMENT_PREVIEW_LABELS)
   );
   await attachToMessage(admin, userId, id, claim.rows);
 
