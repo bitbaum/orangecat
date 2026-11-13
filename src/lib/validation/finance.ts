@@ -12,7 +12,15 @@ import {
 } from '@/types/wallet';
 import { WALLET_VISIBILITY_LEVELS } from '@/config/wallet-visibility';
 import { TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
-import { lightningAddressSchema, optionalText, webUrl, publicBitcoinAddress } from './base';
+import {
+  lightningAddressSchema,
+  optionalText,
+  webUrl,
+  publicBitcoinAddress,
+  positiveNumber,
+  wholeNumber,
+  percentage,
+} from './base';
 
 /**
  * A price kept in BTC. Typed in a fiat currency and converted, a very small
@@ -60,7 +68,7 @@ export const assetSchema = z.object({
   type: z.enum(ASSET_TYPES.map(t => t.value) as [string, ...string[]]),
   description: optionalText(2000),
   location: optionalText(200),
-  estimated_value: z.number().positive().optional().nullable(),
+  estimated_value: positiveNumber().optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),
   documents: z.array(webUrl()).optional().nullable().default([]),
 
@@ -75,8 +83,8 @@ export const assetSchema = z.object({
     .enum(RENTAL_PERIODS.map(r => r.value) as [string, ...string[]])
     .optional()
     .default('daily'),
-  min_rental_period: z.number().int().positive().optional().default(1),
-  max_rental_period: z.number().int().positive().optional().nullable(),
+  min_rental_period: wholeNumber({ min: 1 }).optional().default(1),
+  max_rental_period: wholeNumber({ min: 1 }).optional().nullable(),
 
   // Deposit
   requires_deposit: z.boolean().optional().default(false),
@@ -120,7 +128,7 @@ export const loanSchema = z.object({
   remaining_balance: z
     .number({ error: 'Enter the remaining balance' })
     .positive('Balance must be greater than 0'),
-  interest_rate: z.number().min(0).max(100).optional().nullable(),
+  interest_rate: percentage().optional().nullable(),
   monthly_payment: z.number().min(0).optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),
 
@@ -152,7 +160,7 @@ export const loanSchema = z.object({
 
   // Fields specific to existing loans (refinancing)
   current_lender: optionalText(100),
-  current_interest_rate: z.number().min(0).max(100).optional().nullable(),
+  current_interest_rate: percentage().optional().nullable(),
   desired_rate: z.number().min(0).max(100).optional().nullable(),
 
   // Collateral (array of collateral items)

@@ -27,19 +27,17 @@ export function WizardTemplateOnlyView<T extends Record<string, unknown>>({
         </button>
         <h1 className="text-3xl font-bold text-fg-primary mb-2">{config.pageTitle}</h1>
         <p className="text-fg-secondary">{config.pageDescription}</p>
+        <p className="mt-2 text-sm text-fg-tertiary">Pick a starting point to continue.</p>
       </div>
 
       <WizardTemplatePicker
         templates={(config.templates || []) as EntityTemplate<T>[]}
         onSelectTemplate={onSelectTemplate}
-        selectedTemplateId={null}
+        preselectScratch={false}
         showStartFromScratch
       />
-      {/* The WizardTemplatePicker already renders a "Start from scratch"
-          card (and pre-selects it) when showStartFromScratch=true, so an
-          extra link with the same affordance below the grid is just
-          duplicate UI — confused users into thinking they were two
-          different paths. Card wins; remove the bottom link. */}
+      {/* Picking a card is the way on here, so none starts ticked (a ticked
+          "Start from scratch" with no Continue after it read as a dead end). */}
     </div>
   );
 }
