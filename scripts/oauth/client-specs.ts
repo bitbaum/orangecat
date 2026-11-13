@@ -184,6 +184,9 @@ export const CLIENT_SPECS: Record<string, ClientSpec> = {
   biaslens: {
     name: 'BiasLens',
     origins: ['https://biaslens.orangecat.ch'],
+    // Both pages answered 200 when this was added (bitbaum/biaslens #206).
+    policy_uri: 'https://biaslens.orangecat.ch/privacy',
+    tos_uri: 'https://biaslens.orangecat.ch/terms',
     scopes: 'openid profile email',
     is_confidential: true,
     is_trusted: true,
@@ -297,4 +300,28 @@ export function clientScopeUpdates(): string[] {
     const scopes = `ARRAY[${clientScopes(clientId).map(sqlLiteral).join(', ')}]::text[]`;
     return `UPDATE public.oauth_clients SET allowed_scopes = ${scopes} WHERE client_id = ${sqlLiteral(clientId)} AND allowed_scopes IS DISTINCT FROM ${scopes};`;
   });
+}
+
+/**
+ * One UPDATE per client whose spec names a privacy policy or terms, each a
+ * no-op when the row already says the same. Before this, a link added here
+ * reached the consent screen only when someone re-ran register-client.ts on
+ * the box, so a page could exist for weeks while OrangeCat told people the
+ * app had "not published a privacy policy or terms". A client with neither
+ * in its spec is left alone. Like register-client.ts, the spec is the whole
+ * answer for a client it names: a link it omits is cleared.
+ */
+export function clientDocumentUpdates(): string[] {
+  const uri = (u?: string) => (u ? sqlLiteral(u) : 'NULL');
+  return Object.entries(CLIENT_SPECS)
+    .filter(([, spec]) => spec.policy_uri || spec.tos_uri)
+    .map(([clientId, spec]) => {
+      const policy = uri(spec.policy_uri);
+      const tos = uri(spec.tos_uri);
+      return (
+        `UPDATE public.oauth_clients SET policy_uri = ${policy}, tos_uri = ${tos} ` +
+        `WHERE client_id = ${sqlLiteral(clientId)} ` +
+        `AND (policy_uri IS DISTINCT FROM ${policy} OR tos_uri IS DISTINCT FROM ${tos});`
+      );
+    });
 }

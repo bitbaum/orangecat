@@ -12,11 +12,7 @@
  * window. Tagging is the consent, and it is consent to this much.
  */
 
-import {
-  CAT_CONTEXT_MESSAGE_WINDOW,
-  CAT_DISPLAY_NAME,
-  CAT_MENTION,
-} from '@/config/cat-identity';
+import { CAT_CONTEXT_MESSAGE_WINDOW, CAT_DISPLAY_NAME, CAT_MENTION } from '@/config/cat-identity';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { callPlatformJson, parseJsonLoose } from '@/services/cat/platform-llm';
 import { writeMessage } from '@/features/messaging/server/write-message';
@@ -70,7 +66,12 @@ export function buildPrompt(
   catId: string
 ): string {
   const lines = messages.map(m => {
-    const who = m.sender_id === catId ? CAT_DISPLAY_NAME : m.sender_id === requesterId ? 'They' : 'Someone else';
+    const who =
+      m.sender_id === catId
+        ? CAT_DISPLAY_NAME
+        : m.sender_id === requesterId
+          ? 'They'
+          : 'Someone else';
     return `${who}: ${m.content}`;
   });
   return [
@@ -128,7 +129,9 @@ export async function replyToConversationMention(
     conversationId,
     senderId: catId,
     content: reply,
-    metadata: { is_cat_reply: true },
+    // `requested_by`: an agent's words are never unattributed in a shared
+    // room — the thread shows "Cat · for <the person who tagged it>".
+    metadata: { is_cat_reply: true, requested_by: requesterId },
   });
   return true;
 }

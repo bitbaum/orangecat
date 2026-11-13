@@ -32,6 +32,9 @@ export interface WriteMessageInput {
   type?: string;
   metadata?: Record<string, unknown> | null;
   senderActorId?: string | null;
+  /** What the conversation list shows for a message with no words (one of
+   *  only files): "Photo", "2 photos". Defaults to the words. */
+  preview?: string;
 }
 
 /**
@@ -72,7 +75,7 @@ export async function writeMessage(
   const { error: updateError } = await fromTable(admin, DATABASE_TABLES.CONVERSATIONS)
     .update({
       last_message_at: new Date().toISOString(),
-      last_message_preview: content.substring(0, 100),
+      last_message_preview: (content || input.preview || '').substring(0, 100),
       last_message_sender_id: senderId,
       updated_at: new Date().toISOString(),
     })

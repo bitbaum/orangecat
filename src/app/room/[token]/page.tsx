@@ -31,7 +31,9 @@ function Closed({ message }: { message: string }) {
   return (
     <div className="min-h-[calc(100svh-4rem)] bg-surface-page">
       <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <p className="text-xs font-medium uppercase tracking-caps text-fg-muted">Investor room</p>
+        <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
+          Investor room
+        </p>
         <p className="mt-4 text-base text-fg-secondary">{message}</p>
       </div>
     </div>

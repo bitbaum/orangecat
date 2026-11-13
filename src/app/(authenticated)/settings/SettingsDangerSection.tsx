@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { ACCOUNT_DELETION_COPY } from '@/config/account-deletion';
 
 interface Props {
   isDeleting: boolean;
@@ -17,10 +18,7 @@ export function SettingsDangerSection({ isDeleting, onDelete }: Props) {
       </h3>
       <div className="rounded-md border border-status-negative/20 bg-status-negative/10 p-6">
         <h4 className="mb-2 text-lg font-medium text-status-negative">Delete Account</h4>
-        <p className="mb-4 text-base text-fg-secondary">
-          This will permanently delete your account and all associated data including your profile,
-          projects, and transaction history. This action cannot be undone.
-        </p>
+        <p className="mb-4 text-base text-fg-secondary">{ACCOUNT_DELETION_COPY.whatHappens}</p>
         <Button
           type="button"
           variant="danger"

@@ -8,6 +8,13 @@ it.each(['bitcoin', 'BTC', 'my bitcoin', '0.5 BTC', 'CHF', 'cash', 'money', 'Swi
     expect(isEligibleNudge({ dedupe_key: `growth:asset:${name.toLowerCase()}` })).toBe(false);
   }
 );
+it.each(['loki', 'Loki', 'my Loki', 'Solon', 'OrangeCat'])(
+  'does not suggest renting out a product the person uses (%s)',
+  name => {
+    expect(canSuggestAssetListing(name)).toBe(false);
+    expect(isEligibleNudge({ dedupe_key: `growth:asset:${name.toLowerCase()}` })).toBe(false);
+  }
+);
 it.each(['camera', 'bitcoin mining rig', 'spare room'])(
   'keeps a legitimate listing candidate: %s',
   name => expect(canSuggestAssetListing(name)).toBe(true)

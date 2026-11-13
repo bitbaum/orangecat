@@ -55,8 +55,16 @@ export async function middleware(request: NextRequest) {
     searchParams.has('error_code') ||
     (hash && hash.includes('error='));
 
+  // Only a password-recovery link belongs on the reset page — with its tokens,
+  // or with the error GoTrue attaches when it has expired. Sending EVERY
+  // ?error= there put a cancelled Google sign-in (/auth/callback?error=
+  // access_denied), a failed email confirmation and /auth's own ?error= on the
+  // "Enter Your Reset Code" form, and the error itself was never shown
+  // (production, 2026-11-12). Recovery emails already return to the reset
+  // page itself; everything else reaches the page it was sent to.
   if (
-    ((hasResetTokens && isRecoveryType) || hasAuthErrors) &&
+    (hasResetTokens || hasAuthErrors) &&
+    isRecoveryType &&
     pathname !== ROUTES.AUTH_RESET_PASSWORD
   ) {
     const resetUrl = new URL(ROUTES.AUTH_RESET_PASSWORD, request.url);

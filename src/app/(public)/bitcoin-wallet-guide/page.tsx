@@ -1,16 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Bitcoin, ArrowLeft, AlertTriangle } from 'lucide-react';
-import { BitcoinBadge } from '@/components/ui/BitcoinBadge';
+import { AlertTriangle } from 'lucide-react';
 import { walletOptions } from './config';
 import { ProgressSteps } from './ProgressSteps';
 import { WalletCard } from './WalletCard';
 import { WalletDetail } from './WalletDetail';
 import { FAQSection } from './FAQSection';
 import { GetStartedCTA } from './GetStartedCTA';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export default function BitcoinWalletGuidePage() {
   const [selectedWallet, setSelectedWallet] = useState<string>('brave');
@@ -20,42 +19,13 @@ export default function BitcoinWalletGuidePage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Header */}
-      <div className="bg-surface-base border-b border-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-fg-secondary hover:text-fg-primary transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to OrangeCat
-            </Link>
-            <BitcoinBadge variant="outline">Bitcoin Wallet Guide</BitcoinBadge>
-          </div>
-        </div>
-      </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-8')}>
+        <PublicPageHeader
+          title="Get Your Bitcoin Wallet"
+          lede="Start receiving Bitcoin funding on OrangeCat"
+        />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          {/* Hero — Bitcoin chip keeps Bitcoin Orange (semantic per CLAUDE.md) */}
-          <div className="inline-flex items-center gap-3 p-4 rounded-lg mb-6 bg-bitcoinOrange/10 text-bitcoinOrange border border-bitcoinOrange/20">
-            <Bitcoin className="w-12 h-12" />
-            <div className="text-left">
-              <h1 className="font-heading tracking-display text-3xl md:text-4xl font-bold text-fg-primary">
-                Get Your Bitcoin Wallet
-              </h1>
-              <p className="text-lg text-fg-secondary mt-2">
-                Start receiving Bitcoin funding on OrangeCat
-              </p>
-            </div>
-          </div>
-
+        <div className="mb-12">
           <div className="bg-surface-raised/40 border border-subtle rounded-lg p-4 max-w-3xl mx-auto">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-fg-secondary mt-0.5 flex-shrink-0" />
@@ -69,7 +39,7 @@ export default function BitcoinWalletGuidePage() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <ProgressSteps currentStep={currentStep} onStepClick={setCurrentStep} />
 

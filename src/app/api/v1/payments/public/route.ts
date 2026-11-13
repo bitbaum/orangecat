@@ -5,9 +5,14 @@ import {
   apiSuccess,
 } from '@/lib/api/standardResponse';
 import { initiatePublicSupport } from '@/domain/payments';
+import { ContributionOutsideTermsError } from '@/domain/payments/knownPaymentErrors';
 import { publicSupportCreateSchema } from '@/lib/validation/finance';
 import { createPublicClient } from '@/lib/supabase/public';
-import { rateLimitPaymentRecipient, rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import {
+  rateLimitPaymentRecipient,
+  rateLimitWriteAsync,
+  retryAfterSeconds,
+} from '@/lib/rate-limit';
 import { logger } from '@/utils/logger';
 import { clientIpKey } from '@/lib/client-ip';
 
@@ -50,6 +55,9 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Payment initiation failed';
     logger.error('Public support initiation failed', { error });
+    if (error instanceof ContributionOutsideTermsError) {
+      return apiBadRequest(error.message);
+    }
 
     const safeErrors: Array<[string, string]> = [
       ['not publicly available', 'This page is not available for public support.'],

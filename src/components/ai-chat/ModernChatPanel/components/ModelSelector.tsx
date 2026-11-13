@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { getFreeModels } from '@/config/ai-models';
 import { ROUTES } from '@/config/routes';
+import { CAT_CREDITS_ON_SALE } from '@/config/cat-plans';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import type { ModelAccessSource, UsableModel } from '@/services/cat/model-access';
 import { Sparkles, ChevronDown, Check, ArrowRight, Lock, Laptop } from 'lucide-react';
@@ -45,6 +46,18 @@ const SOURCE_LABEL: Record<ModelAccessSource, string> = {
   byok: 'Frontier · your key',
 };
 const SOURCE_ORDER: ModelAccessSource[] = ['free', 'byok', 'credits'];
+
+// Credits are offered only while they can be bought; until then a locked model
+// opens with the person's own key alone.
+export const UNLOCK_LINK_TEXT = CAT_CREDITS_ON_SALE
+  ? 'Add credits or connect a key to unlock →'
+  : 'Connect your own key to unlock →';
+
+export function lockedModelTitle(name: string): string {
+  return CAT_CREDITS_ON_SALE
+    ? `${name} needs Cat Credits or your own key — open AI settings`
+    : `${name} needs your own API key — open AI settings`;
+}
 
 export function ModelSelector({
   selectedModel,
@@ -322,14 +335,14 @@ export function ModelSelector({
                       role="menuitem"
                       onClick={() => setIsOpen(false)}
                       className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-surface-raised"
-                      title={`${model.name} needs Cat Credits or your own key — open AI settings`}
+                      title={lockedModelTitle(model.name)}
                     >
                       <Lock className="h-3.5 w-3.5 flex-shrink-0 text-fg-tertiary" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm text-fg-secondary">{model.name}</div>
                         <div className="truncate text-xs text-fg-tertiary">{model.provider}</div>
                       </div>
-                      <span className="flex-shrink-0 text-xs font-medium text-accent-warm">
+                      <span className="flex-shrink-0 text-xs font-medium text-fg-primary">
                         Unlock
                       </span>
                     </Link>
@@ -389,9 +402,9 @@ export function ModelSelector({
                 href={ROUTES.SETTINGS_AI}
                 role="menuitem"
                 onClick={() => setIsOpen(false)}
-                className="flex-shrink-0 border-t border-subtle px-4 py-2.5 text-xs font-medium text-accent-warm hover:bg-surface-raised"
+                className="flex-shrink-0 border-t border-subtle px-4 py-2.5 text-xs font-medium text-fg-primary underline underline-offset-4 hover:bg-surface-raised"
               >
-                Add credits or connect a key to unlock →
+                {UNLOCK_LINK_TEXT}
               </Link>
             )}
           </div>

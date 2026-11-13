@@ -7,7 +7,7 @@
  * Created: 2026-01-16
  */
 
-import { usePathname } from 'next/navigation';
+import { useShellPathname } from '@/hooks/useShellPathname';
 import { getRouteContext, type RouteContext } from '@/config/routes';
 
 /**
@@ -16,8 +16,7 @@ import { getRouteContext, type RouteContext } from '@/config/routes';
  * @returns Current route context ('authenticated' | 'public' | 'universal' | 'auth' | 'contextual')
  */
 export function useRouteContext(): RouteContext {
-  const pathname = usePathname();
-  return getRouteContext(pathname ?? '/');
+  return getRouteContext(useShellPathname());
 }
 
 /**

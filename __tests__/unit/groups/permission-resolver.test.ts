@@ -258,8 +258,13 @@ describe('canView and canJoin — visibility, which no preset can express', () =
    * 'join' does not exist in any preset.
    */
   const ids = { groupId: 'g', userId: 'u' };
-  const publicGroup = { governance_preset: 'consensus', is_public: true };
+  const publicGroup = { governance_preset: 'consensus', is_public: true, visibility: 'public' };
   const privateGroup = { governance_preset: 'consensus', is_public: false };
+  const listedMembersOnly = {
+    governance_preset: 'consensus',
+    is_public: true,
+    visibility: 'members_only',
+  };
   const member = { role: 'member', permission_overrides: null };
 
   const check = (group: unknown, membership: unknown, key: 'canView' | 'canJoin') =>
@@ -273,6 +278,11 @@ describe('canView and canJoin — visibility, which no preset can express', () =
   it('lets only members view a private group', async () => {
     expect(await check(privateGroup, null, 'canView')).toBe(false);
     expect(await check(privateGroup, member, 'canView')).toBe(true);
+  });
+
+  it('lets only members view a LISTED members-only group: listed is not open', async () => {
+    expect(await check(listedMembersOnly, null, 'canView')).toBe(false);
+    expect(await check(listedMembersOnly, member, 'canView')).toBe(true);
   });
 
   it('lets a stranger join a public group', async () => {

@@ -11,4 +11,3 @@ export * from './constants';
 // now live in @/lib/rate-limit (rateLimitAction). ADR-0002.
 export * from './conversation-helpers';
 export * from './offline-queue';
-export * from './message-utils';

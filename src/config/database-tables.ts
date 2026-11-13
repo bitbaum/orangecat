@@ -20,6 +20,7 @@ export const DATABASE_TABLES = {
   PROFILES: 'profiles',
   PROFILE_CLAIMS: 'profile_claims',
   IDENTITY_LINKS: 'identity_links',
+  IDENTITY_HANDOVERS: 'identity_handovers',
   PROFILE_USERNAME_HISTORY: 'profile_username_history',
   FOLLOWS: 'follows',
   ACTORS: 'actors',
@@ -194,6 +195,8 @@ export const DATABASE_TABLES = {
 
   // Messaging Views
   MESSAGE_DETAILS: 'message_details',
+  /** Files sent with direct messages (service role only; see features/messaging/server/attachments.ts). */
+  MESSAGE_ATTACHMENTS: 'message_attachments',
   CONVERSATION_DETAILS: 'conversation_details',
 
   // Entity Tables (for direct access when not using entity-registry)
@@ -259,6 +262,8 @@ export const STORAGE_BUCKETS = {
   PROJECT_MEDIA: 'project-media',
   PROOFS: 'proofs',
   DOCUMENTS: 'documents',
+  /** Private. Files on direct messages; only signed URLs the server issues reach it. */
+  MESSAGE_ATTACHMENTS: 'message-attachments',
 } as const;
 
 /**

@@ -18,8 +18,8 @@
  * reaching a vendor that could answer — and more than two once free-pool
  * discovery has run, since that appends up to six more OpenRouter links.
  *
- * ai-kit's freeChain() already orders it `groq -> google -> openrouter`, and
- * Loki inherits that from the package. This pins OrangeCat's hand-rolled chain
+ * ai-kit's freeChain() orders it `groq -> openrouter` (1.26 took Google out:
+ * it bills), and Loki inherits that from the package. This pins OrangeCat's hand-rolled chain
  * to the same rule, because the two drifting apart is how one app quietly gets
  * a worse chain than the other.
  */
@@ -38,14 +38,19 @@ afterEach(() => {
 });
 
 describe('the scarcest pool is drained last', () => {
-  it('puts every free vendor BEFORE the first OpenRouter link', () => {
-    const links = buildPlatformProviders('how do I fund a solar project?');
-    const firstOpenRouter = links.findIndex(p => p.providerId === 'openrouter');
-    const lastFreeVendor = links.map(p => p.providerId).lastIndexOf('google');
+  it('never builds a link to Google, which bills, even with GEMINI_API_KEY set', () => {
+    // ai-kit 1.26: the fleet-wide GEMINI_API_KEY sat on a billed project, and
+    // every app fell through to it when Groq was spent (about $567 on
+    // 10-11 Nov 2026). Google is out of the free chain.
+    const ids = buildPlatformProviders('how do I fund a solar project?').map(p => p.providerId);
+    expect(ids).not.toContain('google');
+  });
 
+  it('puts every Groq link BEFORE the first OpenRouter link', () => {
+    const ids = buildPlatformProviders('how do I fund a solar project?').map(p => p.providerId);
+    const firstOpenRouter = ids.indexOf('openrouter');
     expect(firstOpenRouter, 'no OpenRouter link was built').toBeGreaterThan(-1);
-    expect(lastFreeVendor, 'no free-vendor link was built').toBeGreaterThan(-1);
-    expect(lastFreeVendor).toBeLessThan(firstOpenRouter);
+    expect(ids.lastIndexOf('groq')).toBeLessThan(firstOpenRouter);
   });
 
   it('still leads with Groq, which has the largest per-model pools', () => {
@@ -57,13 +62,6 @@ describe('the scarcest pool is drained last', () => {
     // Last is not the same as gone: its catalogue is the widest, and it is the
     // link that still works when a specific vendor has a bad day.
     const ids = buildPlatformProviders('hello').map(p => p.providerId);
-    expect(ids).toContain('openrouter');
-  });
-
-  it('omits the free vendor entirely when its key is absent', () => {
-    delete process.env.GEMINI_API_KEY;
-    const ids = buildPlatformProviders('hello').map(p => p.providerId);
-    expect(ids).not.toContain('google');
     expect(ids).toContain('openrouter');
   });
 });

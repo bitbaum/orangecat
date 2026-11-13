@@ -14,12 +14,17 @@
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { apiSuccess, handleApiError } from '@/lib/api/standardResponse';
 import { logger } from '@/utils/logger';
-import { fetchMessagingActors } from '@/features/messaging/api-helpers.server';
+import { fetchMessagingActors, fetchMessagingAgent } from '@/features/messaging/api-helpers.server';
 
 export const GET = withAuth(async (req: AuthenticatedRequest) => {
   try {
-    const actors = await fetchMessagingActors(req.user.id);
-    return apiSuccess({ actors });
+    const [actors, agent] = await Promise.all([
+      fetchMessagingActors(req.user.id),
+      fetchMessagingAgent(),
+    ]);
+    // `agent` is the Cat's account: the Messenger marks its messages as an
+    // agent's and knows whose answer it is waiting for when it is tagged.
+    return apiSuccess({ actors, agent });
   } catch (error) {
     logger.error('Messaging actors API error', { error }, 'MessagingActors');
     return handleApiError(error);

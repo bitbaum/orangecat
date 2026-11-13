@@ -8,6 +8,13 @@ import { createEntityConfig } from './base-config-factory';
 import { ASSET_TYPES, RENTAL_PERIODS } from '@/config/assets';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
+/**
+ * Sale, rental and deposit prices are kept in Bitcoin (their columns are
+ * `*_btc`). They are entered like every other amount, in the form's currency,
+ * and converted at today's rate, so their value in francs moves with Bitcoin.
+ */
+const STORED_IN_BTC_HINT = "Kept in Bitcoin, converted at today's rate.";
+
 const fieldGroups: FieldGroup[] = [
   {
     id: 'basic',
@@ -46,12 +53,16 @@ const fieldGroups: FieldGroup[] = [
     description: 'Location and estimated valuation',
     fields: [
       { name: 'location', label: 'Location', type: 'text', placeholder: 'City, Country' },
-      { name: 'estimated_value', label: 'Estimated Value', type: 'number', min: 0 },
+      { name: 'estimated_value', label: 'Estimated Value', type: 'currency', min: 0 },
       {
+        // The same value as the switch on every amount here, and like it, it
+        // converts the estimated value. A field of its own so "Fill with AI"
+        // can set it.
         name: 'currency',
         label: 'Currency',
         type: 'select',
         options: currencySelectOptions,
+        hint: "Changing it converts the estimated value at today's rate.",
       },
     ],
   },
@@ -69,9 +80,11 @@ const fieldGroups: FieldGroup[] = [
       },
       {
         name: 'sale_price_btc',
-        label: 'Sale Price (BTC)',
-        type: 'number',
+        label: 'Sale Price',
+        type: 'currency',
+        storedIn: 'BTC',
         min: 0.00001,
+        hint: STORED_IN_BTC_HINT,
         colSpan: 2,
       },
     ],
@@ -88,7 +101,14 @@ const fieldGroups: FieldGroup[] = [
         hint: 'Enable if you want to rent out this asset',
         colSpan: 2,
       },
-      { name: 'rental_price_btc', label: 'Rental Price (BTC)', type: 'number', min: 0.00001 },
+      {
+        name: 'rental_price_btc',
+        label: 'Rental Price',
+        type: 'currency',
+        storedIn: 'BTC',
+        min: 0.00001,
+        hint: STORED_IN_BTC_HINT,
+      },
       {
         name: 'rental_period_type',
         label: 'Rental Period',
@@ -113,9 +133,11 @@ const fieldGroups: FieldGroup[] = [
       },
       {
         name: 'deposit_amount_btc',
-        label: 'Deposit Amount (BTC)',
-        type: 'number',
+        label: 'Deposit Amount',
+        type: 'currency',
+        storedIn: 'BTC',
         min: 0.00001,
+        hint: STORED_IN_BTC_HINT,
         colSpan: 2,
       },
     ],

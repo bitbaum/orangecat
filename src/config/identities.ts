@@ -28,6 +28,14 @@ export function isUnreachableEmail(email: string | null | undefined): boolean {
 
 export const IDENTITY_NAME_MAX_LENGTH = 60;
 
+/** How long a hand-over link works. After that the holder offers again. */
+export const HANDOVER_TTL_DAYS = 7;
+
+/** The page a hand-over link opens. The token is the last path segment. */
+export function handoverAcceptPath(token: string): string {
+  return `/identities/accept/${token}`;
+}
+
 export const IDENTITIES_COPY = {
   title: 'Your identities',
   intro:
@@ -37,7 +45,11 @@ export const IDENTITIES_COPY = {
   create: 'Create identity',
   switchTo: 'Switch',
   switchLabel: 'Switch identity',
+  waiting: (count: number) => `${count > 99 ? '99+' : count} unread`,
   continueAs: 'Or continue as',
+  consentSwitchFailed:
+    'That switch did not happen. You are still signed in as the account named above; choose again or allow as it.',
+  noEmailToShare: 'Ask for your email address (this identity has none, so none is shared)',
   current: 'Signed in',
   main: 'Main account',
   remove: 'Delete',
@@ -53,4 +65,58 @@ export const IDENTITIES_COPY = {
   switchFailed: 'Could not switch. Try again.',
   removeFailed: 'Could not delete the identity. Try again.',
   removeCurrent: 'Switch to another identity before deleting this one.',
+  loadFailed: 'Could not load your identities.',
+  identityAccountTitle: 'How you sign in to this identity',
+  identityAccountBody:
+    'This identity has no email address or password of its own. You reach it from your main account, ' +
+    'through the menu under your picture. That is also what keeps it private: nothing else leads to it.',
+  identityAccountHandOver:
+    'To give this identity to someone else, hand it over from your main account (Settings, Your identities). ' +
+    'They choose their own address when they accept.',
+  deleteHolderWithIdentities: (handles: string[]) =>
+    `This also deletes your ${handles.length === 1 ? 'identity' : `${handles.length} identities`} ` +
+    `(${handles.join(', ')}) and everything they own.`,
+  deleteIdentityOnly: (handle: string) =>
+    `This deletes ${handle} and everything it owns. Your main account and your other identities stay. This cannot be undone.`,
+  retry: 'Try again',
+  standsAlone:
+    'This identity has a way in of its own (an address or password), so it stands alone: ' +
+    'it cannot switch to or manage your other identities. Sign in to your main account to do that.',
+  handOverNotNow: 'Not now',
+  handOverNewLink: 'Make a new link',
+  handOverNewLinkNote: 'A new link replaces the open one, which stops working.',
+  handOver: 'Hand over',
+  handOverIntro:
+    'Create a link and send it to the person who should have this identity. ' +
+    'When they open it and accept, the identity and everything it owns, including its wallets, is theirs, and you can no longer switch to it.',
+  handOverCreate: 'Create hand-over link',
+  handOverLinkLabel: 'Hand-over link',
+  handOverLinkNote: `Shown once. It works for ${HANDOVER_TTL_DAYS} days, for whoever opens it first.`,
+  handOverCopy: 'Copy link',
+  handOverCopied: 'Copied',
+  handOverOpen: 'A hand-over link is open.',
+  handOverCancel: 'Cancel hand-over',
+  handOverFailed: 'Could not create the link. Try again.',
+  handOverCancelFailed: 'Could not cancel. Try again.',
+  acceptTitle: (name: string) => `Take over ${name}?`,
+  acceptIntro:
+    'This identity was offered to you. Accepting makes it your account, with everything it owns. ' +
+    'The person who offered it loses access.',
+  acceptEmailLabel: 'Your email',
+  acceptEmailNote: 'You will sign in to this account with this address from now on.',
+  acceptButton: 'Accept and sign in',
+  acceptSignedInNote:
+    'You are signed in to another account in this browser. Accepting signs you in to this one here instead.',
+  acceptGoneTitle: 'This link no longer works',
+  acceptGone: 'It was used, withdrawn or has expired. Ask the person who sent it for a new one.',
+  acceptGoneHome: 'Go to OrangeCat',
+  acceptDoneTitle: 'It is yours',
+  acceptDoneSignIn: (email: string) =>
+    `This identity is now an account of its own on ${email}. Sign in with that address to open it.`,
+  acceptDoneSignInButton: 'Sign in',
+  acceptEmailTaken:
+    'That address already has an OrangeCat account. A handed-over identity becomes an account of its own, ' +
+    'so use an address that has none yet.',
+  acceptInvalidEmail: 'Enter a valid email address.',
+  acceptFailed: 'Could not complete the hand-over. Nothing has changed. Try again.',
 } as const;

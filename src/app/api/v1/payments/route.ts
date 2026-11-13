@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Payment initiation failed';
     logger.error('v1 payment initiation failed', { error });
 
-    const safeMessage = mapKnownPaymentError(message);
+    const safeMessage = mapKnownPaymentError(message, error);
     if (safeMessage) {
       return apiBadRequest(safeMessage);
     }

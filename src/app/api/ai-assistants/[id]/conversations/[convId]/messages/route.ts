@@ -94,6 +94,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
         case 'AI_ERROR':
           return apiError('Failed to generate AI response', 'AI_ERROR', 502, {
             message: result.message,
+            // The shared pool, not the person's own key: the chat offers the key.
+            ...(result.sharedPool ? { sharedPool: true } : {}),
           });
         case 'DB_ERROR':
           return apiInternalError(result.message);

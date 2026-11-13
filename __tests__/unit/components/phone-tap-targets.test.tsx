@@ -22,6 +22,19 @@ describe('phone tap targets', () => {
     expect(link.className).toMatch(/\bmin-w-11\b/);
   });
 
+  // The header renders two logos and hides one per breakpoint. The class used
+  // to land on a div inside the link, so the hidden logo's link stayed in the
+  // tab order as a 0x0 stop and was announced twice.
+  it('a logo hidden at a breakpoint hides its link, not a box inside it', () => {
+    render(<BrandMark href="/" className="hidden sm:inline-flex" />);
+    const link = screen.getByRole('link', { name: /home/ });
+    const classes = link.className.split(/\s+/);
+    expect(classes).toContain('hidden');
+    expect(classes).toContain('sm:inline-flex');
+    expect(classes).not.toContain('inline-flex');
+    expect(link.querySelector('.hidden')).toBeNull();
+  });
+
   it('the switch between signing in and signing up is 44px tall', () => {
     render(
       <AuthSocialLogin mode="login" setMode={() => {}} loading={false} onOAuthSignIn={() => {}} />

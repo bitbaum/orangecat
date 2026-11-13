@@ -27,7 +27,8 @@ export const COMPANION_COPY = {
     notEnoughCredits: 'Not enough Cat Credits for this message.',
     topUp: 'Top up Cat Credits',
     sendFailed: 'That did not go through. Try again.',
-    /** Under the server's own line about the day's free messages being spent. */
+    /** Under the server's own line: the day's free messages spent, or the
+     *  shared pool unable to answer. */
     liftLimit: 'Use your own key',
   },
 
@@ -38,6 +39,25 @@ export const COMPANION_COPY = {
     forgetAll: 'Forget everything',
     forgetAllConfirm: 'Yes, forget everything',
     forgetAllHint: 'Every memory goes. Conversations stay.',
+    edit: 'Edit',
+    save: 'Save',
+    cancel: 'Cancel',
+    add: 'Add',
+    addLabel: (name: string) => `Tell ${name} something to remember`,
+    addPlaceholder: 'For example: I am vegetarian',
+    failed: 'That did not save. Try again.',
+  },
+
+  /** A bot's library: what passed through your chats with it. */
+  library: {
+    row: 'Library',
+    title: (name: string) => `Your library with ${name}`,
+    privacy: 'Photos, files and links from your chats with this bot. Only you see this.',
+    empty: (name: string) =>
+      `Nothing yet. A photo, a file or a link you send ${name}, or it sends you, shows up here.`,
+    failed: 'The library could not be read. Try again.',
+    fromYou: 'You',
+    kinds: { photo: 'Photo', file: 'File', link: 'Link', picture: 'Picture from its browser' },
   },
 
   /** The talk home: companions, group chats and the fleet's bots as one list. */
@@ -110,6 +130,31 @@ export const COMPANION_COPY = {
       job: 'money, pages and your account',
       preview: 'Say what you want done on OrangeCat',
     },
+    /** The owner's own rules for all their bots, and their time zone: a row in a bot's details. */
+    rules: {
+      row: 'Your rules for your bots',
+      rowSet: 'Your rules for your bots · set',
+      intro:
+        'Write what your bots must never do, or must ask you about first. Every bot of yours reads them, and a step a bot would take on its own is checked against them: if a rule says no or ask, it waits for your tap.',
+      label: 'Rules',
+      placeholder:
+        'For example: Never send a task to the orangecat project without asking me. Never open a page that is not about my own sites.',
+      zone: 'Your time zone',
+      zoneNone: 'Not set',
+      save: 'Save',
+      saved: 'Saved.',
+      failed: 'That did not save. Try again.',
+    },
+    /** Which model a bot's answers come from: the row in its details. */
+    model: {
+      row: 'Model: automatic',
+      rowChosen: (id: string) => `Model: ${id}`,
+      loading: 'Reading the models your key can use…',
+      pool: 'Answers come from the free shared pool, which picks the model itself. With your own key you choose.',
+      addKey: 'Add a key',
+      pick: (provider: string) => `Your ${provider} key answers. Choose the model:`,
+      auto: (fallback: string) => (fallback === 'auto' ? 'Automatic' : `Automatic (${fallback})`),
+    },
     /** A bot that writes first: the one row in its details. */
     routine: {
       row: 'Writes first, every day',
@@ -157,6 +202,8 @@ export const COMPANION_COPY = {
         send_task_to_loki: 'Start or task an agent session in Loki',
         file_loki_finding: 'File a finding in a Loki project',
         loki_finding_status: 'Read where a finding is',
+        walk_site: 'Walk a live site and say what is wrong',
+        use_browser: 'Use a browser of its own',
       } as Record<string, string>,
     },
     /** The "Do it?" card under a bot's answer, and what follows the tap. */

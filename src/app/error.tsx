@@ -68,7 +68,7 @@ export default function Error({
       <div className="oc-page flex items-center justify-center px-4">
         <div className="oc-surface max-w-md w-full space-y-4 p-6 text-center">
           <RefreshCw className="mx-auto h-8 w-8 animate-spin text-fg-tertiary" />
-          <h2 className="text-xl font-semibold text-fg-primary">Updating to the latest version</h2>
+          <h1 className="text-xl font-semibold text-fg-primary">Updating to the latest version</h1>
           <p className="text-sm text-fg-secondary">
             OrangeCat was updated while this page was open. Reloading now — nothing is lost.
           </p>
@@ -95,7 +95,9 @@ export default function Error({
 
         {/* Title */}
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-fg-primary">Oops! Something went wrong</h2>
+          <h1 className="mb-2 text-2xl font-semibold text-fg-primary sm:mb-3">
+            Oops! Something went wrong
+          </h1>
           {isAuthError ? (
             <p className="mt-3 text-base text-fg-secondary">
               It looks like you need to be logged in to access this page.

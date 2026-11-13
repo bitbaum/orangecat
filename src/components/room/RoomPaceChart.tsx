@@ -55,7 +55,7 @@ export function RoomPaceChart({ pace }: { pace: RepoPace }) {
           </div>
         ))}
       </div>
-      <div className="mt-1 flex justify-between text-xs text-fg-muted" aria-hidden>
+      <div className="mt-1 flex justify-between text-xs text-fg-tertiary" aria-hidden>
         <span>{weekLabel(pace.weeks[0].start)}</span>
         <span>this week</span>
       </div>
@@ -66,7 +66,7 @@ export function RoomPaceChart({ pace }: { pace: RepoPace }) {
           </li>
         ))}
       </ul>
-      <figcaption className="mt-2 text-xs text-fg-muted">
+      <figcaption className="mt-2 text-xs text-fg-tertiary">
         Changes merged to the main branch per week, from{' '}
         <a
           href={pace.repoUrl}

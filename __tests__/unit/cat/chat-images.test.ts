@@ -53,12 +53,14 @@ describe('servingChain vision', () => {
     process.env = { ...env };
   });
 
-  it('marks the platform Groq link blind and Gemini sighted, from ai-kit', () => {
+  it('marks the platform Groq link blind and builds no Google link, from ai-kit', () => {
+    // ai-kit 1.26: Google bills, so it is out of the free chain; the free
+    // vision left is OpenRouter's :free Gemma id.
     process.env.GROQ_API_KEY = 'k';
     process.env.GEMINI_API_KEY = 'k';
     const links = usableChain(servingChain('What is in this photo?'));
     const verdict = (id: string) => links.filter(l => l.provider.id === id).map(linkSeesImages);
     expect(verdict('groq').every(v => v === 'no')).toBe(true);
-    expect(verdict('google')).toContain('yes');
+    expect(verdict('google')).toEqual([]);
   });
 });

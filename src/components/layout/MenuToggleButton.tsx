@@ -15,17 +15,24 @@ interface MenuToggleButtonProps {
   onClick: () => void;
   /** Aria label for accessibility */
   ariaLabel: string;
+  /** Whether the menu this button opens is open (omit for a button that opens nothing modal). */
+  expanded?: boolean;
+  /** The id of the element this button opens. */
+  controls?: string;
   /** Additional CSS classes */
   className?: string;
 }
 
 export const MenuToggleButton = forwardRef<HTMLButtonElement, MenuToggleButtonProps>(
-  ({ onClick, ariaLabel, className }, ref) => (
+  ({ onClick, ariaLabel, expanded, controls, className }, ref) => (
     <HeaderIconButton
       ref={ref}
       icon={Menu}
       label={ariaLabel}
       onClick={onClick}
+      aria-expanded={expanded}
+      aria-controls={controls}
+      aria-haspopup={controls ? 'dialog' : undefined}
       className={cn('lg:hidden', className)}
     />
   )

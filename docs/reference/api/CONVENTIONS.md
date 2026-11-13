@@ -32,9 +32,7 @@ Every successful response uses the shape declared in `src/lib/api/standardRespon
 ```jsonc
 {
   "success": true,
-  "data": {
-    /* endpoint payload */
-  },
+  "data": {/* endpoint payload */},
   "metadata": {
     "timestamp": "2026-06-03T10:00:00.000Z",
     // optional pagination: page, limit, total
@@ -50,9 +48,7 @@ Every error response:
   "error": {
     "code": "UNAUTHORIZED", // UPPERCASE on the wire — see codes table below
     "message": "Unauthorized", // human-readable, may be translated
-    "details": {
-      /* endpoint-specific */
-    },
+    "details": {/* endpoint-specific */},
   },
   "metadata": { "timestamp": "2026-06-03T10:00:00.000Z" },
 }
@@ -118,7 +114,7 @@ Mutating endpoints (POST, PUT, DELETE) **will** accept `Idempotency-Key: <client
 
 Endpoints are minted via `POST /api/webhook-endpoints` (session auth only) and delivered by the cron worker (`/api/cron/webhook-worker`, systemd timer on the box):
 
-- Payloads are signed with HMAC-SHA-256 using the endpoint's secret (returned once at mint). Verification header: `X-OrangeCat-Signature: t=<unix_seconds>,v1=<hex>`; signed string is `${timestamp}.${rawBody}` with a 5-minute default tolerance. Receivers verify with `@orangecat/sdk` (`verifyWebhookSignature`).
+- Payloads are signed with HMAC-SHA-256 using the endpoint's secret (returned once at mint). Verification header: `X-OrangeCat-Signature: t=<unix_seconds>,v1=<hex>`; signed string is `${timestamp}.${rawBody}` with a 5-minute default tolerance. Receivers verify the signature themselves: `@orangecat/sdk` (`verifyWebhookSignature`, in `packages/sdk`) is not published to npm, so the settings page states the scheme rather than pointing at a package nobody can install.
 - Failed deliveries retry with exponential backoff, up to 6 attempts, then flip to `status='failed'`.
 - Each event has a stable `type` string from the `PUBLIC_API_WEBHOOK_EVENTS` allowlist (`src/config/public-api.ts`).
 - **URL policy (SSRF guard, 2026-07):** webhook URLs must be public https URLs. URLs pointing at localhost, private/reserved IP ranges (RFC1918, link-local/cloud-metadata, CGNAT), or hostnames resolving to them are rejected at mint time and re-checked before every delivery (`src/lib/security/ssrfGuard.ts`). Dev allows localhost receivers.

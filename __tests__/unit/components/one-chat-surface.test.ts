@@ -26,8 +26,6 @@ const SHARED_COMPOSER = 'src/components/ai-chat/ModernChatPanel/components/ChatI
 const NOT_A_CONVERSATION: Record<string, string> = {
   'src/components/create/AIFillPanel.tsx':
     'one-shot prompt that fills a form — no turns, no history, no reply',
-  'src/components/messaging/MessageView/MessageItem.tsx':
-    'human-to-human DM with delivery and read receipts, on threadkit — a different job from an AI turn',
   'src/components/timeline/RepostModal.tsx': 'post composer, not a conversation',
   'src/components/timeline/ShareModal.tsx': 'post composer, not a conversation',
   'src/components/raise/NeedStep.tsx':
@@ -108,6 +106,25 @@ describe('one chat surface', () => {
     expect(offenders, `Use CHAT_VOICE from @/hooks/useDictation:\n${offenders.join('\n')}`).toEqual(
       []
     );
+  });
+
+  it("Messages is chatkit's Messenger, not a messenger assembled here", () => {
+    // Direct messages were ~8,700 lines of this app's own list, thread, bubble
+    // and composer; the Cat's answer in a conversation between two people
+    // looked like the other person's, and nothing built here could be fixed
+    // for the next product (owner, 2026-11-12). The screen is the package's.
+    const screen = readFileSync('src/components/messaging/MessagesScreen.tsx', 'utf8');
+    expect(screen).toMatch(
+      /import \{[^}]*\bMessenger\b[^}]*\} from '@bitbaum\/chatkit\/messenger'/
+    );
+    expect(screen).toMatch(/<Messenger\b/);
+    expect(screen).not.toMatch(/<textarea/);
+    const own = components.filter(
+      path =>
+        path.startsWith('src/components/messaging/') &&
+        !/(MessagesScreen|MessageActorSelector)\.tsx$/.test(path)
+    );
+    expect(own, `Messaging UI belongs in @bitbaum/chatkit:\n${own.join('\n')}`).toEqual([]);
   });
 
   it("the Cat chat is chatkit's ChatApp, not an app assembled here", () => {
