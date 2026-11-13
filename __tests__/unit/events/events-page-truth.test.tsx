@@ -51,6 +51,8 @@ describe('Events near you', () => {
       json: async () => ({ data: { events: [] } }),
     })) as unknown as typeof fetch;
     render(<EventsNearYou />);
+    // It opens on every upcoming event, before any place is given.
+    await screen.findByText(/Nothing coming up/);
     fireEvent.change(screen.getByLabelText('Place to search around'), {
       target: { value: 'Zürich' },
     });
@@ -61,5 +63,33 @@ describe('Events near you', () => {
     fireEvent.change(screen.getByLabelText('Distance'), { target: { value: '100' } });
     await waitFor(() => expect(document.body.textContent).toContain('Nothing on within 100 km'));
     expect(document.body.textContent).not.toContain('Widen the distance');
+  });
+
+  it('lists upcoming events before a location is given, asking with no point', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        data: {
+          events: [
+            {
+              id: 'e1',
+              title: 'Online meetup',
+              start_date: '2026-12-01T18:00:00Z',
+              timezone: 'UTC',
+              music_genres: [],
+              is_free: true,
+              is_online: true,
+              distance_km: null,
+            },
+          ],
+        },
+      }),
+    }));
+    global.fetch = fetchMock as unknown as typeof fetch;
+    render(<EventsNearYou />);
+    await screen.findByText('Online meetup');
+    expect(screen.getByText('Online')).toBeInTheDocument();
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]), 'https://x');
+    expect(url.searchParams.has('lat')).toBe(false);
   });
 });
