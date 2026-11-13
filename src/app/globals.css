@@ -211,6 +211,12 @@
     --bitcoin-orange-dark: #e8830f;
     /* RGB channels for Tailwind opacity-modifier support (bg-tiffany-500/50 etc.) */
     --bitcoin-orange-channels: 247 147 26;
+    /* Bitcoin orange for WORDS (text-bitcoin-text): BTC amounts, labels.
+       #f7931a is 2.0-2.3:1 on every light surface, so light takes #9d5906
+       (4.97:1 on raised); dark keeps the true orange (.dark below). Fills,
+       icons and borders keep --bitcoin-orange. Mirrors
+       @bitbaum/design-tokens --bitcoin-orange-text. */
+    --bitcoin-orange-text: #9d5906;
     --tiffany-50: 230 247 247;
     --tiffany-100: 186 235 234;
     --tiffany-200: 142 222 221;
@@ -360,6 +366,7 @@
     --mobile-nav-clearance: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
   }
   .dark {
+    --bitcoin-orange-text: var(--bitcoin-orange);
     --background: var(--surface-page);
     --foreground: var(--text-primary);
     --card: var(--surface-base);
@@ -1110,7 +1117,7 @@
 
   /* Bitcoin-themed elements */
   .bitcoin-text {
-    @apply text-bitcoinOrange font-semibold;
+    @apply text-bitcoin-text font-semibold;
   }
 
   .bitcoin-card {

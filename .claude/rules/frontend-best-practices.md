@@ -39,6 +39,9 @@ root `CLAUDE.md` for the migration direction.
 **One orange**: the accent and Bitcoin orange are the same colour (root `CLAUDE.md` → "One orange").
 `bg-bitcoinOrange` / `text-bitcoinOrange` say _Bitcoin_ (balances, Lightning, icons);
 `bg-accent-warm` says _the action that brings someone in_. Nothing else is orange.
+Bitcoin orange as _words_ (a BTC amount, a "Primary" chip) is `text-bitcoin-text`
+(`--bitcoin-orange-text`): `#f7931a` is ~2.1:1 on light surfaces, so light text takes
+a darker orange and dark keeps the true one. `text-bitcoinOrange` is for icons and glyphs.
 There is no `bitcoin-orange` utility class — `text-bitcoin-orange` renders nothing.
 
 **Legacy tier (still in use, migrate as touched)**:

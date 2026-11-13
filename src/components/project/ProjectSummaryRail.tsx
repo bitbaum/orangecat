@@ -166,7 +166,7 @@ export default function ProjectSummaryRail({
           <div className="mt-3 p-3 bg-bitcoinOrange/5 rounded-lg border border-bitcoinOrange/20">
             <div className="flex items-center gap-2 mb-1">
               <Bitcoin className="w-4 h-4 text-bitcoinOrange" />
-              <span className="text-xs font-medium text-bitcoinOrange uppercase tracking-wide">
+              <span className="text-xs font-medium text-bitcoin-text uppercase tracking-wide">
                 Bitcoin Balance
               </span>
             </div>

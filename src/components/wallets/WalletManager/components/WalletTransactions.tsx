@@ -175,7 +175,7 @@ export function WalletTransactions({ walletId }: { walletId: string }) {
                   {/* Bitcoin Orange is reserved for Bitcoin amounts. */}
                   <span
                     className={`text-sm font-semibold tabular-nums ${
-                      incoming ? 'text-bitcoinOrange' : 'text-fg-primary'
+                      incoming ? 'text-bitcoin-text' : 'text-fg-primary'
                     }`}
                   >
                     {incoming ? '+' : '−'}

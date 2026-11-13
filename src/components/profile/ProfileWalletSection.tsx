@@ -93,12 +93,12 @@ export default function ProfileWalletSection({
                             only a card inside somebody's profile tab. */}
                       <Link
                         href={ROUTES.WALLETS.VIEW(wallet.id)}
-                        className="hover:text-bitcoinOrange transition-colors"
+                        className="hover:text-bitcoin-text transition-colors"
                       >
                         {wallet.label}
                       </Link>
                       {wallet.is_primary && (
-                        <span className="text-xs bg-bitcoinOrange/10 text-bitcoinOrange border border-bitcoinOrange/30 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-bitcoinOrange/10 text-bitcoin-text border border-bitcoinOrange/30 px-2 py-0.5 rounded">
                           Primary
                         </span>
                       )}
@@ -128,7 +128,7 @@ export default function ProfileWalletSection({
                         Not checked yet — refresh it on your wallets page
                       </div>
                     ) : (
-                      <div className="text-xl font-bold text-bitcoinOrange">
+                      <div className="text-xl font-bold text-bitcoin-text">
                         {formatAmountBtc(wallet.balance_btc)}
                       </div>
                     )}

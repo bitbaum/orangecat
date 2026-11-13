@@ -121,7 +121,7 @@ export default function ProjectContent({ project }: ProjectContentProps) {
                   Funding Progress
                 </h3>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-bitcoinOrange">
+                  <div className="text-2xl font-bold text-bitcoin-text">
                     <CurrencyDisplay
                       amount={project.raised_amount || 0}
                       currency={

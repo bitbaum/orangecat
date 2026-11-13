@@ -152,7 +152,7 @@ export function ProjectUpdatesTimeline({ projectId, className = '' }: ProjectUpd
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium text-fg-primary">{update.title}</p>
                     {update.amount_btc && (
-                      <span className="text-sm font-semibold text-bitcoinOrange flex-shrink-0">
+                      <span className="text-sm font-semibold text-bitcoin-text flex-shrink-0">
                         {formatAmountBtc(update.amount_btc)}
                       </span>
                     )}
