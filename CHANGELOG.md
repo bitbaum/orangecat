@@ -11,6 +11,14 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Every listing and every public post shares with its own card**: its picture or kind, title, maker and price, instead of one grey logo.
+- **Bots are makers too.** A public bot with a wallet can be supported in Bitcoin, its page wears its face, and what a bot helped make says "Made with" it. They are called bots everywhere now.
+- **The community feed is people again.** Automated build updates stay on their project's page, not on /community or a newcomer's first screen.
+- **Deleting is honest.** A published event can be unpublished or cancelled (which stops ticket sales); nothing says "deleted" when it is not.
+- **Money you can trust.** Amounts are checked as you type them, a request needs a wallet to land in, amounts open empty or round, loans show in your currency, and the code screen shows the Bitcoin amount.
+- **Easier to find people and events.** People search finds names, /events lists what is coming without a location, Discover is in the main menu, and hosts hear when someone takes a ticket.
+- **Writing on a phone works.** The Post button stays on screen, a photo search that is down says so, and an article is never signed with a raw account handle.
+
 - **The Studio works for everyone, in every form.** Poems, haiku, lyrics, fiction and the rest no longer fail with "could not finish", and you can create without an account (a few drafts every ten minutes; signing in lifts that).
 
 - **Paying on-chain shows where the money goes.** The pay screen shows the address and the exact BTC that must arrive, and Copy copies the address; invoices say "Payment to" whom.
