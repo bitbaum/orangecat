@@ -620,7 +620,7 @@ describe('DELETE', () => {
     const { status, json } = await call(del, req('DELETE'));
     expect(status).toBe(200);
     expect(json.data).toEqual({ message: `${meta.name} deleted successfully` });
-    expect(session.queries[1].ops).toEqual([['delete'], ['eq', 'id', ID]]);
+    expect(session.queries[1].ops).toEqual([['delete'], ['eq', 'id', ID], ['select', 'id']]);
     expect(admin.queries[0]).toEqual({
       client: 'admin',
       table: 'entity_wallets',
@@ -633,7 +633,7 @@ describe('DELETE', () => {
       'session:getUser',
       `session:${meta.tableName}:select.eq.single`,
       'preDelete',
-      `session:${meta.tableName}:delete.eq`,
+      `session:${meta.tableName}:delete.eq.select`,
       'admin:entity_wallets:delete.eq.eq',
       'postProcessDelete',
     ]);
@@ -651,6 +651,44 @@ describe('DELETE', () => {
     expect(err(json).message).toBe('Invalid reference');
     expect(getAdminClient).not.toHaveBeenCalled();
     expect(postProcessDelete).not.toHaveBeenCalled();
+  });
+
+  it('409 when RLS lets the delete remove zero rows; no cleanup, no postProcessDelete', async () => {
+    respond = q =>
+      q.ops.some(o => o[0] === 'delete')
+        ? { data: [], error: null }
+        : { data: { id: ID, status: 'active', user_id: USER } };
+    const postProcessDelete = vi.fn();
+    const { DELETE: del } = createEntityCrudHandlers({ ...BASE, postProcessDelete });
+    const { status, json } = await call(del, req('DELETE'));
+    expect(status).toBe(409);
+    expect(err(json).message).toBe(
+      `This ${meta.name.toLowerCase()} could not be deleted in its current state. Nothing was removed.`
+    );
+    expect(getAdminClient).not.toHaveBeenCalled();
+    expect(postProcessDelete).not.toHaveBeenCalled();
+  });
+
+  it('a published event is refused before any delete runs; a draft one deletes', async () => {
+    const eventMeta = getEntityMetadata('event');
+    const { DELETE: del } = createEntityCrudHandlers({ ...BASE, entityType: 'event' });
+    respond = q =>
+      q.ops.some(o => o[0] === 'delete')
+        ? { data: [{ id: ID }] }
+        : { data: { id: ID, status: 'published', user_id: USER } };
+    const refused = await call(del, req('DELETE'));
+    expect(refused.status).toBe(409);
+    expect(err(refused.json).message).toBe(
+      `This ${eventMeta.name.toLowerCase()} is published and can only be deleted as a draft. Take it offline first, then delete it.`
+    );
+    expect(session.queries).toHaveLength(1);
+
+    respond = q =>
+      q.ops.some(o => o[0] === 'delete')
+        ? { data: [{ id: ID }] }
+        : { data: { id: ID, status: 'draft', user_id: USER } };
+    const deleted = await call(del, req('DELETE'));
+    expect(deleted.status).toBe(200);
   });
 
   it('a failed wallet-link cleanup is non-fatal', async () => {
