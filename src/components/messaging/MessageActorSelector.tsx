@@ -30,15 +30,15 @@ export function MessageActorSelector({
   onSelectActor,
 }: MessageActorSelectorProps) {
   return (
-    <div className="mb-2 flex items-center gap-2 text-xs text-fg-secondary">
-      <span>Sending as:</span>
+    <div className="flex items-center gap-2 px-3 pt-1 text-sm text-fg-secondary">
+      <span>Sending as</span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface-raised hover:bg-surface-overlay dark:hover:bg-surface-raised/80 transition-colors"
+            className="-my-1 flex min-h-11 items-center gap-1.5 rounded-full px-2 font-medium text-fg-primary hover:bg-surface-raised transition-colors"
           >
-            <Avatar className="h-4 w-4">
+            <Avatar className="h-5 w-5">
               <AvatarImage src={selectedActor.avatar_url || undefined} />
               <AvatarFallback className="text-[8px]">
                 {selectedActor.actor_type === 'group' ? (

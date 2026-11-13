@@ -104,6 +104,10 @@ const GET_ALLOWED = new Map([
   ['src/app/api/cat/actions/route.ts', 'GET lists actions; POST executes one'],
   ['src/app/api/cat/permissions/route.ts', 'GET reads permissions; imports the action registry'],
   ['src/app/api/cat/interests/route.ts', 'GET lists interests; POST publishes (embeds)'],
+  [
+    'src/app/api/messages/[conversationId]/route.ts',
+    'GET reads a page of messages; POST sends one, and a message to a bot is answered',
+  ],
 ]);
 
 type Chain = string[];

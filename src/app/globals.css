@@ -1986,3 +1986,35 @@ body:has(.oc-messages) {
   padding: 0 0 0 0.75rem;
   font-size: 0.875rem;
 }
+
+/*
+ * Messages (chatkit's Messenger) inside this site's own base styles.
+ * UNLAYERED on purpose, like the Cat chat above. Each rule answers one base
+ * rule of this file that the Messenger was not written for, and each was a
+ * defect on a phone (owner's screenshot, 2026-11-13):
+ */
+/* `*:focus-visible` draws a ring on the message field, a box inside the box
+   that is already the composer. The composer's own border shows the focus. */
+.ck-msgr .ck-input,
+.ck-msgr .ck-input:focus-visible {
+  box-shadow: none;
+  border-radius: 0;
+}
+/* `a { min-height: 44px; min-width: 44px }` made the name in the top bar a
+   44px row and pushed the line under it away. A link in a sentence is text. */
+.ck-msgr .ck-msgr-top-name,
+.ck-msgr .ck-msgr-link,
+.ck-msgr .ck-md a {
+  min-width: 0;
+  min-height: 0;
+}
+/* `p { leading-relaxed }` loosened an agent's answer against a person's. */
+.ck-msgr .ck-md p {
+  line-height: inherit;
+}
+/* A photo that is not square was drawn as a tall oval: a percentage height
+   does not resolve inside the avatar's grid. (Also fixed in the package.) */
+.ck-msgr .ck-msgr-avatar > img {
+  position: absolute;
+  inset: 0;
+}

@@ -15,21 +15,8 @@
 import { loadChatImages } from '@/services/cat/chat-image-store';
 import { imageRefsIn } from '@/lib/chat/attachment-tags';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { getAdminClient } from '@/lib/supabase/admin';
-import { createApiKeyService } from '@/services/ai/api-key-service';
-import { readOwnKey } from '@/services/ai/own-key';
-import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
-import {
-  checkAffordability,
-  computeCreatorChargeBtc,
-  settleAssistantCharge,
-} from '@/services/ai/assistant-charge';
-import { fetchAssistant, generateReply } from '@/services/ai/sendMessage-internals';
-import type { SendMessageError } from '@/services/ai/sendMessage-types';
-import { decideConversationAccess } from '../access';
+import { companionAnswer, type CompanionAnswerError } from '../answer';
 import { askFleetBot, fleetBot } from './fleet';
-import { recallCompanionMemories } from '../memory';
-import { buildCompanionSystemPrompt } from '../system-prompt';
 import { cutImpersonation, stripSelfPrefix } from './plan';
 import { buildRoomPrompt, roomScene, splitForModel, transcriptFor } from './prompt';
 import { appendRoomMessage } from './store';
@@ -37,8 +24,6 @@ import type { RoomMember, RoomMessage, RoomTurnError, RoomView } from './types';
 
 export type RoomTurnOutcome =
   { message: RoomMessage; handoff: RoomMember | null } | { error: RoomTurnError };
-
-const RATE_LIMITED = 'Daily limit reached. Add your own OpenRouter API key for unlimited usage.';
 
 export async function speakInRoom(args: {
   supabase: AnySupabaseClient;
@@ -72,7 +57,7 @@ export async function speakInRoom(args: {
 }
 
 /** The one-to-one pipeline's errors, in the room's vocabulary (a paused thread is not a room concept). */
-function asRoomError(error: SendMessageError): RoomTurnError {
+function asRoomError(error: CompanionAnswerError): RoomTurnError {
   return error.code === 'ARCHIVED'
     ? { code: 'NOT_FOUND', message: 'This companion is not taking conversations right now.' }
     : error;
@@ -114,119 +99,21 @@ async function companionLine(args: {
   if (!member.assistantId) {
     return { error: { code: 'NOT_FOUND', message: `${member.name} is not here any more.` } };
   }
-  const fetched = await fetchAssistant(supabase, member.assistantId);
-  if ('error' in fetched) {
-    return { error: asRoomError(fetched.error) };
-  }
-  const assistant = fetched.assistant;
-  // The same door as a one-to-one thread: the owner always, a stranger only
-  // while the companion is public and active.
-  const { data: access } = await supabase
-    .from('ai_assistants')
-    .select('status, is_public, user_id')
-    .eq('id', assistant.id)
-    .maybeSingle();
-  const decision = access
-    ? decideConversationAccess(
-        access as { status: string | null; is_public: boolean | null; user_id: string },
-        userId
-      )
-    : ({ allowed: false, reason: 'not_found' } as const);
-  if (!decision.allowed) {
-    return {
-      error: {
-        code: 'NOT_FOUND',
-        message:
-          decision.reason === 'not_active'
-            ? `${member.name} is not taking conversations right now.`
-            : `${member.name} is not here any more.`,
-      },
-    };
-  }
-
-  const keyService = createApiKeyService(supabase);
-  // The person's own key, whichever provider it is from (ai/own-key.ts).
-  const onLoki = () => sharedLokiOwnKeys(supabase, userId);
-  const { hasByok, userKey, directKey } = await readOwnKey(keyService, userId, onLoki);
-  if (!hasByok) {
-    const usage = await keyService.checkPlatformUsage(userId);
-    if (!usage.can_use_platform) {
-      return { error: { code: 'RATE_LIMITED', message: RATE_LIMITED } };
-    }
-  }
-
-  // The creator's price, pre-authorised before the model is asked. A room
-  // turn is never a free message: that daily allowance belongs to the
-  // one-to-one thread, where it is counted.
-  const charge = computeCreatorChargeBtc(assistant, false);
-  const admin = charge > 0 ? getAdminClient() : null;
-  if (admin && charge > 0) {
-    const affordable = await checkAffordability(admin, userId, charge);
-    if (!affordable.ok) {
-      return {
-        error: {
-          code: 'INSUFFICIENT_CREDITS',
-          currentBalance: affordable.balance,
-          requiredAmount: charge,
-          shortfall: charge - affordable.balance,
-        },
-      };
-    }
-  }
-
   const { history, content } = splitForModel(transcript);
-  // What this companion knows about this person (its job, told in their own
-  // thread) comes with it into the room, as it does one to one.
-  const recalled = await recallCompanionMemories(
-    supabase,
-    { assistantId: assistant.id, userId },
-    content
-  );
-  const definition = buildCompanionSystemPrompt({
-    definition: assistant.system_prompt,
-    memories: recalled.map(m => m.content),
-  });
   // The photos on the person's newest line, read back from the store: this
   // member's turn runs in its own request, after the one that carried them.
   const newest = [...room.messages].reverse().find(m => m.role === 'user');
   const refs = newest ? imageRefsIn([newest.content]) : [];
   const images = refs.length ? await loadChatImages(userId, refs) : undefined;
-  const reply = await generateReply({
-    hasByok,
-    userKey,
-    directKey,
-    requestedModel: undefined,
-    assistant,
-    images,
-    systemPrompt: buildRoomPrompt({
-      speaker: member,
-      members: room.members,
-      definition,
-    }),
+  const answer = await companionAnswer({
+    supabase,
+    userId,
+    assistantId: member.assistantId,
+    name: member.name,
     history,
     content,
+    images,
+    scene: definition => buildRoomPrompt({ speaker: member, members: room.members, definition }),
   });
-  if ('error' in reply) {
-    return { error: asRoomError(reply.error) };
-  }
-  const response = reply.response;
-  return {
-    content: response.content,
-    settle: async messageId => {
-      if (!hasByok) {
-        await keyService.incrementPlatformUsage(userId, 1, response.totalTokens);
-      }
-      if (admin && charge > 0) {
-        await settleAssistantCharge(admin, {
-          payerUserId: userId,
-          creatorUserId: assistant.user_id,
-          assistantId: assistant.id,
-          messageId,
-          chargeBtc: charge,
-          model: response.model,
-          totalTokens: response.totalTokens,
-        });
-      }
-    },
-  };
+  return 'error' in answer ? { error: asRoomError(answer.error) } : answer;
 }
