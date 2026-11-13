@@ -34,6 +34,16 @@ const GITHUB_OUTCOME: Record<string, { text: string; ok: boolean }> = {
   failed: { text: 'GitHub could not be connected. Please try again.', ok: false },
 };
 
+/** The same three, from Google's consent screen (see the Google callback route). */
+const GOOGLE_OUTCOME: Record<string, { text: string; ok: boolean }> = {
+  connected: {
+    text: 'Google connected — your mail and calendar can now be read when you ask.',
+    ok: true,
+  },
+  denied: { text: 'Google was not connected — you declined on Google.', ok: false },
+  failed: { text: 'Google could not be connected. Please try again.', ok: false },
+};
+
 const BUTTON =
   'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-subtle px-4 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised';
 
@@ -73,7 +83,9 @@ interface SeesSectionProps {
 export function SeesSection({ connections, failed, onChanged }: SeesSectionProps) {
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const outcome = GITHUB_OUTCOME[useSearchParams()?.get('github') ?? ''];
+  const params = useSearchParams();
+  const outcome =
+    GITHUB_OUTCOME[params?.get('github') ?? ''] ?? GOOGLE_OUTCOME[params?.get('google') ?? ''];
 
   const disconnect = async (c: CatConnectionStatus) => {
     if (!c.disconnectEndpoint) {

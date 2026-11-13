@@ -32,6 +32,9 @@ const READS: ReadonlySet<string> = new Set([
   'loki_run_status',
   'loki_finding_status',
   'walk_site',
+  'github_read',
+  'gmail_read',
+  'calendar_read',
 ]);
 
 export function handRows(grants: HandGrants, held?: ReadonlySet<string>): HandRow[] {
