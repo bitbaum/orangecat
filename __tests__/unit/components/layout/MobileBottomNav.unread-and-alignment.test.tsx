@@ -7,7 +7,7 @@
  *   `counter: 'messages'` — but the bar never read the counter. The Messages
  *   tab was an icon and a word, with no count and no count in its name, so a
  *   phone showed unread messages nowhere.
- * - The raised tab's label ('Money' signed in, 'Create' signed out) was
+ * - The raised tab's label ('Money', signed in) was
  *   pushed to the bottom of its button with `mt-auto` while every other label
  *   sits under a centred icon: 640px against 634px. Its circle is lifted out
  *   of flow, so an icon-sized spacer has to hold the icon's place.
@@ -78,7 +78,6 @@ describe('the raised tab labels on the same line as the others', () => {
   it.each([
     ['signed in, full', { id: 'user-1' }, false, 'Money', 'Home'],
     ['signed in, compact', { id: 'user-1' }, true, 'Money', 'Home'],
-    ['signed out, full', null, false, 'Create', 'Home'],
   ])('%s', (_case, user, compact, raised, neighbour) => {
     mockUser = user;
     mockCompact = compact;

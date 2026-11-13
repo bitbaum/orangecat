@@ -92,8 +92,8 @@ function HeaderNavLink({ href, label, isActive }: HeaderNavLinkProps) {
   const linkClasses = cn(
     'px-4 py-2.5 text-sm font-medium rounded-md transition-colors duration-150 relative',
     isActive
-      ? 'text-fg-primary bg-surface-raised'
-      : 'text-fg-secondary hover:text-fg-primary hover:bg-surface-raised'
+      ? 'text-fg-primary bg-surface-overlay'
+      : 'text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay'
   );
 
   return (
@@ -162,8 +162,8 @@ function HeaderNavDropdown({ item, isActive }: HeaderNavDropdownProps) {
         className={cn(
           'px-4 py-2.5 min-h-11 text-sm font-medium rounded-md transition-colors duration-150 relative flex items-center gap-1',
           hasActiveChild
-            ? 'text-fg-primary bg-surface-raised'
-            : 'text-fg-secondary hover:text-fg-primary hover:bg-surface-raised'
+            ? 'text-fg-primary bg-surface-overlay'
+            : 'text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay'
         )}
       >
         {item.name}
@@ -195,7 +195,7 @@ function HeaderNavDropdown({ item, isActive }: HeaderNavDropdownProps) {
                   href={child.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block px-4 py-2.5 min-h-11 text-sm text-fg-secondary transition-colors hover:text-fg-primary hover:bg-surface-raised"
+                  className="block px-4 py-2.5 min-h-11 text-sm text-fg-secondary transition-colors hover:text-fg-primary hover:bg-surface-overlay"
                   onClick={() => setIsOpen(false)}
                 >
                   <div className="flex items-center gap-1 font-medium">
@@ -216,8 +216,8 @@ function HeaderNavDropdown({ item, isActive }: HeaderNavDropdownProps) {
                 className={cn(
                   'block px-4 py-2.5 min-h-11 text-sm transition-colors',
                   isActive(child.href)
-                    ? 'text-fg-primary bg-surface-raised font-medium'
-                    : 'text-fg-secondary hover:text-fg-primary hover:bg-surface-raised'
+                    ? 'text-fg-primary bg-surface-overlay font-medium'
+                    : 'text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay'
                 )}
                 onClick={() => setIsOpen(false)}
               >

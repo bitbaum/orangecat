@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHeaderScroll } from '@/hooks/useHeaderScroll';
 import { useMobileMenu } from '@/hooks/useMobileMenu';
 import { useIsAuthRoute } from '@/hooks/useRouteContext';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useMobileMenuAnimation } from '@/hooks/useMobileMenuAnimation';
 import { authNavigationItems, getHeaderNavigationItems } from '@/config/navigation';
 import { getAuthStatus } from '@/lib/auth/utils';
@@ -51,10 +52,15 @@ export function Header({
   className = '',
 }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null);
 
   const authState = useAuth();
   const authStatus = getAuthStatus(authState);
-  const { isScrolled, isHidden } = useHeaderScroll();
+  // The header hides on scroll-down only where screen height is scarce. From
+  // lg up the sidebar is pinned under it (`.app-sidebar` top), so a hidden
+  // header left a 64px empty band above the sidebar.
+  const isDesktop = useIsDesktop();
+  const { isScrolled, isHidden } = useHeaderScroll({ hideOnScrollDown: !isDesktop });
 
   // Announce the header's visibility on <html> so anything pinned below it
   // (`.sticky-below-header` in globals.css) can move up when it hides —
@@ -70,7 +76,10 @@ export function Header({
   // only. Signed-in users get ONE navigation system — the app sidebar +
   // header actions — everywhere, including public pages and 404/error
   // pages, instead of a second competing marketing nav.
-  const showMarketingNav = !isAuthRoute && !authStatus.authenticated;
+  // A visitor on an app surface (Discover, a public listing) gets it too: it
+  // was their only way to the rest of the site. There it waits for auth to
+  // settle, so a signed-in person never sees it flash before the sidebar.
+  const showMarketingNav = !authStatus.authenticated && (!isAuthRoute || authStatus.ready);
 
   // Mobile menu animation state
   const { menuRef, buttonRef, isClosing, handleClose } = useMobileMenuAnimation({
@@ -142,8 +151,8 @@ export function Header({
               </div>
             )}
 
-            {/* Create Button (authenticated only) - Icon only on mobile */}
-            {isAuthRoute && (
+            {/* Create Button (signed in, in-app only) - Icon only on mobile */}
+            {isAuthRoute && authStatus.authenticated && (
               <div className="hidden sm:block">
                 <HeaderCreateButton />
               </div>
@@ -163,6 +172,7 @@ export function Header({
             {/* Notifications - Always visible for authenticated users regardless of route */}
             {authStatus.authenticated && (
               <NotificationsButton
+                ref={notificationsButtonRef}
                 onClick={() => setShowNotifications(!showNotifications)}
                 isOpen={showNotifications}
               />
@@ -206,6 +216,7 @@ export function Header({
         <NotificationCenter
           isOpen={showNotifications}
           onClose={() => setShowNotifications(false)}
+          returnFocusRef={notificationsButtonRef}
         />
       )}
 

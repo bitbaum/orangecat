@@ -126,6 +126,9 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
             // Profile collapsed /profile + /profiles; nothing in the bar needs
             // that special case now, so every slot uses the shared active test.
             const isActive = isActiveHref(item.href, item.activeFor);
+            // The slot keeps its name wherever you are; only where Create
+            // leads is contextual. It read "Post" on Messages, a second name
+            // for the same button.
             const label = item.name;
             const count = item.counter === 'messages' ? unreadMessages : 0;
             // Worded like the header's Messages button, so a screen reader
@@ -149,7 +152,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                   'transition-all duration-200',
                   'touch-manipulation select-none',
                   '-webkit-tap-highlight-color-transparent',
-                  'active:scale-95 active:bg-surface-raised dark:active:bg-surface-raised',
+                  'active:scale-95 active:bg-surface-overlay',
                   isActive && 'text-fg-primary',
                   !isActive && 'text-fg-secondary',
                   item.primary && 'relative',

@@ -46,10 +46,10 @@ export const SIDEBAR_SPACING = {
 export const SIDEBAR_COLORS = {
   BACKGROUND: 'bg-surface-page',
   BORDER: 'border-subtle',
-  ACTIVE_BACKGROUND: 'bg-surface-raised',
+  ACTIVE_BACKGROUND: 'bg-surface-overlay',
   ACTIVE_TEXT: 'text-fg-primary',
   ACTIVE_BORDER: 'border-subtle',
-  HOVER_BACKGROUND: 'hover:bg-surface-raised',
+  HOVER_BACKGROUND: 'hover:bg-surface-overlay',
   TEXT_PRIMARY: 'text-fg-primary',
   TEXT_SECONDARY: 'text-fg-secondary',
 } as const;

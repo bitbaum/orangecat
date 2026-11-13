@@ -1,27 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { requiresSignIn, ROUTES } from '@/config/routes';
+import { requiresSignIn, ROUTES, signInModeFor } from '@/config/routes';
 
 // Edge middleware route classification reads from the SAME SSOT used by
 // AppShell / MobileBottomNav / Footer / Header (src/config/routes.ts).
 // Never keep a parallel list here — they will drift. Which in-app routes need
 // a signed-in user is `requiresSignIn` / SIGN_IN_REQUIRED_PREFIXES there.
 
-/**
- * Which form a signed-out visitor sent to /auth should see first.
- *
- * Every public "Start" points at a protected path, so this redirect is where
- * most first-time visitors meet OrangeCat — and it used to greet all of them
- * with "Welcome back, sign in". A browser carrying no Supabase cookie has
- * never signed in on this device, so it gets the register form (which offers
- * "Already have an account?"); one that has a cookie — an expired session —
- * gets the sign-in form.
- */
-function signInModeFor(request: NextRequest): 'login' | 'register' {
-  return request.cookies.getAll().some(cookie => cookie.name.startsWith('sb-'))
-    ? 'login'
-    : 'register';
+/** Whether this browser has ever held a Supabase session (an `sb-*` cookie). */
+function hasHeldSession(request: NextRequest): boolean {
+  return request.cookies.getAll().some(cookie => cookie.name.startsWith('sb-'));
 }
 
 export async function middleware(request: NextRequest) {
@@ -114,7 +103,7 @@ export async function middleware(request: NextRequest) {
     if (!supabaseUrl || !supabaseAnonKey) {
       // Misconfigured deployment — bounce to auth rather than crash.
       const redirectUrl = new URL('/auth', request.url);
-      redirectUrl.searchParams.set('mode', signInModeFor(request));
+      redirectUrl.searchParams.set('mode', signInModeFor(pathname, hasHeldSession(request)));
       redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }
@@ -142,7 +131,7 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       const redirectUrl = new URL('/auth', request.url);
-      redirectUrl.searchParams.set('mode', signInModeFor(request));
+      redirectUrl.searchParams.set('mode', signInModeFor(pathname, hasHeldSession(request)));
       redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }

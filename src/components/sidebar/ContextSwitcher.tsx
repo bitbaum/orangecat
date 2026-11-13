@@ -121,7 +121,7 @@ export function ContextSwitcher({
       <div className="flex w-full items-center gap-1 rounded-md">
         <Link
           href={selfHref}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-2 transition-colors hover:bg-surface-raised"
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-2 transition-colors hover:bg-surface-overlay"
           aria-label={isGroupContext ? `Open ${displayName}` : 'View your profile'}
         >
           <div className="relative flex-shrink-0">
@@ -165,7 +165,7 @@ export function ContextSwitcher({
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Switch context"
           aria-expanded={isOpen}
-          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-surface-raised"
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-surface-overlay"
         >
           <ChevronDown
             className={cn('w-4 h-4 text-fg-tertiary transition-transform', isOpen && 'rotate-180')}
@@ -180,7 +180,7 @@ export function ContextSwitcher({
             <Link
               href={publicProfilePath(profile.username)}
               onClick={() => setIsOpen(false)}
-              className="w-full flex min-h-11 items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors"
+              className="w-full flex min-h-11 items-center gap-3 px-3 py-2 text-left hover:bg-surface-overlay transition-colors"
             >
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised">
                 <User className="w-4 h-4 text-fg-secondary" />
@@ -193,7 +193,7 @@ export function ContextSwitcher({
           <button
             onClick={handleSwitchToIndividual}
             className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors',
+              'w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-overlay transition-colors',
               !isGroupContext && 'bg-surface-raised'
             )}
           >
@@ -245,7 +245,7 @@ export function ContextSwitcher({
                 key={group.id}
                 onClick={() => handleSwitchToGroup(group)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors',
+                  'w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-overlay transition-colors',
                   isGroupContext && context.group?.id === group.id && 'bg-surface-raised'
                 )}
               >
@@ -283,7 +283,7 @@ export function ContextSwitcher({
               setIsOpen(false);
               router.push(`${ROUTES.DASHBOARD.GROUPS}/create`);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-overlay transition-colors"
           >
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised">
               <Plus className="w-4 h-4 text-fg-secondary" />

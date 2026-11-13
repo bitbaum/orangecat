@@ -355,6 +355,21 @@ export const SIGN_IN_REQUIRED_PREFIXES = [
   '/home',
 ] as const;
 
+/**
+ * Which form a signed-out person meets when sign-in is required.
+ *
+ * Sign-up when they were starting something (a create form: "Create your
+ * account" is what they are doing), or when this browser has never held a
+ * session (no `sb-*` cookie: a first visit). Sign-in otherwise, for someone
+ * whose session simply expired.
+ */
+export function signInModeFor(pathname: string, hasHeldSession: boolean): 'login' | 'register' {
+  if (/\/create(\/|$)/.test(pathname)) {
+    return 'register';
+  }
+  return hasHeldSession ? 'login' : 'register';
+}
+
 /** True when the middleware must see a signed-in user before the page renders. */
 export function requiresSignIn(pathname: string): boolean {
   return (

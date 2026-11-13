@@ -75,7 +75,7 @@ export function PaletteRow({
       onSelect={onSelect}
       className={cn(
         'group flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2.5 py-2 text-sm sm:min-h-0',
-        'aria-selected:bg-surface-raised/60 aria-selected:text-fg-primary',
+        'aria-selected:bg-surface-overlay aria-selected:text-fg-primary',
         'text-fg-secondary transition-colors'
       )}
     >

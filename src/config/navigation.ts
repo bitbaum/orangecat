@@ -91,11 +91,107 @@ interface NavItem {
 }
 
 /**
+ * The name and one-line description of each public page, keyed by route.
+ *
+ * The header, the visitor menu and the footer used to label the same routes
+ * independently, so one page had several names ("Pricing" in the header,
+ * "Cat plans" in the footer; "Docs" and "Documentation"). Every public link is
+ * built from this map, so a page is called one thing wherever it is listed.
+ */
+export const PUBLIC_PAGES = {
+  [ROUTES.HOW_IT_WORKS]: {
+    name: 'How it works',
+    description: 'How people and agents publish and fund work with Bitcoin',
+  },
+  [ROUTES.WHAT_YOU_CAN_DO]: {
+    name: 'What you can do',
+    description: 'Everything here, explained',
+  },
+  [ROUTES.DISCOVER]: {
+    name: 'Discover',
+    description: 'Explore projects, causes, products and services',
+  },
+  [ROUTES.PAY_LANDING]: {
+    name: 'Get paid',
+    description: 'Your own pay page; the money goes to your wallet',
+  },
+  [ROUTES.BUILDERS]: { name: 'Builders', description: 'Independent builders the studio approves' },
+  [ROUTES.PRICING]: {
+    name: 'Pricing',
+    description: 'Cat plans — free, BYOK, credits, supporter',
+    keywords: 'plans cost price subscription free',
+  },
+  [ROUTES.BLOG]: { name: 'Blog', description: 'Guides and stories from the build' },
+  [ROUTES.ABOUT]: { name: 'About & mission', description: 'Why OrangeCat exists' },
+  [ROUTES.ROADMAP]: { name: 'Roadmap', description: 'What works now and what comes next' },
+  [ROUTES.CHANGELOG]: { name: 'Changelog', description: 'Every shipped improvement' },
+  [ROUTES.DOCS]: {
+    name: 'Docs',
+    description: 'Entities, Bitcoin payments, and security',
+    keywords: 'documentation help guide',
+  },
+  [ROUTES.WHITEPAPER]: { name: 'Whitepaper', description: 'The economic coordination thesis' },
+  [ROUTES.GOVERNANCE]: { name: 'Governance', description: 'Solon-governed platform policies' },
+  [ROUTES.SUPPORT]: {
+    name: 'Support OrangeCat',
+    description: 'Back OrangeCat with Bitcoin',
+    keywords: 'fund back contribute',
+  },
+  [ROUTES.STUDY_BITCOIN]: {
+    name: 'Bitcoin guide',
+    description: 'Wallets, Lightning Network and self-custody',
+  },
+  [ROUTES.FEEDBACK]: {
+    name: 'Ask the Cat',
+    description: 'Ask anything, or tell us what could be better',
+  },
+  [ROUTES.FAQ]: {
+    name: 'FAQ',
+    description: 'Frequently asked questions',
+    keywords: 'help questions support',
+  },
+  [ROUTES.STATUS]: { name: 'Status', description: 'Current status of the platform services' },
+  [ROUTES.ECOSYSTEM]: {
+    name: 'The stack',
+    description: 'One stack, three pillars — and what binds them',
+  },
+  [ROUTES.COMMUNITY]: { name: 'Community', description: 'Public timeline and community posts' },
+  [ROUTES.STEAL]: {
+    name: 'Steal the cat',
+    description: 'MIT-licensed: take the code and own your copy',
+  },
+  [ROUTES.PRIVACY]: { name: 'Privacy', description: 'How we handle your data' },
+  [ROUTES.TERMS]: { name: 'Terms', description: 'Terms of service' },
+  [ROUTES.SECURITY]: { name: 'Security', description: 'Security practices and data protection' },
+} as const satisfies Record<string, { name: string; description: string; keywords?: string }>;
+
+export type PublicPageRoute = keyof typeof PUBLIC_PAGES;
+
+/** A public page as a navigation link: its one name, its one line, its route. */
+export function publicPageLink(route: PublicPageRoute): NavigationItem & { href: string } {
+  const page = PUBLIC_PAGES[route];
+  return { name: page.name, href: route, description: page.description };
+}
+
+/** The sibling products, from the pillar SSOT, as external links. */
+const ecosystemPillarLinks: Array<NavigationItem & { href: string; external: true }> =
+  ECOSYSTEM_PILLARS.filter(pillar => !pillar.isSelf).map(pillar => ({
+    name: pillar.title,
+    href: pillar.siteUrl,
+    external: true,
+    description: pillar.tagline,
+  }));
+
+/**
  * Header navigation configuration
  *
  * SSOT for the marketing/public header links. This nav is for anonymous
  * visitors only — signed-in users get ONE navigation system (the app
  * sidebar + header actions), never a second marketing nav on top of it.
+ *
+ * "Product" is what the product does; "About" is the company and its record.
+ * They used to be one menu called Product, and a top-level "Support" pointed
+ * at the page where people fund OrangeCat — not where they get help.
  */
 const headerNavigationConfig = {
   /** Navigation for unauthenticated visitors (marketing surfaces) */
@@ -103,61 +199,34 @@ const headerNavigationConfig = {
     {
       name: 'Product',
       children: [
-        { name: 'About & mission', href: ROUTES.ABOUT, description: 'Why OrangeCat exists' },
-        {
-          name: 'Roadmap',
-          href: ROUTES.ROADMAP,
-          description: 'What works now and what comes next',
-        },
-        { name: 'Changelog', href: ROUTES.CHANGELOG, description: 'Every shipped improvement' },
-        {
-          name: 'Docs',
-          href: ROUTES.DOCS,
-          description: 'Entities, Bitcoin payments, and security',
-        },
-        {
-          name: 'Whitepaper',
-          href: ROUTES.WHITEPAPER,
-          description: 'The economic coordination thesis',
-        },
-        {
-          name: 'Governance',
-          href: ROUTES.GOVERNANCE,
-          description: 'Solon-governed platform policies',
-        },
-        {
-          name: 'Pricing',
-          href: ROUTES.PRICING,
-          description: 'Cat plans — free, BYOK, credits, supporter',
-        },
+        publicPageLink(ROUTES.HOW_IT_WORKS),
+        publicPageLink(ROUTES.WHAT_YOU_CAN_DO),
+        publicPageLink(ROUTES.DISCOVER),
+        publicPageLink(ROUTES.PAY_LANDING),
       ],
     },
-    { name: 'Blog', href: ROUTES.BLOG, description: 'Guides and stories from the build' },
+    publicPageLink(ROUTES.PRICING),
+    publicPageLink(ROUTES.BLOG),
     {
-      name: 'Support',
-      href: ROUTES.SUPPORT,
-      description: 'Back OrangeCat with Bitcoin',
+      name: 'About',
+      children: [
+        publicPageLink(ROUTES.ABOUT),
+        publicPageLink(ROUTES.ROADMAP),
+        publicPageLink(ROUTES.CHANGELOG),
+        publicPageLink(ROUTES.DOCS),
+        publicPageLink(ROUTES.WHITEPAPER),
+        publicPageLink(ROUTES.GOVERNANCE),
+        publicPageLink(ROUTES.SUPPORT),
+      ],
     },
     {
       // The sibling products used to sit loose in the top bar, one link each,
       // with nothing saying they belong together. One menu, three pillars —
       // led by the page that explains the stack.
       name: 'Ecosystem',
-      children: [
-        {
-          name: 'The stack',
-          href: ROUTES.ECOSYSTEM,
-          description: 'One stack, three pillars — and what binds them',
-        },
-        ...ECOSYSTEM_PILLARS.filter(pillar => !pillar.isSelf).map(pillar => ({
-          name: pillar.title,
-          href: pillar.siteUrl,
-          external: true,
-          description: pillar.tagline,
-        })),
-      ],
+      children: [publicPageLink(ROUTES.ECOSYSTEM), ...ecosystemPillarLinks],
     },
-  ],
+  ] satisfies NavigationItem[],
 };
 
 /**
@@ -482,15 +551,21 @@ export interface MobileTabItem {
 export const mobileTabBar: MobileTabItem[] = [
   { name: 'Cat', href: ROUTES.DASHBOARD.CAT, icon: BrandMarkIcon },
   { name: 'Home', href: ROUTES.DASHBOARD.HOME, icon: Home },
+  // Same name as the sidebar's entry: one destination, one word.
   { name: 'Money', href: ROUTES.RECEIVE, icon: QrCode, primary: true, activeFor: MONEY_PATHS },
   { name: 'Create', href: ROUTES.CREATE, icon: Plus, opensCreate: true },
   { name: 'Messages', href: ROUTES.MESSAGES, icon: MessageSquare, counter: 'messages' },
 ];
 
+/**
+ * A visitor's bar: places to look, and the way in. Creating needs an account,
+ * so a raised Create slot here was the loudest control on Discover and led
+ * straight to the sign-in form. No slot is raised.
+ */
 export const mobileTabBarAnonymous: MobileTabItem[] = [
   { name: 'Home', href: ROUTES.HOME, icon: Home },
   { name: 'Explore', href: ROUTES.DISCOVER, icon: Compass },
-  { name: 'Create', href: ROUTES.CREATE, icon: Plus, primary: true, opensCreate: true },
+  { name: PUBLIC_PAGES[ROUTES.HOW_IT_WORKS].name, href: ROUTES.HOW_IT_WORKS, icon: Info },
   { name: 'Sign in', href: ROUTES.AUTH, icon: UserIcon },
 ];
 
@@ -508,46 +583,42 @@ export const bottomNavItems: NavItem[] = [];
  */
 export const footerNavigation = {
   product: [
-    { name: 'Discover', href: ROUTES.DISCOVER },
-    { name: 'Get paid', href: ROUTES.PAY_LANDING },
-    { name: 'How it works', href: ROUTES.HOW_IT_WORKS },
-    { name: 'What you can do', href: ROUTES.WHAT_YOU_CAN_DO },
+    publicPageLink(ROUTES.DISCOVER),
+    publicPageLink(ROUTES.PAY_LANDING),
+    publicPageLink(ROUTES.HOW_IT_WORKS),
+    publicPageLink(ROUTES.WHAT_YOU_CAN_DO),
     // /builders only redirects to bitbaum; say so in the link itself.
-    { name: 'Builders', href: ECOSYSTEM.studio.buildersUrl, external: true },
-    { name: 'Roadmap', href: ROUTES.ROADMAP },
-    { name: 'Changelog', href: ROUTES.CHANGELOG },
-    { name: 'Cat plans', href: ROUTES.PRICING },
+    { ...publicPageLink(ROUTES.BUILDERS), href: ECOSYSTEM.studio.buildersUrl, external: true },
+    publicPageLink(ROUTES.ROADMAP),
+    publicPageLink(ROUTES.CHANGELOG),
+    publicPageLink(ROUTES.PRICING),
   ],
   learn: [
-    { name: 'Documentation', href: ROUTES.DOCS },
-    { name: 'Whitepaper', href: ROUTES.WHITEPAPER },
-    { name: 'Blog', href: ROUTES.BLOG },
-    { name: 'Bitcoin guide', href: ROUTES.STUDY_BITCOIN },
+    publicPageLink(ROUTES.DOCS),
+    publicPageLink(ROUTES.WHITEPAPER),
+    publicPageLink(ROUTES.BLOG),
+    publicPageLink(ROUTES.STUDY_BITCOIN),
   ],
   support: [
-    { name: 'Ask the Cat', href: ROUTES.FEEDBACK },
-    { name: 'Support OrangeCat', href: ROUTES.SUPPORT },
-    { name: 'FAQ', href: ROUTES.FAQ },
-    { name: 'Status', href: ROUTES.STATUS },
+    publicPageLink(ROUTES.FEEDBACK),
+    publicPageLink(ROUTES.SUPPORT),
+    publicPageLink(ROUTES.FAQ),
+    publicPageLink(ROUTES.STATUS),
   ],
   ecosystem: [
-    { name: 'The stack', href: ROUTES.ECOSYSTEM },
+    publicPageLink(ROUTES.ECOSYSTEM),
     // Sibling products come from the pillar SSOT, so a fourth pillar (or a
     // moved domain) never has to be remembered here.
-    ...ECOSYSTEM_PILLARS.filter(pillar => !pillar.isSelf).map(pillar => ({
-      name: pillar.title,
-      href: pillar.siteUrl,
-      external: true,
-    })),
-    { name: 'Governance', href: ROUTES.GOVERNANCE },
-    { name: 'Community', href: ROUTES.COMMUNITY },
-    { name: 'About OrangeCat', href: ROUTES.ABOUT },
-    { name: 'Steal the cat', href: ROUTES.STEAL },
+    ...ecosystemPillarLinks,
+    publicPageLink(ROUTES.GOVERNANCE),
+    publicPageLink(ROUTES.COMMUNITY),
+    publicPageLink(ROUTES.ABOUT),
+    publicPageLink(ROUTES.STEAL),
   ],
   legal: [
-    { name: 'Privacy', href: ROUTES.PRIVACY },
-    { name: 'Terms', href: ROUTES.TERMS },
-    { name: 'Security', href: ROUTES.SECURITY },
+    publicPageLink(ROUTES.PRIVACY),
+    publicPageLink(ROUTES.TERMS),
+    publicPageLink(ROUTES.SECURITY),
   ],
   social: [
     {

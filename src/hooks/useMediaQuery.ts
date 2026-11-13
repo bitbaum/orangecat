@@ -39,8 +39,8 @@ export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') {
+    // Only run on client side (and where the API exists — jsdom has none)
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return;
     }
 

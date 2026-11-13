@@ -81,9 +81,31 @@ export function useHeaderScroll(options: UseHeaderScrollOptions = {}): UseHeader
       }
     };
 
+    // Keyboard focus that lands in the header brings it back. Tab past the
+    // last control on a page wraps to the header's own controls; the CSS keeps
+    // a focused header on screen, and this clears the hidden state so what is
+    // pinned below it (`.sticky-below-header`) moves back down as well.
+    const handleFocusIn = (event: FocusEvent) => {
+      if (event.target instanceof Element && event.target.closest('.app-header')) {
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
+        setIsHidden(false);
+      }
+    };
+
+    // Turned off (a wide screen keeps its header): show it now, not on the
+    // next scroll up.
+    if (!hideOnScrollDown) {
+      setIsHidden(false);
+    }
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('focusin', handleFocusIn);
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('focusin', handleFocusIn);
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
       }
