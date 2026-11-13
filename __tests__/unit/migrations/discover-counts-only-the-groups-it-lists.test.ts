@@ -19,7 +19,7 @@ import { FIXTURE_RPC_ARGS } from '@/services/search/public-search';
 const sql = readFileSync(
   join(
     process.cwd(),
-    'supabase/migrations/20261113160000_discover_counts_only_the_groups_it_lists.sql'
+    'supabase/migrations/20261113164500_discover_counts_only_the_groups_it_lists.sql'
   ),
   'utf8'
 ).replace(/^[ \t]*--.*$/gm, '');
