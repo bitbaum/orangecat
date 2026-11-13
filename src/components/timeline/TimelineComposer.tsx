@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Globe, Lock } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { usePostComposer } from '@/hooks/usePostComposerNew';
 import { useContentEditableEditor } from '@/hooks/useContentEditableEditor';
@@ -12,7 +11,6 @@ import {
   TIMELINE_CONTENT_LIMITS,
   TIMELINE_COPY,
   TIMELINE_SURFACE,
-  TIMELINE_VISIBILITY_OPTIONS,
   TIMELINE_AVATAR_SIZE,
 } from '@/config/timeline';
 import {
@@ -24,6 +22,7 @@ import {
   OfflineIndicator,
   ContextIndicator,
 } from './ComposerShared';
+import ComposerVisibilityControl from './ComposerVisibilityControl';
 import PostAiButton from './PostAiButton';
 import ReplyAiButton from './ReplyAiButton';
 import PostAiEditMenu from './PostAiEditMenu';
@@ -275,8 +274,13 @@ const TimelineComposer = React.memo(function TimelineComposer({
 
           <ComposerMessages error={postComposer.error} success={postComposer.postSuccess} />
 
-          <div className="mt-4 flex items-center justify-between border-t border-subtle pt-3">
-            <div className="flex flex-wrap items-center gap-2">
+          {/* Wraps: the send button drops to its own line before the row can
+              push the page wider than the phone (media#1). */}
+          <div
+            className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-3 border-t border-subtle pt-3"
+            data-testid="composer-actions"
+          >
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               {toolsExpanded && !parentEventId && (
                 <PostAiButton onDraft={postComposer.setContent} disabled={postComposer.isPosting} />
               )}
@@ -315,59 +319,18 @@ const TimelineComposer = React.memo(function TimelineComposer({
                   />
                 )}
 
-              {toolsExpanded &&
-                (simpleMode ? (
-                  <div className="flex items-center gap-2">
-                    {TIMELINE_VISIBILITY_OPTIONS.map(preset => {
-                      const Icon = preset.Icon;
-                      const isActive = postComposer.visibility === preset.key;
-                      return (
-                        <button
-                          key={preset.key}
-                          type="button"
-                          onClick={() => postComposer.setVisibility(preset.key)}
-                          disabled={postComposer.isPosting}
-                          className={cn(
-                            TIMELINE_SURFACE.chip,
-                            isActive && TIMELINE_SURFACE.chipActive
-                          )}
-                          title={preset.description}
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            <Icon className="w-4 h-4" />
-                            {preset.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      postComposer.setVisibility(
-                        postComposer.visibility === 'public' ? 'private' : 'public'
-                      )
-                    }
-                    disabled={postComposer.isPosting}
-                    className={TIMELINE_SURFACE.iconButton}
-                    title={
-                      postComposer.visibility === 'public'
-                        ? 'Public - Everyone can see'
-                        : 'Private - Only you can see'
-                    }
-                    aria-label={`Post visibility: ${postComposer.visibility}`}
-                  >
-                    {postComposer.visibility === 'public' ? (
-                      <Globe className="w-4 h-4" />
-                    ) : (
-                      <Lock className="w-4 h-4" />
-                    )}
-                  </button>
-                ))}
+              {/* A reply takes its audience from the post it answers. */}
+              {toolsExpanded && !parentEventId && (
+                <ComposerVisibilityControl
+                  simpleMode={simpleMode}
+                  visibility={postComposer.visibility}
+                  onChange={postComposer.setVisibility}
+                  disabled={postComposer.isPosting}
+                />
+              )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="ml-auto flex shrink-0 items-center gap-3">
               <OfflineIndicator isOnline={isOnline} />
               {!simpleMode && (
                 <CharacterCounter
