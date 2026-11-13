@@ -45,20 +45,14 @@ const renderSheet = (onReference = vi.fn(), onClose = vi.fn()) =>
   );
 
 describe('Your things', () => {
-  it("are three rows of chatkit's attach sheet, each saying what it opens", () => {
+  it('are only things that go into the message, never links that leave the chat', () => {
+    // "Context documents" and "Connections & keys" navigated away and lost the
+    // typed message (orangecat.ch, 2026-11-12).
     const openThings = vi.fn();
-    const go = vi.fn();
-    const rows = yourThingsRows({ openThings, go });
-    expect(rows.map(r => r.label)).toEqual([
-      'One of your things',
-      'Context documents',
-      'Connections & keys',
-    ]);
+    const rows = yourThingsRows({ openThings });
+    expect(rows.map(r => r.label)).toEqual(['One of your things']);
     rows[0].onPick();
     expect(openThings).toHaveBeenCalled();
-    rows[1].onPick();
-    rows[2].onPick();
-    expect(go).toHaveBeenCalledTimes(2);
   });
 
   it("the picker holds no file inputs (pictures and files are chatkit's)", () => {
