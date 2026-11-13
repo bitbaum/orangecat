@@ -7,14 +7,15 @@
  * microphone. Only the words and the data differ; the frame never does.
  */
 
-import type { ReactNode } from 'react';
-import { ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { useRef, type ReactNode } from 'react';
+import { AudioLines, ChevronLeft, MoreHorizontal } from 'lucide-react';
 import type { Attachment, AttachOptions } from '@bitbaum/chatkit';
 import {
   ChatScreen,
   ChatThread,
   Composer,
   type ChatMessageData,
+  type ComposerHandle,
   type LiveTurn,
   type Starter,
 } from '@bitbaum/chatkit/react';
@@ -24,12 +25,14 @@ import { COMPANION_COPY } from '@/config/companions';
 import { CHAT_VOICE } from '@/hooks/useDictation';
 import { ATTACHMENT_UNSUPPORTED_COPY } from '@/components/ai-chat/ModernChatPanel/attachments';
 import { COMPANION_ATTACH } from './attachments';
+import { SuggestionChips, type SuggestionChip } from './SuggestionChips';
 
 export function ChatFrame({
   title,
   face,
   onBack,
   onDetails,
+  onTalk,
   placeholder,
   messages,
   live,
@@ -41,6 +44,7 @@ export function ChatFrame({
   startersTitle,
   showSpeakers,
   aboveComposer,
+  chips,
   footnote,
   loading,
   attach = COMPANION_ATTACH,
@@ -49,6 +53,8 @@ export function ChatFrame({
   face: ReactNode;
   onBack: () => void;
   onDetails: () => void;
+  /** Opens a spoken conversation (chatkit's VoiceMode); the button is there only when given. */
+  onTalk?: () => void;
   placeholder: string;
   messages: ChatMessageData[];
   live: LiveTurn | null;
@@ -62,10 +68,13 @@ export function ChatFrame({
   startersTitle?: ReactNode;
   showSpeakers?: boolean;
   aboveComposer?: ReactNode;
+  /** One-tap starts of a sentence, above the box; the row is there only when given. */
+  chips?: readonly SuggestionChip[];
   footnote?: ReactNode;
   loading?: boolean;
 }) {
   const copy = COMPANION_COPY.talk;
+  const composer = useRef<ComposerHandle>(null);
   return (
     <ChatScreen
       fill="parent"
@@ -89,6 +98,11 @@ export function ChatFrame({
             <span className="max-w-[40vw] truncate text-base font-medium">{title}</span>
           </button>
           <span style={{ flex: 1 }} />
+          {onTalk && (
+            <button type="button" className="ck-glass" aria-label={copy.talk} onClick={onTalk}>
+              <AudioLines className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
           <button type="button" className="ck-glass" aria-label={copy.details} onClick={onDetails}>
             <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -104,6 +118,18 @@ export function ChatFrame({
             onStop={onStop}
             voice={CHAT_VOICE}
             attach={attach}
+            handleRef={composer}
+            above={
+              chips && chips.length > 0 ? (
+                <SuggestionChips
+                  chips={chips}
+                  onPick={draft => {
+                    composer.current?.setText(draft);
+                    composer.current?.focus();
+                  }}
+                />
+              ) : undefined
+            }
             attachmentOnlyText={copy.attach.only}
             labels={{ attachNotes: { wrongType: () => ATTACHMENT_UNSUPPORTED_COPY } }}
           />

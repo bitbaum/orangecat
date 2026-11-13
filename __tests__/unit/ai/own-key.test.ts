@@ -84,7 +84,7 @@ describe("the person's own key for a bot turn", () => {
       'src/services/ai/sendMessage.ts',
       'src/services/companions/answer.ts',
       'src/services/companions/routines.ts',
-      'src/app/api/ai-assistants/[id]/routine/route.ts',
+      'src/services/companions/routines-view.ts',
     ];
     for (const path of paths) {
       const src = readFileSync(path, 'utf8');

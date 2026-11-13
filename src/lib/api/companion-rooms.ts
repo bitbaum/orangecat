@@ -7,6 +7,7 @@
 import { CHAT_IMAGE_MAX_COUNT, chatImageSchema } from '@/services/cat/chat-images';
 import { z } from 'zod';
 import type { NextResponse } from 'next/server';
+import { findHue, findShape } from '@/config/companion-avatars';
 import { isFleetBotSlug } from '@/config/fleet-bots';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import {
@@ -38,9 +39,23 @@ export const newRoomSchema = z.object({
     .max(MAX_ROOM_MEMBERS, `A group chat holds at most ${MAX_ROOM_MEMBERS} companions`),
 });
 
-export const renameRoomSchema = z.object({
-  title: z.string().trim().min(1).max(ROOM_TITLE_MAX),
-});
+/**
+ * What a room's owner may change: its name, its face, or both. The face is
+ * one of our own shapes and colours by id (the server writes the URL), or
+ * null to wear the members' faces again.
+ */
+export const updateRoomSchema = z
+  .object({
+    title: z.string().trim().min(1).max(ROOM_TITLE_MAX).optional(),
+    face: z
+      .object({
+        shape: z.string().refine(id => Boolean(findShape(id)), 'Unknown shape'),
+        hue: z.string().refine(id => Boolean(findHue(id)), 'Unknown colour'),
+      })
+      .nullable()
+      .optional(),
+  })
+  .refine(v => v.title !== undefined || v.face !== undefined, 'Nothing to change');
 
 export const roundStateSchema = z.object({
   queue: z.array(z.string()).max(MAX_BOT_TURNS),

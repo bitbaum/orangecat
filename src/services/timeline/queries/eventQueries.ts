@@ -30,38 +30,31 @@ import { getTimeAgo, isEventRecent } from '@/services/timeline/formatters';
 import { ilikeAny } from '@/lib/db/likePattern';
 
 /**
- * Get event by ID
+ * Get event by ID.
+ *
+ * Read from the `timeline_events` TABLE, whose SELECT policy is the one rule
+ * for who may see a post. It used to try `enriched_timeline_events` first; that
+ * view runs with its owner's rights, so it ignores row-level security and
+ * handed any reader a followers-only or private post by id. The view's joined
+ * columns were never used here — enrichEventsForDisplay fetches the author,
+ * subject and target itself.
  */
 export async function getEventById(
   eventId: string
 ): Promise<{ success: boolean; event?: TimelineDisplayEvent; error?: string }> {
   try {
-    // Try enriched view first
-    const { data: event, error } = await supabase
-      .from(TIMELINE_TABLES.ENRICHED_VIEW)
+    const { data: rawEvent, error } = await supabase
+      .from(TIMELINE_TABLES.EVENTS)
       .select('*')
       .eq('id', eventId)
       .eq('is_deleted', false)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      // Fallback to raw table
-      const { data: rawEvent, error: rawError } = await supabase
-        .from(TIMELINE_TABLES.EVENTS)
-        .select('*')
-        .eq('id', eventId)
-        .eq('is_deleted', false)
-        .single();
-
-      if (rawError || !rawEvent) {
-        return { success: false, error: 'Event not found' };
-      }
-
-      const enriched = await enrichEventsForDisplay([rawEvent]);
-      return { success: true, event: enriched[0] };
+    if (error || !rawEvent) {
+      return { success: false, error: 'Event not found' };
     }
 
-    const enriched = await enrichEventsForDisplay([event]);
+    const enriched = await enrichEventsForDisplay([rawEvent]);
     return { success: true, event: enriched[0] };
   } catch (error) {
     logger.error('Error fetching event by ID', error, 'Timeline');

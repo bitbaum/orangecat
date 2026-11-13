@@ -24,6 +24,7 @@ import Input from '@/components/ui/Input';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { logger } from '@/utils/logger';
 import { Face } from './CompanionFace';
+import { FacePicker } from './FacePicker';
 
 export function NewCompanionSheet({
   open,
@@ -143,48 +144,7 @@ export function NewCompanionSheet({
           maxLength={100}
           autoFocus
         />
-        <fieldset>
-          <legend className="mb-2 text-sm text-fg-secondary">{copy.shape}</legend>
-          <div className="grid grid-cols-6 gap-2">
-            {AVATAR_SHAPES.map(s => (
-              <button
-                key={s.id}
-                type="button"
-                role="radio"
-                aria-checked={s.id === shapeId}
-                aria-label={s.id}
-                onClick={() => setShape(s.id)}
-                className={`flex h-11 w-11 items-center justify-center rounded-full ${
-                  s.id === shapeId ? 'ring-2 ring-fg-primary' : ''
-                }`}
-              >
-                <svg viewBox="0 0 100 100" width={32} height={32} aria-hidden="true">
-                  <path d={s.d} fill={fill} />
-                </svg>
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend className="mb-2 text-sm text-fg-secondary">{copy.colour}</legend>
-          <div className="grid grid-cols-6 gap-2">
-            {AVATAR_HUES.map(h => (
-              <button
-                key={h.id}
-                type="button"
-                role="radio"
-                aria-checked={h.id === hueId}
-                aria-label={h.id}
-                onClick={() => setHue(h.id)}
-                className={`flex h-11 w-11 items-center justify-center rounded-full ${
-                  h.id === hueId ? 'ring-2 ring-fg-primary' : ''
-                }`}
-              >
-                <span className="block h-7 w-7 rounded-full" style={{ backgroundColor: h.fill }} />
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <FacePicker shapeId={shapeId} hueId={hueId} onShape={setShape} onHue={setHue} />
         {error && <p className="mb-0 text-sm text-status-negative">{error}</p>}
         <Button type="submit" variant="primary" size="lg" disabled={!name.trim() || busy}>
           {busy ? copy.creating : copy.submit}

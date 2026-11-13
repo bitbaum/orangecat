@@ -4,7 +4,8 @@
  * A companion's face in the list and the header: the face it was given (drawn
  * inline when it is one of ours), its picture when it has another, otherwise
  * the face its name picks (config/companion-avatars.ts). A
- * group chat wears the faces of its first two members, one over the other.
+ * group chat wears the face its owner picked for it, otherwise the faces of
+ * its first two members, one over the other.
  */
 
 import Image from 'next/image';
@@ -57,15 +58,21 @@ export function Face({
   );
 }
 
-/** Two faces, one over the other: a group. */
+/** A group: its own face when it has one, else two members' faces, one over the other. */
 export function GroupFaces({
   members,
+  avatarUrl,
   size = 48,
 }: {
   members: ReadonlyArray<{ name: string; avatarUrl?: string | null }>;
+  /** The face the group was given; absent or null = its members' faces. */
+  avatarUrl?: string | null;
   size?: number;
 }) {
   const [a, b] = members;
+  if (avatarUrl) {
+    return <Face name="?" avatarUrl={avatarUrl} size={size} />;
+  }
   const small = Math.round(size * 0.68);
   if (!a) {
     return <Face name="?" size={size} />;

@@ -68,7 +68,7 @@ export function rowsFor(home: TalkHomeData, fleetPreviews: Record<string, string
       job: null,
       preview: r.preview ?? COMPANION_COPY.talk.groupLine(r.members.length),
       at: r.lastMessageAt ?? r.createdAt,
-      face: <GroupFaces members={r.members} />,
+      face: <GroupFaces members={r.members} avatarUrl={r.avatarUrl} />,
     });
   }
   for (const b of home.fleet.bots) {

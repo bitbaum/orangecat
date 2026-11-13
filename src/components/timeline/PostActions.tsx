@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, MessageCircle, Share2, ThumbsDown, Repeat2, type LucideIcon } from 'lucide-react';
-import { ShareModal } from '@/components/timeline/ShareModal';
+import { PostShareSheet } from '@/components/timeline/PostShareSheet';
+import { useAuth } from '@/hooks/useAuth';
 import { TimelineDisplayEvent } from '@/types/timeline';
 import { usePostInteractions } from '@/hooks/usePostInteractions';
 import { cn } from '@/lib/utils';
@@ -103,17 +104,13 @@ export function PostActions({
   onRepostClick,
   isReposting = false,
 }: PostActionsProps) {
-  const {
-    isLiking,
-    handleLike,
-    isDisliking,
-    handleDislike,
-    isSharing,
-    shareOpen,
-    handleShareOpen,
-    handleShareClose,
-    handleShareConfirm,
-  } = usePostInteractions({ event, onUpdate, onAddEvent });
+  const { isLiking, handleLike, isDisliking, handleDislike } = usePostInteractions({
+    event,
+    onUpdate,
+    onAddEvent,
+  });
+  const { user } = useAuth();
+  const [shareOpen, setShareOpen] = useState(false);
 
   // One place decides what a reply count is. It used to be an inline IIFE with
   // three fallbacks in this file only, so any other reader of the same number
@@ -169,10 +166,9 @@ export function PostActions({
       key: 'share',
       label: 'Share',
       icon: Share2,
-      active: !!event.userShared,
+      active: false,
       accent: 'text-fg-primary',
-      onClick: handleShareOpen,
-      disabled: isSharing,
+      onClick: () => setShareOpen(true),
       fillWhenActive: false,
     },
   ];
@@ -188,12 +184,12 @@ export function PostActions({
         ))}
       </div>
 
-      <ShareModal
+      <PostShareSheet
+        event={event}
         isOpen={shareOpen}
-        onClose={handleShareClose}
-        onShare={handleShareConfirm}
-        defaultText=""
-        isSubmitting={isSharing}
+        onClose={() => setShareOpen(false)}
+        signedIn={!!user}
+        onRepost={onRepostClick}
       />
     </>
   );

@@ -3,7 +3,6 @@
 import { TimelineDisplayEvent } from '@/types/timeline';
 import { useAuth } from '@/hooks/useAuth';
 import { usePostLikeDislike } from '@/hooks/usePostLikeDislike';
-import { usePostShare } from '@/hooks/usePostShare';
 import { usePostRepost } from '@/hooks/usePostRepost';
 
 interface UsePostInteractionsProps {
@@ -17,11 +16,6 @@ interface UsePostInteractionsReturn {
   handleLike: () => Promise<void>;
   isDisliking: boolean;
   handleDislike: () => Promise<void>;
-  isSharing: boolean;
-  shareOpen: boolean;
-  handleShareOpen: () => void;
-  handleShareClose: () => void;
-  handleShareConfirm: (shareText: string) => Promise<void>;
   isReposting: boolean;
   repostModalOpen: boolean;
   handleRepostClick: () => void;
@@ -38,8 +32,7 @@ export function usePostInteractions({
   const { user } = useAuth();
 
   const likeDislike = usePostLikeDislike({ event, onUpdate });
-  const share = usePostShare({ event, onUpdate });
   const repost = usePostRepost({ event, onAddEvent, userId: user?.id });
 
-  return { ...likeDislike, ...share, ...repost };
+  return { ...likeDislike, ...repost };
 }

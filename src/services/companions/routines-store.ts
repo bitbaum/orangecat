@@ -4,8 +4,9 @@
  * A routine is one line in a bot's details: every day at a time, in the
  * person's zone, or every few hours through the day, the bot is asked one
  * thing in its own thread and the reply lands there like any other message,
- * with a notification. One routine per
- * bot per person. This module reads and writes the row and knows when the
+ * with a notification. A bot
+ * holds a few of them per person (ROUTINES_PER_BOT): a morning brief and a
+ * site check are two routines, not one long prompt. This module reads and writes the row and knows when the
  * next run is; it reaches no model, so the API that sets a routine never
  * does either. The runner (routines.ts) is the one place a turn is sent.
  *
@@ -23,6 +24,17 @@ import type { OwnerNotice } from '@/services/loki/notify-owner';
 import { instantToWallTime, isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
 
 export const ROUTINE_PROMPT_MAX = 500;
+
+/** How many routines one bot holds for one person. */
+export const ROUTINES_PER_BOT = 5;
+
+/** A sixth routine was asked for; the route says so in the person's words. */
+export class RoutineLimitError extends Error {
+  constructor() {
+    super(`A bot can have ${ROUTINES_PER_BOT} routines`);
+    this.name = 'RoutineLimitError';
+  }
+}
 
 /** How often a routine may repeat through the day, in hours. */
 export const ROUTINE_INTERVALS = [1, 2, 4, 8, 12] as const;
@@ -140,51 +152,73 @@ export function toRoutine(r: RoutineRow): Routine {
   };
 }
 
-export async function getRoutine(
+/** The bot's routines for this person, in the order they were set. */
+export async function listRoutines(
   supabase: AnySupabaseClient,
   userId: string,
   assistantId: string
-): Promise<Routine | null> {
+): Promise<Routine[]> {
   const { data } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
     .select('*')
     .eq('user_id', userId)
     .eq('assistant_id', assistantId)
-    .maybeSingle();
-  return data ? toRoutine(data as RoutineRow) : null;
+    .order('created_at', { ascending: true })
+    .limit(ROUTINES_PER_BOT);
+  return ((data ?? []) as RoutineRow[]).map(toRoutine);
 }
 
-/** Set the bot's routine (one per bot per person); the next run is computed from now. */
-export async function upsertRoutine(
+/**
+ * Set a routine: a new one, or the one named by `routineId` changed. The
+ * next run is computed from now either way. A new one past the bot's limit
+ * is refused (RoutineLimitError); an id that is not this person's routine
+ * on this bot changes nothing and answers null.
+ */
+export async function saveRoutine(
   supabase: AnySupabaseClient,
   userId: string,
   assistantId: string,
   input: RoutineInput,
+  routineId?: string | null,
   now = new Date()
-): Promise<Routine> {
+): Promise<Routine | null> {
   if (!isTimeLocal(input.timeLocal) || !isValidTimeZone(input.zone)) {
     throw new Error('A routine needs a time of day and a zone');
   }
   const everyHours = isRoutineInterval(input.everyHours) ? input.everyHours : null;
-  const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
-    .upsert(
-      {
-        user_id: userId,
-        assistant_id: assistantId,
-        prompt: input.prompt.trim().slice(0, ROUTINE_PROMPT_MAX),
-        time_local: input.timeLocal,
-        zone: input.zone,
-        every_hours: everyHours,
-        enabled: true,
-        next_run_at: nextRoutineRun(now, {
-          timeLocal: input.timeLocal,
-          zone: input.zone,
-          everyHours,
-        }),
-        skipped_reason: null,
-        updated_at: now.toISOString(),
-      },
-      { onConflict: 'user_id,assistant_id' }
-    )
+  const fields = {
+    prompt: input.prompt.trim().slice(0, ROUTINE_PROMPT_MAX),
+    time_local: input.timeLocal,
+    zone: input.zone,
+    every_hours: everyHours,
+    enabled: true,
+    next_run_at: nextRoutineRun(now, {
+      timeLocal: input.timeLocal,
+      zone: input.zone,
+      everyHours,
+    }),
+    skipped_reason: null,
+    updated_at: now.toISOString(),
+  };
+  const table = fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES);
+  if (routineId) {
+    const { data, error } = await table
+      .update(fields)
+      .eq('id', routineId)
+      .eq('user_id', userId)
+      .eq('assistant_id', assistantId)
+      .select('*')
+      .maybeSingle();
+    if (error) {
+      throw error;
+    }
+    return data ? toRoutine(data as RoutineRow) : null;
+  }
+  const existing = await listRoutines(supabase, userId, assistantId);
+  if (existing.length >= ROUTINES_PER_BOT) {
+    throw new RoutineLimitError();
+  }
+  const { data, error } = await table
+    .insert({ user_id: userId, assistant_id: assistantId, ...fields })
     .select('*')
     .single();
   if (error) {
@@ -193,15 +227,21 @@ export async function upsertRoutine(
   return toRoutine(data as RoutineRow);
 }
 
+/** Stop one routine, or, with no id, every routine the bot has for this person. */
 export async function deleteRoutine(
   supabase: AnySupabaseClient,
   userId: string,
-  assistantId: string
+  assistantId: string,
+  routineId?: string | null
 ): Promise<void> {
-  const { error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
+  let query = fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
     .delete()
     .eq('user_id', userId)
     .eq('assistant_id', assistantId);
+  if (routineId) {
+    query = query.eq('id', routineId);
+  }
+  const { error } = await query;
   if (error) {
     throw error;
   }

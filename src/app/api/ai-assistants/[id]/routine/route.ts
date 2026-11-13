@@ -1,9 +1,13 @@
 /**
- * A bot's routine: when it writes first, and what it is asked.
+ * A bot's routines: when it writes first, and what it is asked each time.
  *
- * GET    /api/ai-assistants/[id]/routine — the routine, if any, and whether it can run
- * PUT    /api/ai-assistants/[id]/routine — set it: { prompt, timeLocal, zone, everyHours? }
- * DELETE /api/ai-assistants/[id]/routine — remove it
+ * GET    /api/ai-assistants/[id]/routine — its routines and whether they can run
+ * PUT    /api/ai-assistants/[id]/routine — { id?, prompt, timeLocal, zone, everyHours? }:
+ *        with an id that routine is changed, without one a new routine is added
+ * DELETE /api/ai-assistants/[id]/routine?routine=<id> — stop that one; with no id, all
+ *
+ * Every answer carries the whole list (`routines`), and `routine`, the first
+ * of it, which is what a client from before a bot could hold several reads.
  *
  * Owner only (RLS answers on the bot); a routine runs only on the owner's
  * own key, which `canRun` reports so the details can say so.
@@ -23,17 +27,16 @@ import {
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getValidationError, validateUUID } from '@/lib/api/validation';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { createApiKeyService } from '@/services/ai/api-key-service';
-import { readOwnKey } from '@/services/ai/own-key';
-import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import {
   ROUTINE_PROMPT_MAX,
+  ROUTINES_PER_BOT,
+  RoutineLimitError,
   deleteRoutine,
-  getRoutine,
   isRoutineInterval,
   isTimeLocal,
-  upsertRoutine,
+  saveRoutine,
 } from '@/services/companions/routines-store';
+import { routinesView } from '@/services/companions/routines-view';
 import { isValidTimeZone } from '@/utils/timezone';
 import { logger } from '@/utils/logger';
 
@@ -42,6 +45,8 @@ interface RouteContext {
 }
 
 const routineSchema = z.object({
+  /** The routine to change; absent = a new one. */
+  id: z.string().uuid().nullable().optional(),
   prompt: z.string().trim().min(1).max(ROUTINE_PROMPT_MAX),
   timeLocal: z.string().refine(isTimeLocal, 'A time of day as HH:MM'),
   zone: z.string().refine(isValidTimeZone, 'A time zone'),
@@ -69,13 +74,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest, context: Route
     if (!(await ownBot(request, id))) {
       return apiNotFound('Bot not found');
     }
-    const [routine, own] = await Promise.all([
-      getRoutine(request.supabase, request.user.id, id),
-      readOwnKey(createApiKeyService(request.supabase), request.user.id, () =>
-        sharedLokiOwnKeys(request.supabase, request.user.id)
-      ),
-    ]);
-    return apiSuccess({ routine, canRun: own.hasByok });
+    return apiSuccess(await routinesView(request.supabase, request.user.id, id));
   } catch (error) {
     logger.error('routine load failed', error, 'CompanionRoutineAPI');
     return apiInternalError('Failed to load the routine');
@@ -100,12 +99,16 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     if (!(await ownBot(request, id))) {
       return apiNotFound('Bot not found');
     }
-    const routine = await upsertRoutine(request.supabase, request.user.id, id, parsed.data);
-    const own = await readOwnKey(createApiKeyService(request.supabase), request.user.id, () =>
-      sharedLokiOwnKeys(request.supabase, request.user.id)
-    );
-    return apiSuccess({ routine, canRun: own.hasByok });
+    const { id: routineId, ...input } = parsed.data;
+    const saved = await saveRoutine(request.supabase, request.user.id, id, input, routineId);
+    if (!saved) {
+      return apiNotFound('Routine not found');
+    }
+    return apiSuccess(await routinesView(request.supabase, request.user.id, id));
   } catch (error) {
+    if (error instanceof RoutineLimitError) {
+      return apiBadRequest(`A bot can have ${ROUTINES_PER_BOT} routines. Stop one to add another.`);
+    }
     logger.error('routine save failed', error, 'CompanionRoutineAPI');
     return apiInternalError('Failed to save the routine');
   }
@@ -122,7 +125,14 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, context: Ro
     if (!rl.success) {
       return apiRateLimited('Too many requests. Please slow down.', retryAfterSeconds(rl));
     }
-    await deleteRoutine(request.supabase, request.user.id, id);
+    const routineId = new URL((request as NextRequest).url).searchParams.get('routine');
+    if (routineId) {
+      const bad = getValidationError(validateUUID(routineId, 'routine ID'));
+      if (bad) {
+        return bad;
+      }
+    }
+    await deleteRoutine(request.supabase, request.user.id, id, routineId);
     return apiNoContent();
   } catch (error) {
     logger.error('routine delete failed', error, 'CompanionRoutineAPI');
