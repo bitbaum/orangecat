@@ -54,11 +54,18 @@ export function useSettingsForm(user: User | null) {
     }
     setIsSubmittingEmail(true);
     try {
-      const { error } = await supabase.auth.updateUser({ email: formData.email });
+      const { data, error } = await supabase.auth.updateUser({ email: formData.email });
       if (error) {
         throw error;
       }
-      toast.success('Confirmation email sent! Please check your inbox.');
+      // A pending address waits on the emailed link; where the auth server
+      // confirms at once (and a "Start instantly" account converts on the
+      // spot) no email is sent, so none is promised.
+      toast.success(
+        data.user?.new_email
+          ? 'Confirmation email sent! Please check your inbox.'
+          : 'Email saved. It is now a way to sign in.'
+      );
     } catch (error: unknown) {
       toast.error(apiErrorMessage(error, 'Failed to update email.'));
     } finally {
