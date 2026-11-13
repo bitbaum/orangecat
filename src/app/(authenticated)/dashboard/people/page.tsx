@@ -12,6 +12,7 @@ import InviteBanner from './components/InviteBanner';
 import PeopleTabBar from './components/PeopleTabBar';
 import PersonCard from './components/PersonCard';
 import { usePeopleConnections } from './components/usePeopleConnections';
+import { useEveryoneSearch } from './components/useEveryoneSearch';
 import { ROUTES } from '@/config/routes';
 
 export default function PeoplePage() {
@@ -33,6 +34,9 @@ export default function PeoplePage() {
     handleUnfollow,
     isFollowing,
   } = usePeopleConnections(user?.id, hydrated);
+  // Everyone is searched on the server; the two follow lists are complete
+  // in the browser and filter there.
+  const everyone = useEveryoneSearch(activeTab === 'all' ? searchTerm : '');
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -50,11 +54,15 @@ export default function PeoplePage() {
   }
 
   const connections = (
-    activeTab === 'following' ? following : activeTab === 'followers' ? followers : allUsers
+    activeTab === 'following'
+      ? following
+      : activeTab === 'followers'
+        ? followers
+        : (everyone.results ?? allUsers)
   )
     .filter(conn => (activeTab === 'all' ? conn.profile.id !== user.id : true))
     .filter(conn => {
-      if (!searchTerm.trim()) {
+      if (!searchTerm.trim() || activeTab === 'all') {
         return true;
       }
       const q = searchTerm.trim().toLowerCase();
@@ -71,7 +79,11 @@ export default function PeoplePage() {
       ? "You haven't connected with anyone yet. Start building your Bitcoin network!"
       : activeTab === 'followers'
         ? 'No one has connected with you yet. Share your profile to get started!'
-        : 'No users found yet.';
+        : searchTerm.trim()
+          ? everyone.searching
+            ? 'Searching…'
+            : `Nobody found for "${searchTerm.trim()}".`
+          : 'No users found yet.';
 
   // The page's one primary action, in the header only: it used to appear in
   // the header, the invite card and the empty state at once.
