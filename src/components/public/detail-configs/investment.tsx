@@ -5,6 +5,7 @@ import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailP
 import { ROUTES } from '@/config/routes';
 import { INVESTMENT_PUBLIC_STATUSES } from '@/config/investments';
 import { formatCurrency } from '@/services/currency';
+import { renderChatMarkdown } from '@/utils/markdown';
 import {
   INVESTMENT_TYPE_LABELS,
   INVESTMENT_RISK_COLORS,
@@ -122,9 +123,12 @@ export const investmentDetailConfig: EntityDetailConfig = {
               <CardTitle className="text-lg">Terms & Conditions</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-fg-primary whitespace-pre-wrap">
-                {entity.terms as string}
-              </p>
+              {/* Terms are written in Markdown ("## The deal", "- Pre-revenue"):
+                  rendered, not printed as characters, on the section a backer
+                  reads before sending money that cannot come back. */}
+              <div className="text-sm text-fg-primary">
+                {renderChatMarkdown(entity.terms as string)}
+              </div>
             </CardContent>
           </Card>
         )}
