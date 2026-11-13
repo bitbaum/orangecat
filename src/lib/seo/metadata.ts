@@ -3,6 +3,7 @@ import { SITE_ORIGIN } from '@/config/site-origin';
 import { APP_NAME } from '@/config/brand';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
+import { OG_SIZE } from '@/lib/og/branding';
 import { metaDescription } from '@/lib/og/share-line';
 
 const BASE_URL = SITE_ORIGIN;
@@ -13,6 +14,15 @@ const BASE_URL = SITE_ORIGIN;
  * it — so the file-based image is lost unless the page names one again.
  */
 export const DEFAULT_SHARE_IMAGE = `${BASE_URL}/opengraph-image`;
+
+/**
+ * An entity's own share card (src/app/api/og/entity/[type]/[id]): its picture
+ * or its kind's icon, title, maker and one figure. A draft or private item
+ * renders the brand card there, so naming the URL leaks nothing.
+ */
+export function entityShareImage(type: EntityType, id: string): string {
+  return `${BASE_URL}/api/og/entity/${type}/${encodeURIComponent(id)}`;
+}
 
 /**
  * Feed autodiscovery. `alternates` is replaced, not merged, too: a page that
@@ -32,6 +42,11 @@ interface PageMetadataInput {
   path: string;
   /** Absolute image URL. Defaults to the branded root card. */
   image?: string | null;
+  /**
+   * True when `image` is one of our generated 1200×630 cards: the tags then
+   * carry its size and alt text, so previewers lay it out before fetching it.
+   */
+  imageIsCard?: boolean;
 }
 
 /**
@@ -46,11 +61,15 @@ export function pageMetadata({
   shareDescription = description,
   path,
   image,
+  imageIsCard = false,
 }: PageMetadataInput): Metadata {
   const url = `${BASE_URL}${path}`;
   const desc = metaDescription(description ?? null);
   const shareDesc = metaDescription(shareDescription ?? null);
-  const images = [image || DEFAULT_SHARE_IMAGE];
+  const images =
+    image && imageIsCard
+      ? [{ url: image, ...OG_SIZE, alt: shareTitle }]
+      : [image || DEFAULT_SHARE_IMAGE];
 
   return {
     title,
@@ -78,24 +97,25 @@ interface EntityMetadataInput {
   id: string;
   title: string;
   description?: string | null;
-  imageUrl?: string | null;
 }
 
 /**
  * Generate Next.js Metadata for an entity page.
- * Derives canonical URL from ENTITY_REGISTRY publicBasePath (SSOT).
+ * Derives canonical URL from ENTITY_REGISTRY publicBasePath (SSOT). The share
+ * image is always the entity's own card, which draws its picture when it has
+ * one: a bare cover photo said nothing about what or whose it was.
  */
 export function generateEntityMetadata({
   type,
   id,
   title,
   description,
-  imageUrl,
 }: EntityMetadataInput): Metadata {
   return pageMetadata({
     title,
     description: description?.trim() || `${title} on ${APP_NAME} - Bitcoin-native marketplace.`,
     path: `${ENTITY_REGISTRY[type].publicBasePath}/${id}`,
-    image: imageUrl,
+    image: entityShareImage(type, id),
+    imageIsCard: true,
   });
 }

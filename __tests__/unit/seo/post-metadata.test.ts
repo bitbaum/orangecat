@@ -46,7 +46,15 @@ describe('buildPostMetadata', () => {
       publishedTime: '2026-11-01T10:00:00.000Z',
       authors: ['Ada Lovelace'],
     });
-    expect(meta.twitter).toMatchObject({ card: 'summary' });
+    // A shared post shows a card (author, first words), not a bare text box.
+    const card = {
+      url: `${SITE}/api/og/post/${post('public').id}`,
+      width: 1200,
+      height: 630,
+      alt: meta.title,
+    };
+    expect(meta.openGraph).toMatchObject({ images: [card] });
+    expect(meta.twitter).toMatchObject({ card: 'summary_large_image', images: [card] });
   });
 
   it.each(['followers', 'private'])('puts none of a %s post into metadata', visibility => {
