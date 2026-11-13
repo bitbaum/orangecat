@@ -1,21 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
 import { ChevronDown, Plus } from 'lucide-react';
+import ProjectSelectionModal from '@/components/timeline/ProjectSelectionModal';
 import { ARTICLE_COPY } from '@/config/articles';
 import type { ProjectWalls } from './useProjectWalls';
 
-// The same sheet short posts use to cross-post to projects — one picker, one rule.
-const ProjectSelectionModal = dynamic(() => import('@/components/timeline/ProjectSelectionModal'), {
-  ssr: false,
-  loading: () => null,
-});
-
 /**
  * "Also post on a project": closed until wanted, a text button that says what
- * it does (the OptionalNoteField shape). Nothing at all when the writer has no
- * projects — a choice with nothing to choose is a dead end.
+ * it does (the OptionalNoteField shape), opening the sheet short posts use to
+ * cross-post (`ProjectSelectionModal`) — one picker, one rule. Nothing at all
+ * when the writer has no projects: a choice with nothing to choose is a dead end.
  */
 export default function ProjectWallsField({
   walls,
