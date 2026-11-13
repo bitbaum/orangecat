@@ -8,7 +8,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { AudioLines, ChevronLeft, MoreHorizontal } from 'lucide-react';
 import type { Attachment, AttachOptions } from '@bitbaum/chatkit';
 import {
   ChatScreen,
@@ -30,6 +30,7 @@ export function ChatFrame({
   face,
   onBack,
   onDetails,
+  onTalk,
   placeholder,
   messages,
   live,
@@ -49,6 +50,8 @@ export function ChatFrame({
   face: ReactNode;
   onBack: () => void;
   onDetails: () => void;
+  /** Opens a spoken conversation (chatkit's VoiceMode); the button is there only when given. */
+  onTalk?: () => void;
   placeholder: string;
   messages: ChatMessageData[];
   live: LiveTurn | null;
@@ -89,6 +92,11 @@ export function ChatFrame({
             <span className="max-w-[40vw] truncate text-base font-medium">{title}</span>
           </button>
           <span style={{ flex: 1 }} />
+          {onTalk && (
+            <button type="button" className="ck-glass" aria-label={copy.talk} onClick={onTalk}>
+              <AudioLines className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
           <button type="button" className="ck-glass" aria-label={copy.details} onClick={onDetails}>
             <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
           </button>
