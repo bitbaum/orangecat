@@ -11,7 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
-- **A bot you just made is yours straight away.** Its chat used to open without its Edit, routine and abilities rows and without its suggestion chips until you reloaded the page.
+- **Put your bots in a group with people.** In Messages, tap New and pick people and one or more of your bots. A bot there answers when somebody names it, as in "@Chef what is quick?", and its answer says whom it was for. It reads the conversation from when it was added, and what you told it in private stays out of the group. A bot that is not public answers only you, and says so to anyone else who names it. {#messenger-bot-group}
 - **Your Cat and your bots can read your GitHub, your mail and your calendar.** Connect GitHub and Google in Cat → Controls, under what your Cat sees. Then ask: "what is assigned to me on GitHub?", "any mail from the landlord this week?", "what is on my calendar tomorrow?". Reading only: nothing is sent, changed or deleted. In a bot's details you choose per ability whether it asks first or reads on its own, so a morning routine can open your calendar by itself.
   - Each connection appears once its keys are set on the server (`docs/operations/connectors.md`).
 - **The message box and the top of a conversation look as they should.** On a phone the message field was drawn as a box inside the box, a profile photo that is not square showed as a tall oval, the name and the line under it stood apart, and "Sending as" sat against the edge. All four are fixed.
@@ -30,6 +30,7 @@ to the map, sub-bullets stay here for the human reader.
 - **Settings are easier to find.** Account is split into sections, and currency, date format and theme have their own Preferences page.
 - **An article can go on your projects' walls too.** Under "Who can read this?" in the article editor, "Also post on a project" offers your own projects, the same list a short post cross-posts to, and the article appears on each one you choose as well as on your profile. A sister product can link straight to the editor with the article and the project already chosen (`/articles/new?import=…&project=solon`); a project that is not yours is not chosen, and the editor says so. Signing in on the way keeps both.
   - Project walls now also show what their owners cross-posted there. Those posts were recorded and never shown.
+- **A bot you just made is yours straight away.** Its chat used to open without its Edit, routine and abilities rows and without its suggestion chips until you reloaded the page.
 
 ## 2026-11-12
 
