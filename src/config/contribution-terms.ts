@@ -47,24 +47,42 @@ export function contributionRange(bounds?: ContributionBoundsBtc | null) {
   const minBtc = Math.max(PAY_MIN_BTC, bounds?.minBtc ?? 0);
   const maxBtc = Math.min(PAY_MAX_BTC, bounds?.maxBtc ?? PAY_MAX_BTC);
   const defaultBtc = Math.min(Math.max(DEFAULT_CONTRIBUTION_BTC, minBtc), maxBtc);
-  return { minBtc, maxBtc, defaultBtc };
+  // A stated minimum above what one payment can be (PAY_MAX_BTC) cannot be met
+  // online at all; the card says so instead of offering a field it refuses.
+  const unpayable = minBtc > maxBtc;
+  return { minBtc, maxBtc, defaultBtc, unpayable };
 }
 
 /** Half a satoshi: a converted amount that rounds to the bound is the bound. */
 const BOUND_TOLERANCE_BTC = 0.5e-8;
 
-/** Which stated bound an amount breaks, if any. */
+/**
+ * How far the Bitcoin rate may move between the page converting a fiat bound
+ * and the server converting it again. A payer who pays exactly the CHF 100
+ * minimum the page offered is not refused because the rate moved 0.1% while
+ * they read the terms. Bounds stated in BTC or SATS need none.
+ */
+export const FIAT_BOUND_DRIFT = 0.02;
+
+/** Which stated bound an amount breaks, if any. `drift` widens both bounds by that share. */
 export function breachedBound(
   amountBtc: number,
-  bounds?: ContributionBoundsBtc | null
+  bounds?: ContributionBoundsBtc | null,
+  drift = 0
 ): 'min' | 'max' | null {
   const minBtc = bounds?.minBtc ?? null;
   const maxBtc = bounds?.maxBtc ?? null;
-  if (minBtc !== null && amountBtc + BOUND_TOLERANCE_BTC < minBtc) {
+  if (minBtc !== null && amountBtc + BOUND_TOLERANCE_BTC < minBtc * (1 - drift)) {
     return 'min';
   }
-  if (maxBtc !== null && amountBtc - BOUND_TOLERANCE_BTC > maxBtc) {
+  if (maxBtc !== null && amountBtc - BOUND_TOLERANCE_BTC > maxBtc * (1 + drift)) {
     return 'max';
   }
   return null;
+}
+
+/** Whether a stated currency is fiat, whose BTC value moves with the rate. */
+export function isFiatBoundCurrency(currency: string): boolean {
+  const c = currency.toUpperCase();
+  return c !== 'BTC' && c !== 'SATS';
 }

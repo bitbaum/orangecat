@@ -124,22 +124,33 @@ export function PublicSupportPanel({
                 <span className="mt-1 block font-medium text-fg-primary">{statedTerms}</span>
               )}
             </p>
-            <AmountField
-              value={amountBtc}
-              onChange={setAmountBtc}
-              minBtc={range.minBtc}
-              maxBtc={range.maxBtc}
-              label="How much"
-            />
-            <Button
-              onClick={createIntent}
-              disabled={
-                !Number.isFinite(amountBtc) || amountBtc < range.minBtc || amountBtc > range.maxBtc
-              }
-              className="w-full min-h-11"
-            >
-              Create Bitcoin request
-            </Button>
+            {range.unpayable ? (
+              <p className="text-sm text-fg-primary">
+                This minimum is more than one online payment can be ({formatAmountBtc(range.maxBtc)}
+                ), so this {words.noun} cannot be paid here. Ask the owner how to take part.
+              </p>
+            ) : (
+              <>
+                <AmountField
+                  value={amountBtc}
+                  onChange={setAmountBtc}
+                  minBtc={range.minBtc}
+                  maxBtc={range.maxBtc}
+                  label="How much"
+                />
+                <Button
+                  onClick={createIntent}
+                  disabled={
+                    !Number.isFinite(amountBtc) ||
+                    amountBtc < range.minBtc ||
+                    amountBtc > range.maxBtc
+                  }
+                  className="w-full min-h-11"
+                >
+                  Create Bitcoin request
+                </Button>
+              </>
+            )}
             <p className="text-center text-xs text-fg-tertiary">{words.custody}</p>
           </>
         )}

@@ -16,6 +16,8 @@ const KNOWN_PAYMENT_ERRORS: Record<string, string> = {
   'outside allowed range': 'Payment amount is outside the allowed range for this seller.',
   'LNURL callback': 'Lightning Address invoice request failed. Try again later.',
   'not a pay request': 'Seller Lightning Address is not configured correctly.',
+  'exchange rate unavailable':
+    'We could not check the Bitcoin exchange rate just now, so we did not want to guess the amount. Please try again in a moment.',
 };
 
 /**

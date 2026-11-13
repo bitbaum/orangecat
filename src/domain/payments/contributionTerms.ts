@@ -9,7 +9,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   CONTRIBUTION_TERMS,
+  FIAT_BOUND_DRIFT,
   breachedBound,
+  isFiatBoundCurrency,
   type ContributionBoundsBtc,
 } from '@/config/contribution-terms';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
@@ -103,7 +105,13 @@ export async function assertWithinContributionTerms(
   if (!stated) {
     return;
   }
-  const breach = breachedBound(amountBtc, await resolveContributionBoundsBtc(entityType, row));
+  // The page converted a fiat bound at its own moment's rate; allow the rate to
+  // have moved since, so the exact minimum it offered is not refused.
+  const breach = breachedBound(
+    amountBtc,
+    await resolveContributionBoundsBtc(entityType, row),
+    isFiatBoundCurrency(stated.currency) ? FIAT_BOUND_DRIFT : 0
+  );
   if (breach === 'min' && stated.min !== null) {
     throw new ContributionOutsideTermsError(
       `The minimum ${terms.noun} is ${formatCurrency(stated.min, stated.currency)}.`

@@ -12,7 +12,11 @@ import { Button } from '@/components/ui/Button';
 import { Wallet } from 'lucide-react';
 import { PaymentDialog } from './PaymentDialog';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
-import { CONTRIBUTION_TERMS, type ContributionBoundsBtc } from '@/config/contribution-terms';
+import {
+  CONTRIBUTION_TERMS,
+  contributionRange,
+  type ContributionBoundsBtc,
+} from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
 interface PaymentButtonProps {
@@ -58,7 +62,9 @@ export function PaymentButton({
   const buttonText = isContribution
     ? (CONTRIBUTION_TERMS[entityType]?.verb ?? 'Support')
     : 'Buy Now';
-  const disabled = !sellerHasWallet;
+  // A minimum above what one payment can be cannot be met here (contributionRange).
+  const unpayable = isContribution && contributionRange(contributionBounds).unpayable;
+  const disabled = !sellerHasWallet || unpayable;
 
   return (
     <>
@@ -69,7 +75,11 @@ export function PaymentButton({
         size="lg"
       >
         <Wallet className="mr-2 h-4 w-4" />
-        {disabled ? 'No wallet connected' : buttonText}
+        {unpayable
+          ? 'Above the online payment limit'
+          : disabled
+            ? 'No wallet connected'
+            : buttonText}
         {!isContribution && priceBtc && !disabled && (
           <span className="ml-1 opacity-75">({formatPrice(priceBtc, priceCurrency)})</span>
         )}

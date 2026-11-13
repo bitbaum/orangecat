@@ -116,6 +116,7 @@ describe('contribution range', () => {
       minBtc: PAY_MIN_BTC,
       maxBtc: PAY_MAX_BTC,
       defaultBtc: DEFAULT_CONTRIBUTION_BTC,
+      unpayable: false,
     });
   });
 
