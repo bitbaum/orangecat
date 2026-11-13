@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-13
+
+- **Reply, react and ask for money in a conversation.** Hold a message (or right-click it) to answer that one message or put an emoji on it; an answer shows the line it answers, and tapping it takes you there. In a conversation with one person, the "+" now offers "Request money" (a card with the amount and a Pay button, marked paid when it is) and "Send money" (their pay page).
+
 ## 2026-11-12
 
 - **Your tasks are yours.** A task is seen and changed by the person who made it and by the person it was asked of; before, every signed-in account could see and complete it. Asking someone to do a task now means picking that person, instead of notifying every account on OrangeCat.
