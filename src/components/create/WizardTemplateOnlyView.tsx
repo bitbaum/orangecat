@@ -20,7 +20,7 @@ export function WizardTemplateOnlyView<T extends Record<string, unknown>>({
       <div className="mb-8">
         <button
           onClick={onCancel}
-          className="inline-flex items-center text-fg-secondary hover:text-fg-primary mb-4 transition-colors"
+          className="inline-flex items-center text-fg-secondary hover:text-fg-primary mb-4 transition-colors pointer-coarse:min-h-11"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Cancel

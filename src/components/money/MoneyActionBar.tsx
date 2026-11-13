@@ -13,10 +13,15 @@
  * once. `sticky` rather than `fixed` on purpose — a fixed bar overlaps the last
  * field when the software keyboard opens.
  *
- * `pb-[env(safe-area-inset-bottom)]` keeps it clear of the iPhone home
- * indicator; without it the tap target is partly under the system gesture area.
+ * It sticks ABOVE the bottom tab bar, not to the bottom of the viewport: the
+ * tab bar is fixed there and drawn over this bar, which left "Review payment"
+ * underneath it (the button's centre hit-tested to the tab bar's Receive
+ * button at 390x844, 390x667 and 320x568). While the software keyboard is up
+ * the tab bar is gone, so the bar goes back to the bottom edge and takes the
+ * iPhone home-indicator inset itself.
  */
 
+import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 import { cn } from '@/lib/utils';
 
 export function MoneyActionBar({
@@ -26,11 +31,15 @@ export function MoneyActionBar({
   children: React.ReactNode;
   className?: string;
 }) {
+  const keyboardOpen = useSoftKeyboard();
+
   return (
     <div
       className={cn(
-        'sticky bottom-0 z-10 -mx-4 mt-2 border-t border-default bg-surface-page/95 px-4 pt-3 backdrop-blur',
-        'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+        'sticky z-10 -mx-4 mt-2 border-t border-default bg-surface-page/95 px-4 pt-3 backdrop-blur',
+        keyboardOpen
+          ? 'bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]'
+          : 'bottom-[var(--mobile-nav-clearance)] pb-3',
         'sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:backdrop-blur-none',
         className
       )}

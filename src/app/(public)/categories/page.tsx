@@ -4,7 +4,7 @@ import { categories } from '@/config/categories';
 import Link from 'next/link';
 import { Palette, Code, GraduationCap, Building2, Heart, ArrowRight } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
@@ -30,15 +30,12 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen pt-20">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <PageHeading className="mb-4">Find Your Community</PageHeading>
-          <p className="text-xl text-fg-secondary max-w-2xl mx-auto">
-            Whether you&apos;re a creator, builder, educator, or organization, OrangeCat helps you
-            exchange, fund, lend, invest, and govern—without gatekeepers.
-          </p>
-        </div>
+    <div className="min-h-screen bg-surface-page">
+      <div className={PUBLIC_PAGE_WIDTH.wide}>
+        <PublicPageHeader
+          title="Find Your Community"
+          lede="Whether you're a creator, builder, educator, or organization, OrangeCat helps you exchange, fund, lend, invest, and govern—without gatekeepers."
+        />
 
         <div className="grid gap-12">
           {categories.map(category => {
@@ -87,7 +84,7 @@ export default function CategoriesPage() {
               Already have an account?{' '}
               <Link
                 href={ROUTES.AUTH_LOGIN}
-                className="text-fg-primary hover:text-fg-primary underline-offset-4 hover:underline"
+                className="text-fg-primary underline underline-offset-4"
               >
                 Sign in
               </Link>

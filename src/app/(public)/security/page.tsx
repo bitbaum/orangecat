@@ -2,8 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import { Shield, Lock, Eye, Server, Key, AlertTriangle } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import { CONTACT_EMAIL } from '@/config/brand';
 
 export const metadata = {
@@ -83,17 +84,11 @@ export default function SecurityPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
-            <Shield className="w-16 h-16 text-fg-secondary" />
-          </div>
-          <PageHeading className="mb-4">Security &amp; Privacy</PageHeading>
-          <p className="text-xl text-fg-secondary">
-            Your security and privacy are our top priorities at OrangeCat
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          title="Security & Privacy"
+          lede="Your security and privacy are our top priorities at OrangeCat"
+        />
 
         {/* Security Overview */}
         <div className="bg-surface-base rounded-lg shadow-sm border border-default p-6 mb-8">
@@ -162,12 +157,12 @@ export default function SecurityPage() {
         </div>
 
         {/* Contact Section — public-surface band per Loki pattern */}
-        <div className="mt-12 bg-surface-public text-fg-inverted rounded-lg p-6">
+        <div className="mt-12 bg-surface-public text-on-public rounded-lg p-6">
           <div className="text-center">
             <h3 className="font-heading tracking-display text-2xl font-bold mb-4">
               Security Concerns?
             </h3>
-            <p className="mb-6 text-fg-inverted/70">
+            <p className="mb-6 text-on-public/70">
               If you have security concerns or believe you&apos;ve discovered a vulnerability,
               please contact us immediately.
             </p>
@@ -178,12 +173,12 @@ export default function SecurityPage() {
                 </Button>
               </a>
               <Link href={ROUTES.DOCS}>
-                {/* Outline inverted for the dark band — the default outline
-                    (dark text/border) is invisible on bg-surface-public. */}
+                {/* The default outline (text-fg-primary, border-strong) is for
+                    themed surfaces; this band is dark in both themes. */}
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-fg-inverted/40 text-fg-inverted hover:bg-fg-inverted/10"
+                  className="border-on-public/40 text-on-public hover:bg-on-public/10"
                 >
                   View Documentation
                 </Button>

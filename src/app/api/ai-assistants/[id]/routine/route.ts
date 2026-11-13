@@ -24,6 +24,7 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getValidationError, validateUUID } from '@/lib/api/validation';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createApiKeyService } from '@/services/ai/api-key-service';
+import { readOwnKey } from '@/services/ai/own-key';
 import {
   ROUTINE_PROMPT_MAX,
   deleteRoutine,
@@ -67,11 +68,11 @@ export const GET = withAuth(async (request: AuthenticatedRequest, context: Route
     if (!(await ownBot(request, id))) {
       return apiNotFound('Bot not found');
     }
-    const [routine, key] = await Promise.all([
+    const [routine, own] = await Promise.all([
       getRoutine(request.supabase, request.user.id, id),
-      createApiKeyService(request.supabase).getDecryptedKey(request.user.id, 'openrouter'),
+      readOwnKey(createApiKeyService(request.supabase), request.user.id),
     ]);
-    return apiSuccess({ routine, canRun: Boolean(key) });
+    return apiSuccess({ routine, canRun: own.hasByok });
   } catch (error) {
     logger.error('routine load failed', error, 'CompanionRoutineAPI');
     return apiInternalError('Failed to load the routine');
@@ -97,11 +98,8 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
       return apiNotFound('Bot not found');
     }
     const routine = await upsertRoutine(request.supabase, request.user.id, id, parsed.data);
-    const key = await createApiKeyService(request.supabase).getDecryptedKey(
-      request.user.id,
-      'openrouter'
-    );
-    return apiSuccess({ routine, canRun: Boolean(key) });
+    const own = await readOwnKey(createApiKeyService(request.supabase), request.user.id);
+    return apiSuccess({ routine, canRun: own.hasByok });
   } catch (error) {
     logger.error('routine save failed', error, 'CompanionRoutineAPI');
     return apiInternalError('Failed to save the routine');

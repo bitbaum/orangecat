@@ -28,7 +28,7 @@ export default function ProfileArticlesTab({
           {isOwnProfile && (
             <Link
               href={ROUTES.ARTICLES_NEW}
-              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent-warm hover:underline"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-fg-primary underline underline-offset-4 hover:text-fg-secondary"
             >
               <PenLine className="h-4 w-4" />
               {ARTICLE_COPY.index.write}

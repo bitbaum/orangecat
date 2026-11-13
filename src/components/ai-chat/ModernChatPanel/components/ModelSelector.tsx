@@ -329,7 +329,7 @@ export function ModelSelector({
                         <div className="truncate text-sm text-fg-secondary">{model.name}</div>
                         <div className="truncate text-xs text-fg-tertiary">{model.provider}</div>
                       </div>
-                      <span className="flex-shrink-0 text-xs font-medium text-accent-warm">
+                      <span className="flex-shrink-0 text-xs font-medium text-fg-primary">
                         Unlock
                       </span>
                     </Link>
@@ -389,7 +389,7 @@ export function ModelSelector({
                 href={ROUTES.SETTINGS_AI}
                 role="menuitem"
                 onClick={() => setIsOpen(false)}
-                className="flex-shrink-0 border-t border-subtle px-4 py-2.5 text-xs font-medium text-accent-warm hover:bg-surface-raised"
+                className="flex-shrink-0 border-t border-subtle px-4 py-2.5 text-xs font-medium text-fg-primary underline underline-offset-4 hover:bg-surface-raised"
               >
                 Add credits or connect a key to unlock →
               </Link>

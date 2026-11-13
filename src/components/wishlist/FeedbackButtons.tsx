@@ -98,7 +98,8 @@ export function FeedbackButtons({
           size="sm"
           className={cn(
             sizeClasses[size],
-            userFeedback === 'like' && 'bg-status-positive hover:bg-status-positive/90 text-white'
+            userFeedback === 'like' &&
+              'bg-status-positive hover:bg-status-positive/90 text-fg-inverted'
           )}
           onClick={handleLikeClick}
           disabled={disabled}
@@ -114,7 +115,7 @@ export function FeedbackButtons({
           className={cn(
             sizeClasses[size],
             userFeedback === 'dislike' &&
-              'bg-status-negative hover:bg-status-negative/90 text-white'
+              'bg-status-negative hover:bg-status-negative/90 text-fg-inverted'
           )}
           onClick={handleDislikeClick}
           disabled={disabled}

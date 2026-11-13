@@ -45,7 +45,7 @@ export function SlideList({
           </button>
           {i === selected && (
             <div className="mt-1 flex justify-between">
-              <span className="self-center text-xs text-fg-muted">{i + 1}</span>
+              <span className="self-center text-xs text-fg-tertiary">{i + 1}</span>
               <span className="flex">
                 <Button
                   variant="ghost"

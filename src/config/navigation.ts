@@ -127,8 +127,12 @@ const headerNavigationConfig = {
         },
       ],
     },
-    { name: 'Blog', href: ROUTES.BLOG },
-    { name: 'Support', href: ROUTES.SUPPORT },
+    { name: 'Blog', href: ROUTES.BLOG, description: 'Guides and stories from the build' },
+    {
+      name: 'Support',
+      href: ROUTES.SUPPORT,
+      description: 'Back OrangeCat with Bitcoin',
+    },
     {
       // The sibling products used to sit loose in the top bar, one link each,
       // with nothing saying they belong together. One menu, three pillars —
@@ -483,7 +487,6 @@ export const footerNavigation = {
     { name: 'Support OrangeCat', href: ROUTES.SUPPORT },
     { name: 'FAQ', href: ROUTES.FAQ },
     { name: 'Status', href: ROUTES.STATUS },
-    { name: 'Security', href: ROUTES.SECURITY },
   ],
   ecosystem: [
     { name: 'The stack', href: ROUTES.ECOSYSTEM },
@@ -516,15 +519,6 @@ export const footerNavigation = {
       icon: GitHubIcon,
     },
   ],
-  // Compact bottom-bar links (rendered next to the copyright line in
-  // <Footer>). Kept in config so adding/removing one is a config-only
-  // change. External URLs are marked with `external: true`.
-  bottomBar: [
-    { name: 'Documentation', href: ROUTES.DOCS },
-    { name: 'Source Code', href: 'https://github.com/bitbaum/orangecat', external: true },
-    { name: 'Roadmap', href: ROUTES.ROADMAP },
-    { name: 'Support', href: ROUTES.SUPPORT },
-  ] as { name: string; href: string; external?: boolean }[],
 };
 
 /**

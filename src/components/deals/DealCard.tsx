@@ -53,7 +53,7 @@ export function DealCard({ deal }: { deal: MyDeal }) {
 
         {deal.myReview && (
           <section aria-label="Your review" className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-label text-fg-muted">
+            <p className="text-xs font-medium uppercase tracking-label text-fg-tertiary">
               Your review
             </p>
             <ReviewAnswers answers={deal.myReview.answers} body={deal.myReview.body} />
@@ -62,7 +62,7 @@ export function DealCard({ deal }: { deal: MyDeal }) {
 
         {deal.theirReview && (
           <section aria-label={`${who}'s review`} className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-label text-fg-muted">
+            <p className="text-xs font-medium uppercase tracking-label text-fg-tertiary">
               {who}&apos;s review of you
             </p>
             <ReviewAnswers answers={deal.theirReview.answers} body={deal.theirReview.body} />
@@ -89,14 +89,14 @@ export function DealCard({ deal }: { deal: MyDeal }) {
               <Button size="sm" onClick={() => setReviewing(true)}>
                 Review {who}
               </Button>
-              <span className="text-sm text-fg-muted">
+              <span className="text-sm text-fg-tertiary">
                 Open until {formatDate(deal.review_closes_at)}
               </span>
             </div>
           ))}
 
         {!deal.myReview && !windowOpen && (
-          <p className="text-sm text-fg-muted">
+          <p className="text-sm text-fg-tertiary">
             The review window closed on {formatDate(deal.review_closes_at)}.
           </p>
         )}

@@ -29,6 +29,7 @@ import {
 } from '@/services/ai';
 import { servingChain } from '@/services/cat/provider-catalog';
 import { markLinkDown, pruneDownLinks } from '@/services/ai/link-health';
+import { cappedService } from '@/services/ai/vendor-spend-cap';
 
 import type { AiService } from './types';
 
@@ -105,7 +106,9 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
     const key = process.env[link.provider.keyEnv]?.trim() ?? '';
     return {
       providerId: link.provider.id,
-      aiService: serviceFor(link, key),
+      // The platform pays for this key: every call is counted against the
+      // vendor's daily cap first (vendor-spend-cap). Others pass unchanged.
+      aiService: cappedService(serviceFor(link, key), key),
       defaultModel: link.model,
       toolEndpoint: `${link.provider.baseUrl}/chat/completions`,
       toolKey: key,

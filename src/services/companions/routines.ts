@@ -17,6 +17,7 @@ import { NotificationService } from '@/lib/services/notifications';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
 import { createApiKeyService } from '@/services/ai/api-key-service';
+import { readOwnKey } from '@/services/ai/own-key';
 import { sendAiMessage } from '@/services/ai/sendMessage';
 import { notifyOwnerViaLoki } from '@/services/loki/notify-owner';
 import { logger } from '@/utils/logger';
@@ -62,7 +63,7 @@ export async function runDueRoutines(
         everyHours: row.every_hours,
         dueAt: row.next_run_at,
       });
-      const hasOwnKey = Boolean(await keys.getDecryptedKey(row.user_id, 'openrouter'));
+      const hasOwnKey = (await readOwnKey(keys, row.user_id)).hasByok;
       const reason = skipReason(hasOwnKey);
       if (reason) {
         await fromTable(admin, DATABASE_TABLES.COMPANION_ROUTINES)

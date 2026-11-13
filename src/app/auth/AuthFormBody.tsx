@@ -200,7 +200,7 @@ export function AuthFormBody({
         <p className="text-center text-sm">
           <Link
             href={ROUTES.AUTH_NO_EMAIL}
-            className="text-fg-secondary underline hover:text-fg-primary"
+            className="inline-flex min-h-11 items-center text-fg-secondary underline hover:text-fg-primary"
           >
             Can&apos;t get to your email?
           </Link>

@@ -8,6 +8,7 @@ import { renderMarkdownToReact } from '@/utils/markdown';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 import { getExternalAttribution } from '@/config/external-publish';
 import { ROUTES } from '@/config/routes';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 interface PostContentProps {
   event: TimelineDisplayEvent;
@@ -72,7 +73,10 @@ export function PostContent({ event }: PostContentProps) {
                 window.history.replaceState({}, '', url.toString());
                 const el = document.querySelector(`[data-event-id="${event.parentEventId}"]`);
                 if (el) {
-                  (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  (el as HTMLElement).scrollIntoView({
+                    behavior: scrollBehavior(),
+                    block: 'center',
+                  });
                 }
               } catch {}
             }}
@@ -130,7 +134,7 @@ export function PostContent({ event }: PostContentProps) {
           {displayContent && (
             <p className="mt-1 line-clamp-2 text-sm text-fg-secondary">{displayContent}</p>
           )}
-          <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-warm">
+          <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-fg-primary">
             Read article
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/article:translate-x-0.5" />
           </span>
