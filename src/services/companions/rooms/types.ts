@@ -36,6 +36,8 @@ export interface RoomMessage {
 export interface RoomSummary {
   id: string;
   title: string;
+  /** The face its owner picked for it; null = it wears its members' faces. */
+  avatarUrl: string | null;
   createdAt: string;
   lastMessageAt: string | null;
   members: RoomMember[];
