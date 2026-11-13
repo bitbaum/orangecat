@@ -20,8 +20,13 @@ export const CONTRIBUTION_QUICK_AMOUNTS_BTC = [0.00001, 0.00005, 0.0001, 0.0005,
 /** Round amounts in the payer's own currency, converted to BTC when chosen. */
 export const CONTRIBUTION_QUICK_AMOUNTS_FIAT = [1, 5, 10, 20, 50] as const;
 
-/** Default contribution when the payer hasn't chosen an amount yet. */
-export const DEFAULT_CONTRIBUTION_BTC = 0.0001;
+/**
+ * Where an amount field opens when the payer hasn't chosen: empty, as /pay
+ * does. It was 0.0001 BTC, which a franc reader met as "Tip CHF 5.77" — a
+ * BTC round number turned into an unround franc that read as a mistake. The
+ * suggestions underneath are round in the payer's own currency.
+ */
+export const DEFAULT_CONTRIBUTION_BTC = 0;
 
 /**
  * Labeled support tiers for public pay panels. Roughly 10 / 50 / 200 in USD at

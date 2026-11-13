@@ -27,6 +27,11 @@ export const REQUEST_COPY = {
   noteAdd: 'Add a note',
   notePlaceholder: 'Dinner, rent, tickets…',
 
+  /** Asking without a wallet would leave the payer nowhere to pay into. */
+  noWalletTitle: 'Add a wallet to get paid',
+  noWalletBody: 'A request is paid straight into your own wallet. Add one first, then ask.',
+  noWalletCta: 'Add a wallet',
+
   submit: 'Send request',
   submitting: 'Sending…',
   sent: 'Request sent',

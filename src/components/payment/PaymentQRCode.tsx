@@ -18,6 +18,8 @@
  * screen also says the BTC that must arrive (detection needs all of it: a payer
  * who converts the fiat headline and rounds down is never seen) and shows the
  * address, and Copy copies the address. Open in wallet keeps the whole URI.
+ * On Lightning the BTC figure sits under the headline too: the wallet shows
+ * Bitcoin, and a franc headline alone gave the payer nothing to check it by.
  */
 
 import { useEffect, useState } from 'react';
@@ -67,7 +69,7 @@ export function PaymentQRCode({
   expiresInSeconds,
 }: PaymentQRCodeProps) {
   const { copied, copy } = useCopyToClipboard();
-  const { formatAmountBtc } = useDisplayCurrency();
+  const { formatAmountBtc, displayCurrency } = useDisplayCurrency();
   const [secondsLeft, setSecondsLeft] = useState(expiresInSeconds ?? 0);
   const [codeShown, setCodeShown] = useState(false);
 
@@ -108,10 +110,18 @@ export function PaymentQRCode({
         <p className="mb-0 font-heading text-3xl font-semibold tracking-display text-fg-primary">
           {formatAmountBtc(amountBtc)}
         </p>
-        {onchainAddress && (
+        {onchainAddress ? (
           <p className="mb-0 mt-1 text-sm tabular-nums text-fg-primary">
             {COPY.mustArrive(displayBTC(amountBtc))}
           </p>
+        ) : (
+          // The wallet that opens next shows Bitcoin, not francs: the figure
+          // it will show is here too, so the payer can check it.
+          displayCurrency !== 'BTC' && (
+            <p className="mb-0 mt-1 text-sm tabular-nums text-fg-secondary">
+              {displayBTC(amountBtc)}
+            </p>
+          )
         )}
         <p className={cn('mt-1 text-sm', urgent ? 'text-status-negative' : 'text-fg-secondary')}>
           {methodLabel} · {deadline}

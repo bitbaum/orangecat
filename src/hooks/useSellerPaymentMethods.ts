@@ -29,6 +29,9 @@ export function useSellerPaymentMethods(sellerProfileId: string | null): SellerP
     }
 
     let cancelled = false;
+    // A new profile is unknown until asked: never answer for it with the
+    // previous one's verdict (or the "no wallet" given while there was none).
+    setInfo({ hasWallet: false, loading: true });
 
     async function check() {
       try {

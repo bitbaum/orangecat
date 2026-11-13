@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Bitcoin, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +11,7 @@ import {
   type ContributionBoundsBtc,
 } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useChosenAmountBtc } from '@/components/money/useOpeningAmountBtc';
 import { usePublicPayment } from '@/hooks/usePublicPayment';
 import { PublicPaymentProgress } from './PublicPaymentProgress';
 import type { EntityType } from '@/config/entity-registry';
@@ -90,7 +90,7 @@ export function PublicSupportPanel({
     ...(title && { title }),
   };
   const range = contributionRange(bounds);
-  const [amountBtc, setAmountBtc] = useState<number>(range.defaultBtc);
+  const [amountBtc, setAmountBtc] = useChosenAmountBtc(range);
   const { formatAmountBtc } = useDisplayCurrency();
   const payment = usePublicPayment();
   const statedTerms = [

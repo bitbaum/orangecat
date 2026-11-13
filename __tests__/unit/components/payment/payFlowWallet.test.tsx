@@ -116,6 +116,24 @@ describe('PayFlow — pay from my wallet', () => {
     const pay = screen.getByRole('button', { name: /^Pay / });
     expect(pay.hasAttribute('disabled')).toBe(false);
   });
+
+  it('keeps a pay link’s "For" note on the code step, where the payer decides', async () => {
+    canPayFromWallet = false;
+    render(
+      <PayFlow
+        username="mao"
+        recipientName="Mao"
+        initialCanReceive
+        initialAmountBtc={0.0002}
+        words={PAY_COPY}
+        noteSlot={<p>For: Coffee</p>}
+      />
+    );
+    expect(screen.getByText('For: Coffee')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Pay / }));
+    expect(await screen.findByTestId('the-code')).toBeTruthy();
+    expect(screen.getByText('For: Coffee')).toBeTruthy();
+  });
 });
 
 describe('PayFlow — the action waits for an amount it can pay', () => {

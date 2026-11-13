@@ -198,6 +198,8 @@ export function PayFlow({
             {words.walletDeclined(flow.walletNote)}
           </p>
         )}
+        {/* What the payment is for stays on the step where the payer decides. */}
+        {noteSlot}
         <PaymentQRCode
           qrData={invoice.qrData}
           methodLabel={invoice.methodLabel}

@@ -406,6 +406,20 @@ describe('investment return cadence', () => {
     );
     expect(screen.queryByText('Return Paid')).not.toBeInTheDocument();
   });
+
+  it('renders the Markdown terms instead of printing "## The deal"', () => {
+    render(
+      <div>
+        {investmentDetailConfig.renderDetails?.({
+          ...base,
+          terms: '## The deal\n- Pre-revenue\n- Ten years',
+        })}
+      </div>
+    );
+    expect(screen.getByText('The deal')).toBeInTheDocument();
+    expect(screen.queryByText(/## The deal/)).not.toBeInTheDocument();
+    expect(screen.getByText('Pre-revenue').tagName).toBe('LI');
+  });
 });
 
 describe('event page visibility', () => {

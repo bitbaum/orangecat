@@ -15,6 +15,7 @@ import { PublicSupportPanel } from '@/components/payment/PublicSupportPanel';
 import { PaymentDialog } from '@/components/payment/PaymentDialog';
 import { breachedBound, contributionRange } from '@/config/contribution-terms';
 import { DEFAULT_CONTRIBUTION_BTC } from '@/config/payment-presets';
+import { roundUpToWholeUnit } from '@/components/money/useOpeningAmountBtc';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
 
 const amountFieldProps = vi.fn();
@@ -102,12 +103,24 @@ describe('the signed-in dialog', () => {
 });
 
 describe('contribution range', () => {
-  it('opens at the nearest bound when the usual amount is outside the terms', () => {
+  it('opens at a stated minimum, and empty otherwise', () => {
     expect(contributionRange({ minBtc: 0.001, maxBtc: null }).defaultBtc).toBe(0.001);
-    expect(contributionRange({ minBtc: null, maxBtc: 0.00005 }).defaultBtc).toBe(0.00005);
-    expect(contributionRange({ minBtc: 0.00001, maxBtc: null }).defaultBtc).toBe(
-      DEFAULT_CONTRIBUTION_BTC
-    );
+    expect(contributionRange({ minBtc: 0.00001, maxBtc: null }).defaultBtc).toBe(0.00001);
+    expect(contributionRange({ minBtc: null, maxBtc: 0.00005 }).defaultBtc).toBe(0);
+    expect(DEFAULT_CONTRIBUTION_BTC).toBe(0);
+  });
+
+  it('rounds an opening minimum up to a whole unit of the payer’s currency', () => {
+    // 1 BTC = CHF 57,780: the 0.001 BTC minimum reads CHF 57.78.
+    const toFiat = (btc: number) => btc * 57780;
+    const toBtc = (chf: number) => chf / 57780;
+    const opened = roundUpToWholeUnit(0.001, 0.01, toFiat, toBtc);
+    expect(opened).toBeGreaterThanOrEqual(0.001);
+    expect(toFiat(opened)).toBeCloseTo(58, 2);
+    // Never past the maximum, never conjured from nothing, never without a rate.
+    expect(roundUpToWholeUnit(0.001, 0.001, toFiat, toBtc)).toBe(0.001);
+    expect(roundUpToWholeUnit(0, 0.01, toFiat, toBtc)).toBe(0);
+    expect(roundUpToWholeUnit(0.001, 0.01, () => 0, toBtc)).toBe(0.001);
   });
 
   it('keeps the terms inside what a payment can be at all', () => {
