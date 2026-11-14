@@ -9,6 +9,7 @@ import { formatRelativeTime } from '@/utils/dates';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { TIMELINE_CONTENT_LIMITS, TIMELINE_SURFACE } from '@/config/timeline';
 import { cn } from '@/lib/utils';
+import { postAuthor, postAuthorSource } from '@/utils/byline';
 
 const QUOTE_MAX_LENGTH = TIMELINE_CONTENT_LIMITS.quote;
 
@@ -57,16 +58,8 @@ export function RepostModal({
 
   // Prefer original author info when available
   const metadata = event.metadata as RepostMetadata | undefined;
-  const originalAuthor = {
-    name: metadata?.original_actor_name || event.actor.name || 'User',
-    username:
-      metadata?.original_actor_username ||
-      event.actor.username ||
-      metadata?.original_actor_id ||
-      '',
-    id: metadata?.original_actor_id || event.actor.id,
-    avatar: metadata?.original_actor_avatar || event.actor.avatar || null,
-  };
+  const originalSource = postAuthorSource(event.actor, metadata, true);
+  const originalAuthor = postAuthor(originalSource);
 
   // Extract original body, stripping legacy separators
   const originalBody = (() => {
@@ -190,30 +183,24 @@ export function RepostModal({
             <div className="rounded-md border border-subtle bg-surface-raised p-3 transition-colors hover:bg-surface-raised/80">
               <div className="flex items-start gap-3">
                 <AvatarLink
-                  username={originalAuthor.username || null}
-                  userId={originalAuthor.id}
-                  avatarUrl={originalAuthor.avatar}
-                  name={originalAuthor.name}
+                  username={originalSource.username}
+                  userId={originalSource.id}
+                  avatarUrl={originalSource.avatar}
+                  name={originalSource.name}
                   size={36}
                   className="flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                     <Link
-                      href={
-                        originalAuthor.username
-                          ? `/profiles/${originalAuthor.username}`
-                          : `/profiles/${originalAuthor.id}`
-                      }
+                      href={originalAuthor.profileHref ?? '#'}
                       className="font-semibold text-sm text-fg-primary hover:underline"
                     >
                       {originalAuthor.name}
                     </Link>
-                    {originalAuthor.username && (
+                    {originalAuthor.handle && (
                       <>
-                        <span className="text-fg-secondary text-sm">
-                          @{originalAuthor.username}
-                        </span>
+                        <span className="text-fg-secondary text-sm">@{originalAuthor.handle}</span>
                         <span className="text-fg-tertiary text-sm">·</span>
                       </>
                     )}

@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import DefaultAvatar from '@/components/ui/DefaultAvatar';
+import { CatAvatar } from '@/components/cat/CatAvatar';
 import { CAT_DISPLAY_NAME, CAT_USERNAME } from '@/config/cat-identity';
 
 export default function CatIsAnswering() {
@@ -26,11 +26,11 @@ export default function CatIsAnswering() {
       role="status"
       aria-live="polite"
     >
-      <DefaultAvatar size={40} className="flex-shrink-0" />
+      <CatAvatar size={40} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-bold text-fg-primary">{CAT_DISPLAY_NAME}</span>
-          <span className="flex-shrink-0 rounded-sm bg-accent-warm px-1.5 py-0.5 text-2xs font-medium uppercase tracking-caps text-on-accent">
+          <span className="flex-shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-2xs font-medium uppercase tracking-caps text-fg-secondary">
             AI
           </span>
           <span className="text-sm text-fg-secondary">@{CAT_USERNAME}</span>

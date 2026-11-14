@@ -9,6 +9,7 @@ import { ROUTES } from '@/config/routes';
 import WalletPayPanel from '@/components/wallets/WalletPayPanel';
 import WalletLedger from '@/components/wallets/WalletLedger';
 import { readPublicLedger } from '@/services/wallets/publicLedger';
+import { notFoundTitle } from '@/config/not-found';
 
 /**
  * The ledger reads the chain, so the page is regenerated at most every five
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const wallet = await readPublicWallet(id);
   if (!wallet) {
-    return { title: 'Wallet Not Found' };
+    return { title: notFoundTitle('wallet') };
   }
   const owner = await ownerOf(wallet.profile_id);
   const who = owner?.name || owner?.username;

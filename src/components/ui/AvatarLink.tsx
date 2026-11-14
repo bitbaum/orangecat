@@ -14,7 +14,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { User } from 'lucide-react';
+import { CatAvatar } from '@/components/cat/CatAvatar';
+import { isCatUsername } from '@/config/cat-identity';
 import { getInitial } from '@/utils/string';
+import { bylineName, needsBylineName } from '@/utils/byline';
 
 interface AvatarLinkProps {
   /**
@@ -85,7 +89,11 @@ export default function AvatarLink({
         ? '/profiles/me'
         : '#';
 
-  const displayName = name || username || 'User';
+  // Signed like every byline: a minted `user_<hex>` handle is neither the
+  // label nor the letter. With no name worth a letter, the plate holds a
+  // person glyph instead of the "A" of the neutral phrase.
+  const displayName = bylineName(name, username);
+  const anonymous = needsBylineName(name, username);
   const initial = getInitial(displayName);
 
   // Ensure href is always a valid string
@@ -101,7 +109,9 @@ export default function AvatarLink({
       )}
       title={`View ${displayName}'s profile`}
     >
-      {avatarUrl ? (
+      {isCatUsername(username) ? (
+        <CatAvatar size={size} />
+      ) : avatarUrl ? (
         <Image
           src={avatarUrl}
           alt={`${displayName}'s avatar`}
@@ -120,7 +130,11 @@ export default function AvatarLink({
           )}
           style={{ width: size, height: size, fontSize: `${size * 0.4}px` }}
         >
-          {initial}
+          {anonymous ? (
+            <User aria-hidden="true" style={{ width: size * 0.5, height: size * 0.5 }} />
+          ) : (
+            initial
+          )}
         </div>
       )}
       {showOnlineStatus && (

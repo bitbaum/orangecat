@@ -19,16 +19,16 @@ import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
 import { RoomOwnerAction } from '@/components/room/RoomOwnerAction';
 import { ProjectProductRecord } from './product-record';
 import { canManageProject } from '@/domain/projects/manage-access';
-import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { isProjectPubliclyVisible } from '@/config/project-statuses';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { getTableName } from '@/config/entity-registry';
+import { ENTITY_REGISTRY, getTableName } from '@/config/entity-registry';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import { resolveSellerReceiveInfo } from '@/domain/payments';
 import { getEntityFundingStats } from '@/services/wallets/funding-stats';
 import { getEntityOpenLedgerWalletId } from '@/services/wallets/entityOpenLedger';
 import { computeAmountRaised } from '@/lib/projectGoal';
+import { notFoundTitle } from '@/config/not-found';
 
 const ProjectPageClient = dynamic(() => import('@/components/project/ProjectPageClient'), {
   loading: () => (
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const project = projectData as ProjectMeta | null;
   if (!project) {
     return {
-      title: 'Project Not Found',
+      title: notFoundTitle('project'),
       description: 'The project you are looking for does not exist.',
     };
   }

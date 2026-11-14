@@ -8,9 +8,18 @@
  *
  * When the reviewed versions land, update the content here and clear the
  * `draft` flag; bump `lastUpdated` on any substantive change.
+ *
+ * Who operates the Service (legal name, address, contact) is NOT written
+ * here: it comes from the one constant in config/legal.ts.
  */
 
-import { CONTACT_EMAIL } from '@/config/brand';
+import { operatorContactLines, operatorName } from '@/config/legal';
+
+/**
+ * The operator, read from config/legal.ts: the legal name once the owner has
+ * supplied it, the interim name until then. Never typed in this file.
+ */
+const OPERATOR = operatorName();
 
 export interface LegalSection {
   heading: string;
@@ -39,7 +48,7 @@ export const PRIVACY_POLICY: LegalDocument = {
   lastUpdated: '2026-06-02',
   draft: true,
   intro: [
-    'This Privacy Policy describes how OrangeCat ("we," "us," "our," or the "Service"), operated by Cato, collects, uses, and shares your personal information when you use the Service.',
+    `This Privacy Policy describes how OrangeCat ("we," "us," "our," or the "Service"), operated by ${OPERATOR}, collects, uses, and shares your personal information when you use the Service.`,
     'By using the Service, you agree to the collection and use of information in accordance with this Policy.',
   ],
   sections: [
@@ -170,7 +179,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     },
     {
       heading: 'Contact',
-      paragraphs: [`Cato (Data Controller) — ${CONTACT_EMAIL}`],
+      paragraphs: operatorContactLines('Data Controller'),
     },
     {
       heading: 'Changes to this Policy',
@@ -186,7 +195,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
   lastUpdated: '2026-06-02',
   draft: true,
   intro: [
-    'These Terms of Service ("Terms") govern your access to and use of OrangeCat (the "Service"), operated by Cato (herein "we," "us," "our"). By accessing or using the Service, you agree to be bound by these Terms.',
+    `These Terms of Service ("Terms") govern your access to and use of OrangeCat (the "Service"), operated by ${OPERATOR} (herein "we," "us," "our"). By accessing or using the Service, you agree to be bound by these Terms.`,
     'If you do not agree, do not use the Service.',
   ],
   sections: [
@@ -371,7 +380,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     },
     {
       heading: 'Contact',
-      paragraphs: [`Cato — ${CONTACT_EMAIL}`],
+      paragraphs: operatorContactLines(),
     },
   ],
 };

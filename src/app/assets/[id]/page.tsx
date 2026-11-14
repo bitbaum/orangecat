@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { assetDetailConfig } from '@/components/public/detail-configs/asset';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const asset = await fetchEntityForMetadata('asset', id, 'title, description');
   if (!asset) {
     return {
-      title: 'Asset Not Found',
+      title: notFoundTitle('asset'),
       description: 'The asset you are looking for does not exist.',
     };
   }

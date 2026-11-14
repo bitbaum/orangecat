@@ -4,6 +4,7 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import { ShareRow, type CrossPost } from '@/components/sharing/ShareRow';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
+import { postAuthor } from '@/utils/byline';
 import { isPublicPost, postPreview, postUrl } from '@/lib/seo/post-metadata';
 import type { TimelineDisplayEvent } from '@/types/timeline';
 
@@ -27,12 +28,13 @@ export function PostShareSheet({
 }) {
   const isPublic = isPublicPost(event.visibility);
   const url = postUrl(SITE_URL, event.id);
+  const signed = postAuthor(event.actor);
   const { title, description } = postPreview({
     id: event.id,
     visibility: event.visibility,
     text: event.description || event.title || '',
-    authorName: event.actor?.name ?? '',
-    authorUsername: event.actor?.username,
+    authorName: signed.name,
+    authorUsername: signed.handle,
   });
 
   const repostLabel = `Repost on ${APP_NAME}`;

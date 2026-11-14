@@ -28,6 +28,7 @@ import { getUnclaimedOwnerBySlug } from '@/domain/profileClaims/unclaimed';
 import { UnclaimedProfileView } from '@/components/claim/UnclaimedProfileView';
 import { fetchUnclaimedListings } from '@/domain/profileClaims/unclaimedListings';
 import { looseClient } from '@/lib/supabase/untyped';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ username: string }>;
@@ -95,7 +96,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
     return {
-      title: 'Profile Not Found',
+      title: notFoundTitle('profile'),
       description: 'The profile you are looking for does not exist.',
     };
   }

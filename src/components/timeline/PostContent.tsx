@@ -9,6 +9,8 @@ import { TIMELINE_SURFACE } from '@/config/timeline';
 import { getExternalAttribution } from '@/config/external-publish';
 import { ROUTES } from '@/config/routes';
 import { scrollBehavior } from '@/lib/scroll-behavior';
+import { postAuthor, postAuthorSource } from '@/utils/byline';
+import { avatarUrlFor } from '@/config/cat-identity';
 
 interface PostContentProps {
   event: TimelineDisplayEvent;
@@ -20,10 +22,10 @@ export function PostContent({ event }: PostContentProps) {
   const isQuoteRepost = event.metadata?.is_quote_repost;
 
   // Original post details for reposts
+  const originalSource = postAuthorSource(event.actor, event.metadata, true);
   const originalAuthor = {
-    name: event.metadata?.original_actor_name || event.actor.name || 'Original author',
-    username: event.metadata?.original_actor_username || event.actor.username || '',
-    avatar: event.metadata?.original_actor_avatar || event.actor.avatar || '/default-avatar.svg',
+    ...postAuthor(originalSource),
+    avatar: avatarUrlFor(originalSource.username, originalSource.avatar) || '/default-avatar.svg',
   };
   const originalDescription = event.metadata?.original_description || '';
   const originalEventId = event.metadata?.original_event_id;
@@ -225,7 +227,7 @@ export function PostContent({ event }: PostContentProps) {
         <div className={`mt-3 overflow-hidden ${TIMELINE_SURFACE.panel}`}>
           <div className="p-3 sm:p-4 space-y-2">
             <div className="flex items-start gap-3">
-              <Link href={`/profiles/${originalAuthor.username}`} className="flex-shrink-0">
+              <Link href={originalAuthor.profileHref ?? '#'} className="flex-shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns */}
                 <img
                   src={originalAuthor.avatar}
@@ -236,13 +238,13 @@ export function PostContent({ event }: PostContentProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 flex-wrap">
                   <Link
-                    href={`/profiles/${originalAuthor.username}`}
+                    href={originalAuthor.profileHref ?? '#'}
                     className="font-semibold text-fg-primary hover:underline"
                   >
                     {originalAuthor.name}
                   </Link>
-                  {originalAuthor.username && (
-                    <span className="text-fg-secondary text-sm">@{originalAuthor.username}</span>
+                  {originalAuthor.handle && (
+                    <span className="text-fg-secondary text-sm">@{originalAuthor.handle}</span>
                   )}
                 </div>
               </div>

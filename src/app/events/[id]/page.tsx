@@ -9,6 +9,7 @@ import {
   EVENT_METADATA_SELECT,
 } from '@/components/public/detail-configs/event';
 import { eventZone, formatEventDate } from '@/domain/events/time';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   );
   if (!event) {
     return {
-      title: 'Event Not Found',
+      title: notFoundTitle('event'),
       description: 'The event you are looking for does not exist.',
     };
   }

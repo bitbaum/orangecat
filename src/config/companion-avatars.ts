@@ -9,9 +9,17 @@
  *
  * The face is served as SVG by /api/ai-assistants/avatar?shape=…&hue=…, so it
  * lives in `avatar_url` like any picture and renders wherever a picture does.
- * Shapes are paths in a 100×100 box; colours are hex because they are CONTENT
- * (a picture's pigment), not a design token — the same reason an uploaded
- * photo is not asked to use `bg-surface-raised`.
+ * Shapes are paths in a 100×100 box; colours are hex because the SVG is served
+ * as a picture, where a CSS variable does not resolve.
+ *
+ * No face is orange. Orange says Bitcoin, or the one action that brings a
+ * visitor in (the one-orange rule); a bot is neither. `orange` and `amber`
+ * were two of the eleven pigments, so the public Guide wore the brand's
+ * colour. They are replaced IN PLACE by two values of the shared map scale
+ * (`--map-scale-1`, `--map-scale-2` in @bitbaum/design-tokens), so the face
+ * every other name picks stays the face it had; a stored face URL that still
+ * says `hue=orange` resolves to its replacement (RETIRED_HUES).
+ * `check:one-orange` fails on an orange pigment in this list.
  */
 
 export interface AvatarShape {
@@ -57,8 +65,8 @@ export const AVATAR_HUES: readonly AvatarHue[] = [
   { id: 'ink', fill: '#111111' },
   { id: 'cocoa', fill: '#8B5A2B' },
   { id: 'red', fill: '#FF3B4A' },
-  { id: 'orange', fill: '#FF7A1A' },
-  { id: 'amber', fill: '#FFA726' },
+  { id: 'indigo', fill: '#46327E' },
+  { id: 'steel', fill: '#365C8D' },
   { id: 'green', fill: '#1CC37A' },
   { id: 'teal', fill: '#0ABAB5' },
   { id: 'blue', fill: '#1E7DFF' },
@@ -66,6 +74,12 @@ export const AVATAR_HUES: readonly AvatarHue[] = [
   { id: 'pink', fill: '#FF2E9A' },
   { id: 'slate', fill: '#7A7A7A' },
 ] as const;
+
+/** Pigments that no longer exist, and the one a stored face now wears instead. */
+export const RETIRED_HUES: Readonly<Record<string, string>> = {
+  orange: 'indigo',
+  amber: 'steel',
+};
 
 export const AVATAR_PATH = '/api/ai-assistants/avatar';
 
@@ -98,7 +112,8 @@ export function findShape(id: string | null | undefined): AvatarShape | null {
 }
 
 export function findHue(id: string | null | undefined): AvatarHue | null {
-  return AVATAR_HUES.find(h => h.id === id) ?? null;
+  const current = id && RETIRED_HUES[id] ? RETIRED_HUES[id] : id;
+  return AVATAR_HUES.find(h => h.id === current) ?? null;
 }
 
 /** The face as SVG markup: the shape, and two eyes that always sit in the same place. */
@@ -127,7 +142,8 @@ export function parseFaceUrl(
   const params = new URLSearchParams(url.slice(i + AVATAR_PATH.length + 1));
   const shape = params.get('shape');
   const hue = params.get('hue');
-  return shape && hue && findShape(shape) && findHue(hue) ? { shape, hue } : null;
+  const known = findHue(hue);
+  return shape && known && findShape(shape) ? { shape, hue: known.id } : null;
 }
 
 /**
