@@ -3,7 +3,7 @@
  *
  * GET  /api/calendar?days=30&zone=Europe/Zurich — the agenda: own entries,
  *      tasks and reminders that fall due, and a connected Google calendar
- * POST /api/calendar — add an entry: { title, start, end?, location?, notes?, zone? }
+ * POST /api/calendar — add an entry: { title, start, minutes?, end?, location?, notes?, zone? }
  *
  * `zone` is the browser's, used only when the person has not set their own
  * (Settings → bot rules): a time typed with no offset is their wall clock.
@@ -19,33 +19,29 @@ import {
   apiSuccess,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
-import { getBotSettings } from '@/services/companions/rules';
 import { addCalendarEntry, readAgenda } from '@/services/planner/calendar';
 import { agendaForPage } from '@/services/planner/calendar-page';
-import { isValidTimeZone } from '@/utils/timezone';
+import { plannerZone } from '@/services/planner/zone';
 import { logger } from '@/utils/logger';
 
 const entrySchema = z.object({
   title: z.string().trim().min(1).max(200),
+  /** A day (`YYYY-MM-DD`, all day) or a day and a wall time (`YYYY-MM-DDTHH:MM`). */
   start: z.string().trim().min(8).max(40),
   end: z.string().trim().max(40).optional().nullable(),
+  /** How long, instead of an end. */
+  minutes: z.number().int().min(5).max(1440).optional().nullable(),
   location: z.string().trim().max(300).optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
   zone: z.string().optional().nullable(),
 });
-
-/** The person's own zone when they set one, else the one their browser reports. */
-async function zoneFor(request: AuthenticatedRequest, offered: string | null | undefined) {
-  const own = (await getBotSettings(request.supabase, request.user.id).catch(() => null))?.timeZone;
-  return own ?? (isValidTimeZone(offered) ? offered : null);
-}
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
     const params = new URL((request as NextRequest).url).searchParams;
     const [agenda, zone] = await Promise.all([
       readAgenda(request.supabase, request.user.id, params.get('days') ?? 30),
-      zoneFor(request, params.get('zone')),
+      plannerZone(request.supabase, request.user.id, params.get('zone')),
     ]);
     return apiSuccess(agendaForPage(agenda, zone), {
       headers: { 'Cache-Control': 'private, no-store' },
@@ -69,7 +65,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const { zone, ...entry } = parsed.data;
     const added = await addCalendarEntry(request.supabase, request.user.id, entry, {
       madeBy: 'me',
-      zone: await zoneFor(request, zone),
+      zone: await plannerZone(request.supabase, request.user.id, zone),
     });
     return added.success
       ? apiSuccess(added.data, { status: 201 })

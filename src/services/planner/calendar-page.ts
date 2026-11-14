@@ -6,6 +6,7 @@
 
 import { isValidTimeZone } from '@/utils/timezone';
 import { whenText, type Agenda, type AgendaItem, type AgendaSource } from './calendar';
+import { DUE_DAY_TIME } from './tasks';
 
 export interface CalendarPageRow {
   source: AgendaSource;
@@ -26,6 +27,8 @@ export interface CalendarPageDay {
 }
 
 export interface CalendarPage {
+  /** Today in the person's own clock. */
+  today: string;
   days: number;
   /** The zone the times are written in; null = UTC. */
   zone: string | null;
@@ -36,7 +39,10 @@ export interface CalendarPage {
 function rowOf(item: AgendaItem, zone: string | null): { day: string; row: CalendarPageRow } {
   const start = whenText(item.start, item.allDay, zone);
   const day = start.slice(0, 10);
-  const clock = item.allDay || item.start.length === 10 ? 'All day' : start.slice(11, 16);
+  // A task due "that day" is stored at the day's last minute; it has no hour.
+  const dueThatDay = item.source !== 'calendar' && start.slice(11, 16) === DUE_DAY_TIME;
+  const clock =
+    item.allDay || item.start.length === 10 || dueThatDay ? 'All day' : start.slice(11, 16);
   const end =
     item.end && clock !== 'All day' ? whenText(item.end, false, zone).slice(11, 16) : null;
   return {
@@ -53,7 +59,11 @@ function rowOf(item: AgendaItem, zone: string | null): { day: string; row: Calen
 }
 
 /** Pure. */
-export function agendaForPage(agenda: Agenda, zone: string | null): CalendarPage {
+export function agendaForPage(
+  agenda: Agenda,
+  zone: string | null,
+  now: Date = new Date()
+): CalendarPage {
   const known = zone && isValidTimeZone(zone) ? zone : null;
   const byDay: CalendarPageDay[] = [];
   for (const item of agenda.items) {
@@ -65,5 +75,11 @@ export function agendaForPage(agenda: Agenda, zone: string | null): CalendarPage
       byDay.push({ day, rows: [row] });
     }
   }
-  return { days: agenda.days, zone: known, byDay, googleNote: agenda.googleNote };
+  return {
+    today: whenText(now.toISOString(), false, known).slice(0, 10),
+    days: agenda.days,
+    zone: known,
+    byDay,
+    googleNote: agenda.googleNote,
+  };
 }
