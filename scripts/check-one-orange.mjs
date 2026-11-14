@@ -69,7 +69,9 @@ function walk(dir) {
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) {continue;}
+      if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
+        continue;
+      }
       out = out.concat(walk(full));
     } else if (EXTENSIONS.has(extname(entry.name))) {
       out.push(full);
@@ -88,7 +90,9 @@ const passed = [];
 for (const { name, pattern, scope, baseline, advice } of RATCHETS) {
   const hits = [];
   for (const { file, lines } of sources) {
-    if (!scope(file)) {continue;}
+    if (!scope(file)) {
+      continue;
+    }
     lines.forEach((line, i) => {
       if (pattern.test(line)) {
         hits.push({ file, line: i + 1, text: line.trim().slice(0, 90) });
@@ -125,7 +129,12 @@ for (const { name, pattern, scope, baseline, advice } of RATCHETS) {
 //    see them: `orange` and `amber` sat in the list and the public bots wore
 //    the brand's colour (agents#14). Not a ratchet: no pigment may be orange.
 const FACES_FILE = join('src', 'config', 'companion-avatars.ts');
-const facesSource = readFileSync(join(ROOT, FACES_FILE), 'utf8');
+let facesSource = '';
+try {
+  facesSource = readFileSync(join(ROOT, FACES_FILE), 'utf8');
+} catch {
+  // Reported below: a moved file must fail the gate, not skip it.
+}
 const huesBlock = /export const AVATAR_HUES[^=]*=\s*\[([\s\S]*?)\]/.exec(facesSource)?.[1];
 if (!huesBlock) {
   failed = true;
@@ -155,13 +164,19 @@ function isOrange(hex) {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const delta = max - min;
-  if (delta === 0) {return false;}
+  if (delta === 0) {
+    return false;
+  }
   const lightness = (max + min) / 2;
   const saturation = delta / (1 - Math.abs(2 * lightness - 1));
   let hue;
-  if (max === r) {hue = ((g - b) / delta) % 6;}
-  else if (max === g) {hue = (b - r) / delta + 2;}
-  else {hue = (r - g) / delta + 4;}
+  if (max === r) {
+    hue = ((g - b) / delta) % 6;
+  } else if (max === g) {
+    hue = (b - r) / delta + 2;
+  } else {
+    hue = (r - g) / delta + 4;
+  }
   hue = (hue * 60 + 360) % 360;
   return hue >= 12 && hue <= 48 && saturation >= 0.6 && lightness >= 0.42;
 }
