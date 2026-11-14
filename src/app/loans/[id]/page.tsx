@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { loanDetailConfig } from '@/components/public/detail-configs/loan';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!loan) {
     return {
-      title: 'Loan Not Found',
+      title: notFoundTitle('loan'),
       description: 'The loan you are looking for does not exist.',
     };
   }

@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { serviceDetailConfig } from '@/components/public/detail-configs/service';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const service = await fetchEntityForMetadata('service', id);
   if (!service) {
     return {
-      title: 'Service Not Found',
+      title: notFoundTitle('service'),
       description: 'The service you are looking for does not exist.',
     };
   }

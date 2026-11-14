@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { causeDetailConfig } from '@/components/public/detail-configs/cause';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cause = await fetchEntityForMetadata('cause', id, 'title, description');
   if (!cause) {
     return {
-      title: 'Cause Not Found',
+      title: notFoundTitle('cause'),
       description: 'The cause you are looking for does not exist.',
     };
   }

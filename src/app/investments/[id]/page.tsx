@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { investmentDetailConfig } from '@/components/public/detail-configs/investment';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   );
   if (!investment) {
     return {
-      title: 'Investment Not Found',
+      title: notFoundTitle('investment'),
       description: 'The investment you are looking for does not exist.',
     };
   }
