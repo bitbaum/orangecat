@@ -115,10 +115,11 @@ export function CalendarView() {
       toast.error(CALENDAR_COPY.notRemoved);
       return;
     }
+    const title = opened?.row.title;
     setOpened(null);
     await data.reload();
     if (!quiet) {
-      toast.success(CALENDAR_COPY.remove);
+      toast.success(title ? CALENDAR_COPY.removed(title) : CALENDAR_COPY.removed('the entry'));
     }
   }
 

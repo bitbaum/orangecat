@@ -19,7 +19,9 @@
  * Nothing here calls a model.
  */
 
+import { dayLabel, formatTime } from '@bitbaum/whenkit';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { APP_LOCALE } from '@/utils/locale';
 import { PLANNER_HANDS } from '@/services/planner/hands';
 import { CONNECTOR_HANDS, OUTSIDE_CONTENT_NOTE } from './hands';
 
@@ -83,6 +85,36 @@ export interface PreRead {
   block: string;
   /** What was read, for the check that an answer says only what it was shown. */
   evidence: string[];
+  /**
+   * The person's own calendar and list as plain words, to show them when no
+   * model answers: the read happened, so they still see their week. Mail is
+   * never in it (null when only mail was read).
+   */
+  plain: string | null;
+}
+
+/** Their own things, safe to show back without a model; mail is not. */
+const OWN = new Set(['calendar_read', 'tasks_read']);
+
+/**
+ * A read as the person should see it: ids gone, "2026-11-20 17:00" as
+ * "Friday, November 20 at 5:00 PM". Pure.
+ */
+export function readForPerson(text: string): string {
+  const day = (iso: string) => dayLabel(iso, { locale: APP_LOCALE }).long;
+  return text
+    .replace(/ \[(entry|task)_id: [^\]]*\]/g, '')
+    .replace(/ \(times in [^)]*\)/g, '')
+    .replace(/(\d{4}-\d{2}-\d{2}) \(all day\)/g, (_m, d: string) => `${day(d)} (all day)`)
+    .replace(
+      /(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})( UTC)?/g,
+      (_m, d: string, t: string, utc?: string) =>
+        `${day(d)} at ${formatTime(t as `${number}:${number}`, APP_LOCALE)}${utc ?? ''}`
+    )
+    .replace(
+      / to (\d{2}:\d{2})/g,
+      (_m, t: string) => ` to ${formatTime(t as `${number}:${number}`, APP_LOCALE)}`
+    );
 }
 
 type Hand = (
@@ -123,7 +155,9 @@ export async function preReadForTurn(
   }
   const hands = opts.hands ?? READS;
   const may = opts.allowed ?? (() => true);
-  const jobs: Array<Promise<{ title: string; text: string; ok: boolean; outside: boolean }>> = [];
+  const jobs: Array<
+    Promise<{ handId: string; title: string; text: string; ok: boolean; outside: boolean }>
+  > = [];
   const run = (handId: string, title: string, params: Record<string, unknown>) => {
     if (!may(handId) || !hands[handId]) {
       return;
@@ -132,6 +166,7 @@ export async function preReadForTurn(
       hands[handId](supabase, userId, params)
         .catch(() => ({ success: false, error: 'the read failed just now' }))
         .then(outcome => ({
+          handId,
           title,
           text: shown(outcome),
           ok: outcome.success,
@@ -161,5 +196,10 @@ export async function preReadForTurn(
       ...(read ? [OUTSIDE_CONTENT_NOTE] : []),
     ].join('\n\n'),
     evidence: parts.filter(p => p.ok).map(p => p.text),
+    plain:
+      parts
+        .filter(p => p.ok && OWN.has(p.handId))
+        .map(p => readForPerson(p.text))
+        .join('\n\n') || null,
   };
 }

@@ -29,6 +29,7 @@ to the map, sub-bullets stay here for the human reader.
 - **Your calendar and your other calendars, together.** Paste the private iCal link of a Google, Apple or Outlook calendar (or any other) and its events show in your OrangeCat calendar, repeating ones included. And one private link puts your OrangeCat calendar into Apple Calendar, Google Calendar or Outlook on your phone. Both are under the link button on the calendar.
 - **When you ask the Cat to put something in your calendar and no AI model answers, it still tells you it is done** ("Added to your calendar: dentist, Monday, November 16 at 9:00 AM.") instead of only saying it could not reach a model. The entry was always added; now you are told.
 - **Calendar is in the main menu now**, under Discover. It was folded inside "Money and work", where a new person could not find it. "Tasks" there is now called "To-do".
+- **The Cat shows you your week even when no AI model answers.** Asking "what's on my calendar this week?" used to end in "Cat couldn't reach an AI model"; now you see the entries it read, in plain words. It also says "Friday, November 20 at 5:00 PM" instead of "2026-11-20", and removing an entry says "Removed: Coffee with Lea".
 
 ## 2026-11-13
 
