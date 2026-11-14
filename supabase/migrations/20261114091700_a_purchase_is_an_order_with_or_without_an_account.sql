@@ -29,6 +29,7 @@
 --   -- only once no order has a NULL buyer:
 --   ALTER TABLE public.orders ALTER COLUMN buyer_id SET NOT NULL;
 
+-- migration-safety: contract-ok dropping NOT NULL only widens what the column accepts: the release before this one always writes a buyer_id, so it runs unchanged after a rollback.
 ALTER TABLE public.orders ALTER COLUMN buyer_id DROP NOT NULL;
 
 ALTER TABLE public.orders
