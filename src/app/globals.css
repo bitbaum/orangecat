@@ -1655,6 +1655,36 @@ body:has(.oc-messages) {
   overflow: hidden;
   overscroll-behavior: none;
 }
+/* The planner (calendar and to-do): its chips and its one-line field are
+   ink, not orange. Orange is Bitcoin and the one action that brings someone
+   in (AGENTS.md, "One orange"). The soft tint is restated because whenkit
+   resolves it once, at :root, from the accent it found there. */
+.oc-planner {
+  --wk-accent: hsl(var(--text-primary));
+  --wk-on-accent: hsl(var(--text-inverted));
+  --wk-accent-soft: hsl(var(--surface-raised));
+  --ck-accent: hsl(var(--text-primary));
+  --ck-on-accent: hsl(var(--text-inverted));
+}
+/* The one-line field shows focus on its frame (chatkit); the app's own
+   input ring inside it drew a second box. */
+.oc-planner .ck-field-input:focus,
+.oc-planner .ck-field-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* Fifteen start times in one row that scrolls, not five rows that push the
+   Add button off a phone. */
+.oc-planner-times .wk-chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+.oc-planner-times .wk-chip {
+  flex: none;
+}
 .oc-messages {
   /* Inside the app the one action is monochrome (AGENTS.md, "One orange"):
      Send is ink, not the accent. */

@@ -1029,7 +1029,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: true,
         description: 'YYYY-MM-DDTHH:MM in their time, or a date alone for all day',
       },
-      { name: 'end', type: 'string', required: false, description: 'Same format' },
+      { name: 'minutes', type: 'number', required: false, description: 'How long' },
       { name: 'location', type: 'string', required: false, description: 'Where' },
     ],
     examples: [

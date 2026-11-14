@@ -14,6 +14,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { TASK_STATUSES } from '@/config/tasks';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { APP_LOCALE } from '@/utils/locale';
+import { instantToWallTime, isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
 import { parseReminderDate } from './when';
 
 export interface PlannerOutcome {
@@ -295,4 +296,52 @@ export function openTasksText(tasks: readonly OpenTask[], now: Date = new Date()
     return `- ${t.title}${t.isReminder ? ' (reminder)' : ''} · ${when}${flag} [task_id: ${t.id}]`;
   };
   return [`${tasks.length} open on your to-do list:`, ...tasks.map(line)].join('\n');
+}
+
+/** The wall time a task "due that day" is stored at: the day's last minute. */
+export const DUE_DAY_TIME = '23:59';
+
+export interface ListTask {
+  id: string;
+  title: string;
+  /** The day it is due in the person's own clock, or null. */
+  dueDay: string | null;
+  isReminder: boolean;
+  priority: string;
+}
+
+export interface TaskListPage {
+  /** Today in the person's own clock. */
+  today: string;
+  tasks: ListTask[];
+}
+
+/** The open list as the page draws it: each task with the DAY it is due, in the person's zone. Pure. */
+export function taskListPage(
+  tasks: readonly OpenTask[],
+  zone: string | null,
+  now: Date = new Date()
+): TaskListPage {
+  const dayOf = (iso: string) =>
+    zone && isValidTimeZone(zone) ? instantToWallTime(iso, zone).slice(0, 10) : iso.slice(0, 10);
+  return {
+    today: dayOf(now.toISOString()),
+    tasks: tasks.map(t => ({
+      id: t.id,
+      title: t.title,
+      dueDay: t.dueDate ? dayOf(t.dueDate) : null,
+      isReminder: t.isReminder,
+      priority: t.priority,
+    })),
+  };
+}
+
+/** A day as the instant a task due that day is stored at, in the person's zone. Pure. */
+export function dueInstant(day: string, zone: string | null): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    return null;
+  }
+  return zone && isValidTimeZone(zone)
+    ? wallTimeToUtc(`${day}T${DUE_DAY_TIME}`, zone)
+    : `${day}T${DUE_DAY_TIME}:00.000Z`;
 }

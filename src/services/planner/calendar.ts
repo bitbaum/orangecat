@@ -89,7 +89,13 @@ export async function addCalendarEntry(
         'A calendar entry needs "start": a date and time such as 2026-11-16T09:00, or a date alone for a whole day. Ask the user when.',
     };
   }
-  const endsAt = parseWhen(params.end, zone);
+  // "For 30 minutes" is how people say an end; nobody types an end time.
+  const minutes = Math.round(Number(params.minutes));
+  const endsAt =
+    parseWhen(params.end, zone) ??
+    (Number.isFinite(minutes) && minutes >= 5 && minutes <= 24 * 60
+      ? new Date(Date.parse(startsAt) + minutes * 60_000).toISOString()
+      : null);
   if (endsAt && endsAt < startsAt) {
     return { success: false, error: 'It cannot end before it starts.' };
   }

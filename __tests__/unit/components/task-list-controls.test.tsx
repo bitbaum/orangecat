@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TASK_TYPES } from '@/config/tasks';
-import TasksPage from '@/app/(authenticated)/dashboard/tasks/page';
+// The fuller view (filters, categories), which the page shows at `?view=all`.
+import TasksPage from '@/app/(authenticated)/dashboard/tasks/components/TeamTasksView';
 const { user } = vi.hoisted(() => ({ user: { id: 'own-test-user' } }));
 vi.mock('@/hooks/useAuth', () => ({
   useRequireAuth: () => ({ user, hydrated: true, isLoading: false }),
