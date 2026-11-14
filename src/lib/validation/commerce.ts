@@ -123,6 +123,7 @@ export const userServiceSchema = z
     images: z.array(webUrl()).optional().default([]),
     portfolio_links: z.array(webUrl()).optional().default([]),
     show_on_profile: z.boolean().optional().default(true),
+    cover_image_url: optionalUrl(),
     status: z.enum(SERVICE_STATUSES).default(ENTITY_STATUS.DRAFT),
   })
   .superRefine((data, ctx) => {
@@ -145,6 +146,7 @@ export const userCauseSchema = z.object({
   lightning_address: lightningAddressSchema,
   distribution_rules: distributionRulesSchema.optional().nullable(),
   beneficiaries: z.array(beneficiarySchema).optional().default([]),
+  cover_image_url: optionalUrl(),
   status: z.enum(CAUSE_STATUSES).default(ENTITY_STATUS.DRAFT),
   // Public-profile visibility toggle (DB show_on_profile, default true). Optional/
   // no-default — see userProductSchema note. Was absent → form checkbox stripped.

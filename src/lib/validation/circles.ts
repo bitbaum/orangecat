@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import { optionalText } from './base';
+import { optionalText, optionalUrl } from './base';
 
 export const CIRCLE_VISIBILITIES = ['public', 'unlisted', 'private'] as const;
 export const CIRCLE_STATUSES = ['draft', 'active', 'paused', 'archived'] as const;
@@ -13,7 +13,7 @@ export const circleSchema = z.object({
   description: optionalText(1000),
   category: optionalText(50),
   visibility: z.enum(CIRCLE_VISIBILITIES).default('public'),
-  cover_image_url: optionalText(),
+  cover_image_url: optionalUrl(),
   tags: z.array(z.string()).optional().default([]),
   status: z.enum(CIRCLE_STATUSES).default('active'),
 });

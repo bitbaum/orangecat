@@ -46,14 +46,6 @@ const fieldGroups: FieldGroup[] = [
         colSpan: 2,
       },
       {
-        // The cover buyers see first. `images` stays the column for a gallery;
-        // the public page shows both.
-        name: 'thumbnail_url',
-        label: 'Photo',
-        type: 'image',
-        colSpan: 2,
-      },
-      {
         name: 'category',
         label: 'Category',
         type: 'text',

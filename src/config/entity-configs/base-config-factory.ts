@@ -20,6 +20,72 @@ import type {
 } from '@/components/create/types';
 import type { ZodType } from 'zod';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
+import { ENTITY_COVER } from '@/config/entity-cover';
+
+/**
+ * The picture field every kind's form shows, from ENTITY_COVER. One
+ * definition: the same control (upload, paste, find or generate), the same
+ * place (right under the description), the same words.
+ */
+export function coverPictureField(entityType: EntityType): FieldConfig | null {
+  const cover = ENTITY_COVER[entityType];
+  if (!cover) {
+    return null;
+  }
+  return {
+    name: cover.field,
+    label: cover.label,
+    type: 'image',
+    hint: 'Shown on its page, on Discover and when the link is shared.',
+    colSpan: 2,
+  };
+}
+
+/** `name` placed right after `anchor` (or last when there is no anchor). */
+function insertAfter<T>(items: readonly T[], item: T, isAnchor: (candidate: T) => boolean): T[] {
+  const at = items.findIndex(isAnchor);
+  return at < 0 ? [...items, item] : [...items.slice(0, at + 1), item, ...items.slice(at + 1)];
+}
+
+/** The field groups with the cover field under the description, exactly once. */
+export function withCoverField(entityType: EntityType, groups: FieldGroup[]): FieldGroup[] {
+  const field = coverPictureField(entityType);
+  if (!field) {
+    return groups;
+  }
+  const without = groups.map(group =>
+    group.fields ? { ...group, fields: group.fields.filter(f => f.name !== field.name) } : group
+  );
+  const home = Math.max(
+    without.findIndex(group => group.fields?.some(f => f.name === 'description')),
+    without.findIndex(group => Array.isArray(group.fields))
+  );
+  return without.map((group, i) =>
+    i === home && group.fields
+      ? { ...group, fields: insertAfter(group.fields, field, f => f.name === 'description') }
+      : group
+  );
+}
+
+/** A wizard shows only the fields its steps name: the cover joins the description's step. */
+function withCoverStep(entityType: EntityType, wizard?: WizardConfig): WizardConfig | undefined {
+  const name = ENTITY_COVER[entityType]?.field;
+  if (!wizard || !name || wizard.steps.some(step => step.fields.includes(name))) {
+    return wizard;
+  }
+  const home = Math.max(
+    wizard.steps.findIndex(step => step.fields.includes('description')),
+    0
+  );
+  return {
+    ...wizard,
+    steps: wizard.steps.map((step, i) =>
+      i === home
+        ? { ...step, fields: insertAfter(step.fields, name, f => f === 'description') }
+        : step
+    ),
+  };
+}
 
 /**
  * Common field definitions that appear in most entity forms
@@ -175,7 +241,7 @@ export function createEntityConfig<T extends object>(
     pageDescription: options.pageDescription,
     formTitle: options.formTitle,
     formDescription: options.formDescription,
-    fieldGroups: options.fieldGroups,
+    fieldGroups: withCoverField(options.entityType, options.fieldGroups),
     validationSchema: options.validationSchema,
     defaultValues: options.defaultValues,
     guidanceContent: options.guidanceContent,
@@ -184,7 +250,7 @@ export function createEntityConfig<T extends object>(
     infoBanner: options.infoBanner,
     successMessage: options.successMessage,
     successRedirectDelay: options.successRedirectDelay,
-    wizardConfig: options.wizardConfig,
+    wizardConfig: withCoverStep(options.entityType, options.wizardConfig),
     deriveInitialValues: options.deriveInitialValues,
   };
 }

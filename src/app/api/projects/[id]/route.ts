@@ -1,3 +1,4 @@
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { projectSchema } from '@/lib/validation';
 import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { logger } from '@/utils/logger';
@@ -117,8 +118,7 @@ const buildProjectUpdatePayload = createUpdatePayloadBuilder([
   { from: 'title' },
   { from: 'description', transform: entityTransforms.emptyStringToNull },
   { from: 'goal_amount' },
-  // Currency: only include if explicitly provided (don't override existing value)
-  // Currency is for display/input only - all transactions are in BTC
+  // Currency (display/input only): written only when provided, never defaulted.
   { from: 'currency' },
   { from: 'funding_purpose', transform: entityTransforms.emptyStringToNull },
   { from: 'work_status', transform: entityTransforms.emptyStringToNull },
@@ -126,6 +126,7 @@ const buildProjectUpdatePayload = createUpdatePayloadBuilder([
   { from: 'lightning_address', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.urlField('website_url'),
   commonFieldMappings.urlField('logo_url'),
+  ...coverFieldMapping('project'),
   { from: 'category', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.arrayField('tags', []),
   commonFieldMappings.dateField('start_date'), // Normalize date fields
@@ -133,7 +134,6 @@ const buildProjectUpdatePayload = createUpdatePayloadBuilder([
   { from: 'show_on_profile' },
 ]);
 
-// Create handlers using generic CRUD factory
 const { GET, PUT, DELETE } = createEntityCrudHandlers({
   entityType: 'project',
   schema: projectSchema,

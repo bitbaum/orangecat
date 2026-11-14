@@ -8,6 +8,7 @@
  * After refactoring: ~45 lines (76% reduction)
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { loanSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -31,6 +32,7 @@ const buildLoanUpdatePayload = createUpdatePayloadBuilder([
   { from: 'currency' },
   { from: 'fulfillment_type' },
   { from: 'loan_type' },
+  ...coverFieldMapping('loan'),
   // Refinancing fields (existing_refinance loans). createLoan persists these, but
   // the update builder omitted them — so editing a refinance loan silently dropped
   // its lender/rate details. (Caught by entity-update-builder-coverage guard.)

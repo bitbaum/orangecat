@@ -3,6 +3,7 @@
  * Generic CRUD handler; entity metadata from entity-registry (SSOT).
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { circleSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -16,7 +17,7 @@ const buildCircleUpdatePayload = createUpdatePayloadBuilder([
   { from: 'description', transform: entityTransforms.emptyStringToNull },
   { from: 'category', transform: entityTransforms.emptyStringToNull },
   { from: 'visibility' },
-  { from: 'cover_image_url', transform: entityTransforms.emptyStringToNull },
+  ...coverFieldMapping('circle'),
   commonFieldMappings.arrayField('tags', []),
   // No default — see products/[id] note. Here a `default: 'active'` was the
   // opposite hazard: a partial PUT could silently re-activate a paused circle.

@@ -5,6 +5,7 @@
  * Uses generic entity CRUD handlers and registry metadata.
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { wishlistSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -26,7 +27,7 @@ const buildWishlistUpdatePayload = createUpdatePayloadBuilder([
   { from: 'type' },
   { from: 'visibility' },
   commonFieldMappings.dateField('event_date'),
-  commonFieldMappings.urlField('cover_image_url'),
+  ...coverFieldMapping('wishlist'),
   { from: 'is_active' },
 ]);
 

@@ -10,6 +10,7 @@
  * After refactoring: ~45 lines (79% reduction)
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { assetSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -29,6 +30,7 @@ const buildAssetUpdatePayload = createUpdatePayloadBuilder([
   // Currency is for display/input only - all transactions are in BTC
   { from: 'currency' },
   commonFieldMappings.arrayField('documents', []), // Normalize null to empty array
+  ...coverFieldMapping('asset'),
   // Sale / rental / deposit config — collected by the form and backed by real
   // `assets` columns, but previously dropped on both create and update (the form
   // silently didn't work). Now persisted. (Caught by the update-builder guard.)
