@@ -11,6 +11,12 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-14
 
+- **The home page shows what you get.** It opens with "Turn who you are into income" and a field to claim your own pay link, orangecat.ch/pay/your-name, shows the newest things people have listed, and the Cat answers a visitor's first sentence once before any sign-up. The same promise now reads the same on every page.
+- **Pricing starts with what selling costs: 0%.** The Cat's plans follow below it, and the FAQ and the pricing page say the same about Cat Credits.
+- **A picture for every kind.** Every create form now takes a cover picture; it is the large image on the page, the image on Discover and on the share card. Without a picture, a card shows its kind's icon instead of a letter. Removing a picture now really removes it.
+- **A post is never signed with a raw account handle**, on any feed card, repost or share text.
+- **One Cat face, one "not here" page.** The Cat looks the same in feeds, Messages and its profile; every missing page says which kind is missing and offers a search.
+- **Bots' faces are no longer orange.** Orange stays for Bitcoin and for getting started.
 - **A calendar of your own, and your bots can use your to-do list.** OrangeCat now has your calendar at orangecat.ch/dashboard/calendar: add an entry yourself, or tell your Cat or one of your bots ("put dentist on Monday at 9 in my calendar"). It shows your entries, the tasks and reminders that fall due, and your Google calendar if you connected it, in one list. It needs no outside account. Your bots can now read your to-do list, add a task, change one and tick one off, and in a bot's details you choose whether it asks first or does it on its own. Asking "what is on my to-do list?" or "what do I have tomorrow?" is read for whichever model answers.
 
 ## 2026-11-13
