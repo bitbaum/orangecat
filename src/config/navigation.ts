@@ -351,17 +351,10 @@ const moneyAndWorkSection: NavSection = {
       requiresAuth: true,
     },
     {
-      name: 'Calendar',
-      href: ROUTES.DASHBOARD.CALENDAR,
-      icon: CalendarDays,
-      description: 'Your days: entries, what falls due, bookings',
-      requiresAuth: true,
-    },
-    {
-      name: 'Tasks',
+      name: 'To-do',
       href: ROUTES.DASHBOARD.TASKS,
       icon: ClipboardList,
-      description: 'Manage team tasks',
+      description: 'Your list',
       requiresAuth: true,
     },
     {
@@ -454,6 +447,16 @@ const simplifiedSections: NavSection[] = [
         icon: Compass,
         description: 'Find people and projects',
         requiresAuth: false,
+      },
+      {
+        // Used every day, by the person and by their Cat. Folded inside
+        // "Money and work" a new person could not find it (walked live
+        // 2026-11-14), so it sits at the top level, after Discover.
+        name: 'Calendar',
+        href: ROUTES.DASHBOARD.CALENDAR,
+        icon: CalendarDays,
+        description: 'Your days, and the calendars you linked',
+        requiresAuth: true,
       },
       {
         // Everything the person made or joined, one list. Replaces the four
