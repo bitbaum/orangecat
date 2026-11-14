@@ -80,10 +80,6 @@ export const eventDetailConfig: EntityDetailConfig = {
       <EventVenueCard assetId={entity.asset_id} />
     ) : null,
   getViewRoute: id => ROUTES.EVENTS.VIEW(id),
-  getCoverImages: entity => {
-    const images = Array.isArray(entity.images) ? (entity.images as string[]) : [];
-    return [entity.banner_url as string, entity.thumbnail_url as string, ...images].filter(Boolean);
-  },
   getJsonLdExtra: entity => {
     const place = eventPlaceLine(entity);
     const ticket = ticketOf(entity);

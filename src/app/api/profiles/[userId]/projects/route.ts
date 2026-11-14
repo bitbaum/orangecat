@@ -45,6 +45,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
         created_at,
         updated_at,
         logo_url,
+        cover_image_url,
         project_media(id, storage_path, position)
       `
       )
@@ -73,6 +74,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
       currency?: string | null;
       raised_amount?: number | null;
       logo_url?: string | null;
+      cover_image_url?: string | null;
       bitcoin_balance_btc?: number | null;
       bitcoin_balance_updated_at?: string | null;
       created_at: string;
@@ -88,6 +90,10 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
 
     // Process projects to get first media URL
     const projectsWithMedia = enrichedProjects.map((project: ProjectWithMedia) => {
+      // The cover its maker chose leads, as on its page and its Discover card.
+      if (project.cover_image_url) {
+        return { ...project, thumbnail_url: project.cover_image_url, project_media: undefined };
+      }
       if (project.project_media && project.project_media.length > 0) {
         // Get first media item (sorted by position)
         const firstMedia = project.project_media.sort(

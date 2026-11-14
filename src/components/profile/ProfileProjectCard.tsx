@@ -10,6 +10,7 @@
  * panel (#pay) so backing something is one tap from the listing.
  */
 
+import { EntityCoverPlaceholder } from '@/components/entity/EntityCoverPlaceholder';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Bitcoin } from 'lucide-react';
@@ -70,13 +71,8 @@ export default function ProfileProjectCard({ project }: { project: ProfileProjec
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             ) : (
-              // No image yet: the project's initial, in the display face —
-              // a name to recognise beats a generic target icon on every card.
-              <div className="flex h-full w-full items-center justify-center">
-                <span className="oc-mark-monogram text-5xl text-fg-secondary" aria-hidden="true">
-                  {project.title.trim().charAt(0).toUpperCase()}
-                </span>
-              </div>
+              // No picture yet: the kind's icon, the stand-in every list uses.
+              <EntityCoverPlaceholder type="project" />
             )}
             {project.category && (
               <div className="absolute left-2 top-2">

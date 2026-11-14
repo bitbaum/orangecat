@@ -17,6 +17,7 @@ import { generateEntityJsonLd, JsonLdScript } from '@/lib/seo/structured-data';
 import EntityShare from '@/components/sharing/EntityShare';
 import PublicEntityOwnerCard from '@/components/public/PublicEntityOwnerCard';
 import PublicEntityHero from '@/components/public/PublicEntityHero';
+import { entityCoverImages } from '@/lib/entities/cover';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import { resolveSellerReceiveInfo, type SellerReceiveInfo } from '@/domain/payments';
 import { getSharedWalletUsage, type SharedWalletUsage } from '@/domain/wallets/walletUsage';
@@ -254,7 +255,8 @@ export default async function PublicEntityDetailPage({
         </div>
 
         {(() => {
-          const coverImages = config.getCoverImages?.(entity) ?? [];
+          const coverImages =
+            config.getCoverImages?.(entity) ?? entityCoverImages(config.entityType, entity);
           return coverImages.length > 0 ? (
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
               <PublicEntityHero images={coverImages} title={entity.title} />

@@ -146,6 +146,7 @@ export default function LoansPage() {
                   items={myLoans}
                   isLoading={loading}
                   makeHref={loanEntityConfig.makeHref}
+                  entityType="loan"
                   makeCardProps={loanEntityConfig.makeCardProps}
                   emptyState={emptyStateWithCreate(
                     loanEntityConfig.emptyState,

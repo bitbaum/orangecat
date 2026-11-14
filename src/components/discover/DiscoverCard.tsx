@@ -56,7 +56,12 @@ export function DiscoverCard({
 }) {
   return (
     <Link href={hit.href} className="oc-discover-card group">
-      <DiscoverCardMedia src={hit.imageUrl} title={hit.title} round={hit.type === 'profile'} />
+      <DiscoverCardMedia
+        src={hit.imageUrl}
+        title={hit.title}
+        type={hit.type === 'profile' ? null : hit.type}
+        round={hit.type === 'profile' || hit.type === 'ai_assistant'}
+      />
       <div className="oc-discover-body">
         <p className="oc-discover-kind">{kindLabel(hit.type)}</p>
         <h3 className="oc-discover-title">

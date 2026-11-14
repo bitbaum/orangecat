@@ -61,6 +61,8 @@ export const aiAssistantDetailConfig: EntityDetailConfig = {
   getViewRoute: id => ROUTES.AI_ASSISTANTS.VIEW(id),
   // Its face: the picture or face it was given, else the face its name picks
   // (the same one it wears in Talk), never a stock robot.
+  // The face in the header is the picture; a wide hero of a portrait is not.
+  getCoverImages: () => [],
   renderHeaderIcon: entity => (
     <Face
       name={(entity.title as string) || ''}

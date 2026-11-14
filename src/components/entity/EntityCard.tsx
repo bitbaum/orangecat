@@ -1,5 +1,6 @@
 'use client';
 
+import type { EntityType } from '@/config/entity-registry';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
@@ -47,6 +48,8 @@ export interface EntityCardProps {
   metricsSlot?: ReactNode;
   footerSlot?: ReactNode;
   compact?: boolean;
+  /** The kind: picks the stand-in when the card has no picture. */
+  entityType?: EntityType | null;
 }
 
 export function EntityCard({
@@ -85,6 +88,7 @@ export function EntityCard({
   metricsSlot,
   footerSlot,
   compact = false,
+  entityType,
 }: EntityCardProps) {
   const imageSrc = thumbnailUrl || imageUrl;
   const hasActions =
@@ -104,7 +108,13 @@ export function EntityCard({
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => e.key === 'Enter' && onClick() : undefined}
     >
-      <EntityCardImage imageSrc={imageSrc} title={title} compact={compact} href={detailHref} />
+      <EntityCardImage
+        imageSrc={imageSrc}
+        title={title}
+        compact={compact}
+        href={detailHref}
+        entityType={entityType}
+      />
 
       {hasActions && (
         <div className="absolute top-2 right-2 z-20">
