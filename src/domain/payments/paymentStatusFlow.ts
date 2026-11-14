@@ -27,6 +27,7 @@ import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { hashPublicStatusToken, updatePaymentStatus } from './paymentFlowHelpers';
 import { handlePaymentConfirmed } from './paymentSettlement';
 import { findTicketForPayment, guestTicketPath } from '@/domain/events/tickets';
+import { orderRef } from '@/domain/commerce/orders';
 
 /**
  * Check payment status. For NWC, does active lookup; for others, returns DB status.
@@ -76,7 +77,29 @@ export async function checkPublicPaymentStatus(
     ...result,
     requires_recipient_confirmation: result.status === STATUS.PAYMENT_INTENTS.BUYER_CONFIRMED,
     ...(await guestTicketLink(admin, pi as PaymentIntent, result.status)),
+    ...(await guestOrderRef(admin, pi as PaymentIntent, result.status)),
   };
+}
+
+/** A buyer without an account gets the order's reference on their receipt. */
+async function guestOrderRef(
+  admin: SupabaseClient,
+  pi: PaymentIntent,
+  status: string
+): Promise<{ order_ref?: string }> {
+  if (
+    status !== STATUS.PAYMENT_INTENTS.PAID ||
+    pi.intent_kind !== 'purchase' ||
+    pi.entity_type === 'event'
+  ) {
+    return {};
+  }
+  const { data } = await admin
+    .from(DATABASE_TABLES.ORDERS)
+    .select('id')
+    .eq('payment_intent_id', pi.id)
+    .maybeSingle();
+  return data?.id ? { order_ref: orderRef(data.id as string) } : {};
 }
 
 /** A guest who paid for a ticket is sent to it: the status poll carries the link. */

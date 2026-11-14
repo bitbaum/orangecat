@@ -15,6 +15,7 @@
  */
 
 import { TIP_MAX_BTC, TIP_MIN_BTC } from './tips';
+import { PAY_STATE_WORDS } from './pay-words';
 import { SITE_URL } from './brand';
 
 export const PAY_MIN_BTC = TIP_MIN_BTC;
@@ -118,38 +119,15 @@ export const PAY_COPY = {
     'This is your pay page. Nobody can pay you here yet. Add a wallet and payments land in it.',
   ownerAddWallet: 'Add a wallet',
   notFound: "We couldn't find that OrangeCat account.",
-  /** Honesty line — the whole point of the alias is that we never hold funds. */
-  disclaimer: 'Paid directly to them. OrangeCat takes 0% and never touches your funds.',
+  /** The states' words (honesty line, waiting, paid, expired, wallet): src/config/pay-words.ts. */
+  ...PAY_STATE_WORDS,
   openInWallet: 'Open in wallet',
   shareTitle: 'Get paid',
   shareHint: 'Send this link and they can pay you from any Bitcoin wallet.',
   copyLink: 'Copy link',
   copiedLink: 'Link copied',
-  /**
-   * The code screen puts "Open in wallet" first on a phone and the code one
-   * more tap away, so no label promises the code.
-   */
-  generate: 'Pay with a Bitcoin wallet',
-  /** Beside "Pay from my wallet": a different wallet from the one connected. */
-  generateOther: 'Pay from another wallet',
   /** The one action when no wallet is in hand: the verb and the figure. */
   payAmount: (amount: string) => `Pay ${amount}`,
-  enterAmount: 'Enter an amount',
-  generating: 'Preparing…',
-  scan: 'Waiting for the payment…',
-  again: 'Change amount',
-  paidTitle: 'Paid',
-  paidBody: (name: string) => `Paid straight to ${name}'s wallet.`,
-  expiredTitle: 'This code expired',
-  expiredBody: 'Nothing was sent. You can make another.',
-  /** For a payer who is signed in with a wallet connected: pay without leaving. */
-  payFromWallet: 'Pay from my wallet',
-  payFromWalletNote: "They'll see it was you.",
-  payingFromWallet: 'Paying from your wallet…',
-  confirming: 'Paid. Confirming…',
-  /** The wallet said no: the code is still there, so there is no dead end. */
-  walletDeclined: (reason: string) =>
-    `Your wallet couldn't pay this: ${reason} You can pay the code below from another wallet.`,
   /** A request that already has its payment: say so instead of offering to pay it again. */
   requestPaidTitle: 'This request is already paid',
   requestPaidBody: (name: string) => `${name} has been paid for it. Nothing more to send.`,

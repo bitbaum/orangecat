@@ -215,6 +215,8 @@ export const API_ROUTES = {
     RECEIVE_INFO: '/api/payments/receive-info',
     RECIPIENT_CONFIRMATIONS: '/api/payments/recipient-confirmations',
     CAN_RECEIVE: '/api/payments/can-receive',
+    /** A fixed-price purchase without an account: the invoice and its order. */
+    PUBLIC_PURCHASE: '/api/v1/payments/public/purchase',
   },
   TIPS: {
     RECEIVE_INFO: '/api/tips/receive-info',
@@ -368,6 +370,8 @@ export const API_ROUTES = {
     BASE: '/api/bookings',
     BY_ID: (id: string) => `/api/bookings/${id}`,
     RECEIVE_INFO: (id: string) => `/api/bookings/${id}/receive-info`,
+    /** The customer pays a booking the provider accepted. */
+    PAY: (id: string) => `/api/bookings/${id}/pay`,
   },
   /** The signed-in person's rule for where money paid to them lands. */
   MONEY_ROUTES: '/api/money-routes',

@@ -28,7 +28,7 @@ export async function fetchTipInvoice(
   });
   const { invoice } = await unwrapApiResponse<{ invoice: TipInvoice }>(
     res,
-    'Could not create a tip request.'
+    'Could not create a payment request.'
   );
   return invoice;
 }

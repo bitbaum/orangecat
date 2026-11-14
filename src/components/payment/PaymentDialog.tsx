@@ -1,9 +1,11 @@
 /**
- * PaymentDialog — Full payment flow modal
+ * PaymentDialog — a signed-in payment for a listing, in the one flow.
  *
- * Phases: Confirm → QR code → Waiting → Success
- * Handles fixed_price (buy) and contribution flows: support, or for an
- * investment, investing on its stated terms (src/config/contribution-terms.ts).
+ * Amount → code → paid / expired / failed, in the words and steps every
+ * payment shares (src/config/payment-flow.ts, PaymentFlowSteps). Handles
+ * fixed_price (a purchase, which is also an order) and contribution flows:
+ * support, or for an investment, investing on its stated terms
+ * (src/config/contribution-terms.ts).
  */
 
 'use client';
@@ -18,8 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
-import { PaymentQRCode } from './PaymentQRCode';
-import { PaymentStatusIndicator } from './PaymentStatusIndicator';
+import { PaymentFlowSteps } from './PaymentFlowSteps';
 import { AmountField } from '@/components/money/AmountField';
 import { usePaymentFlow } from '@/hooks/usePaymentFlow';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
@@ -31,7 +32,8 @@ import {
 } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useChosenAmountBtc } from '@/components/money/useOpeningAmountBtc';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { PAYMENT_FLOW_COPY, payeeLine, type PaymentAct } from '@/config/payment-flow';
+import { ROUTES } from '@/config/routes';
 
 interface PaymentDialogProps {
   open: boolean;
@@ -46,6 +48,8 @@ interface PaymentDialogProps {
   priceCurrency?: string;
   /** Seller's profile ID (for checking wallet availability) */
   sellerProfileId?: string;
+  /** Who is paid (the owner's name): named before the money moves and on the receipt. */
+  recipientName?: string | null;
   /** Seed the contribution amount picker (e.g. wishlist tier target) */
   defaultAmount?: number;
   /** An investment's stated minimum/maximum, in BTC (src/config/contribution-terms.ts). */
@@ -60,6 +64,7 @@ export function PaymentDialog({
   entityTitle,
   priceBtc,
   priceCurrency,
+  recipientName = null,
   defaultAmount,
   contributionBounds = null,
 }: PaymentDialogProps) {
@@ -69,7 +74,9 @@ export function PaymentDialog({
   const range = contributionRange(contributionBounds);
   const { formatAmountBtc, formatPrice } = useDisplayCurrency();
 
-  const { state, initiate, confirmPaid, reset, isLoading } = usePaymentFlow();
+  const flow = usePaymentFlow();
+  const { state, initiate, reset, isLoading } = flow;
+  const act: PaymentAct = !isContribution ? 'pay' : terms ? 'invest' : 'support';
 
   const [contributionAmount, setContributionAmount] = useChosenAmountBtc(range, defaultAmount);
   // A new defaultAmount (another wishlist tier picked on the parent) re-seeds the picker.
@@ -130,10 +137,9 @@ export function PaymentDialog({
           </DialogTitle>
           <DialogDescription>
             {terms
-              ? `Choose an amount to ${terms.verb.toLowerCase()} on the terms on this page`
-              : isContribution
-                ? `Choose an amount to support this ${meta.name.toLowerCase()}`
-                : `Pay ${priceLabel}`}
+              ? `Choose an amount to ${terms.verb.toLowerCase()} on the terms on this page. `
+              : ''}
+            {payeeLine(recipientName, entityTitle)}
           </DialogDescription>
         </DialogHeader>
 
@@ -188,111 +194,32 @@ export function PaymentDialog({
               <Button
                 onClick={handleInitiate}
                 disabled={isLoading || !hasValidAmount}
-                className="w-full min-h-11"
+                className="w-full"
               >
-                {!isContribution
-                  ? `Pay ${priceLabel}`
-                  : contributionAmount > 0
-                    ? `${terms?.verb ?? 'Support with'} ${priceLabel}`
-                    : 'Enter an amount'}
+                {hasValidAmount || !isContribution
+                  ? PAYMENT_FLOW_COPY.action(act, priceLabel)
+                  : PAYMENT_FLOW_COPY.enterAmount}
               </Button>
+              <p className="mb-0 text-center text-xs text-fg-tertiary">
+                {PAYMENT_FLOW_COPY.custody}
+              </p>
             </>
           )}
 
-          {/* Phase: Initiating */}
-          {state.phase === 'initiating' && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-fg-tertiary" />
-              <p className="text-sm text-fg-secondary">Creating payment request…</p>
-            </div>
-          )}
-
-          {/* Phase: Awaiting Payment */}
-          {state.phase === 'awaiting_payment' && (
-            <div className="flex flex-col items-center gap-4">
-              <PaymentQRCode
-                qrData={state.data.qr_data}
-                methodLabel={state.data.method_label}
-                amountBtc={state.data.payment_intent.amount_btc}
-                expiresInSeconds={state.data.expires_in_seconds ?? undefined}
-              />
-
-              <PaymentStatusIndicator status="invoice_ready" />
-
-              {/* "I've paid" fallback ONLY for a bare Lightning address (no LUD-21
-                  verify URL) — the single rail we can't auto-detect. NWC,
-                  verify-capable Lightning addresses, and on-chain are confirmed
-                  automatically and the server refuses manual confirmation for them.
-                  Keep in sync with buyerConfirmPayment's guard. */}
-              {state.data.payment_intent.payment_method === 'lightning_address' &&
-                !state.data.payment_intent.lnurl_verify_url && (
-                  <Button variant="outline" size="sm" onClick={confirmPaid} className="min-h-11">
-                    I&apos;ve paid
-                  </Button>
-                )}
-              {state.notice && (
-                <p role="status" className="text-sm text-fg-secondary text-center">
-                  {state.notice}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Phase: Success */}
-          {state.phase === 'success' && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <CheckCircle2 className="h-12 w-12 text-status-positive" />
-              <p className="text-lg font-semibold text-status-positive">Payment successful!</p>
-              <p className="text-sm text-fg-secondary">
-                {terms
-                  ? `Your ${terms.noun} is paid.`
-                  : isContribution
-                    ? 'Thank you for your support!'
-                    : 'Your order has been placed.'}
-              </p>
-              <Button onClick={handleClose} className="min-h-11">
-                Done
+          <PaymentFlowSteps
+            flow={flow}
+            fixedAmount={!isContribution}
+            payeeName={recipientName}
+            forWhat={entityTitle}
+          >
+            {!isContribution && state.phase === 'success' && (
+              // A purchase is an order: the receipt leads to the record of it.
+              <Button variant="outline" href={ROUTES.DASHBOARD.ORDERS}>
+                {PAYMENT_FLOW_COPY.seeOrder}
               </Button>
-            </div>
-          )}
-
-          {/* Phase: Claimed — the buyer's word, awaiting the seller's check */}
-          {state.phase === 'claimed' && (
-            <div className="flex flex-col items-center gap-4 py-8 text-center">
-              <CheckCircle2 className="h-12 w-12 text-fg-secondary" />
-              <p className="text-lg font-semibold text-fg-primary">Thanks — noted</p>
-              <p className="text-sm text-fg-secondary">
-                The seller confirms once it shows in their wallet. You don&apos;t need to pay again.
-              </p>
-              <Button onClick={handleClose} className="min-h-11">
-                Done
-              </Button>
-            </div>
-          )}
-
-          {/* Phase: Expired */}
-          {state.phase === 'expired' && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <PaymentStatusIndicator status="expired" />
-              <p className="text-sm text-fg-secondary">
-                The invoice has expired. Please try again.
-              </p>
-              <Button onClick={reset} variant="outline" className="min-h-11">
-                Try Again
-              </Button>
-            </div>
-          )}
-
-          {/* Phase: Error */}
-          {state.phase === 'error' && (
-            <div className="flex flex-col items-center gap-4 py-8">
-              <PaymentStatusIndicator status="failed" />
-              <p className="text-sm text-status-negative">{state.message}</p>
-              <Button onClick={reset} variant="outline" className="min-h-11">
-                Try Again
-              </Button>
-            </div>
-          )}
+            )}
+            <Button onClick={handleClose}>{PAYMENT_FLOW_COPY.done}</Button>
+          </PaymentFlowSteps>
         </div>
       </DialogContent>
     </Dialog>

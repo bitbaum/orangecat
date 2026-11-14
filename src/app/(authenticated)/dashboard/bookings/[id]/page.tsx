@@ -14,7 +14,8 @@ import { BADGE_COLORS } from '@/config/badge-colors';
 import { STATUS } from '@/config/database-constants';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { logger } from '@/utils/logger';
-import { PublicPayPanel } from '@/components/payment/PublicPayPanel';
+import { BookingPayCard } from '@/components/bookings/BookingPayCard';
+import { bookingAmountDueBtc, isBookingPayable } from '@/domain/bookings/payment';
 import type { Booking } from '@/services/bookings';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 
@@ -82,19 +83,13 @@ export default function BookingDetailPage() {
     void loadBooking();
   }, [loadBooking]);
 
-  // For the customer on a confirmed-but-unpaid booking, fetch where to pay
-  // (the provider's public receiving address) so we can show a pay panel.
+  // For the customer on an accepted, unpaid booking: whether a payment can
+  // reach the provider at all, so the pay card never offers what cannot work.
   useEffect(() => {
     if (!booking) {
       return;
     }
-    const payable =
-      booking.role === 'customer' &&
-      (booking.status === STATUS.BOOKINGS.CONFIRMED ||
-        booking.status === STATUS.BOOKINGS.IN_PROGRESS) &&
-      booking.price_btc > 0 &&
-      (booking.total_paid_btc ?? 0) < booking.price_btc;
-    if (!payable) {
+    if (!(booking.role === 'customer' && isBookingPayable(booking))) {
       setReceive(null);
       return;
     }
@@ -262,37 +257,32 @@ export default function BookingDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Customer pay step — the booking dead-ended here before: confirmed,
-          but no way to pay. Reveal the provider's address + exact amount. */}
+      {/* Booked first, paid on acceptance: once the provider accepted, the
+          customer pays here through the one payment flow. */}
       {!isProvider &&
-        (booking.status === STATUS.BOOKINGS.CONFIRMED ||
-          booking.status === STATUS.BOOKINGS.IN_PROGRESS) &&
-        booking.price_btc > 0 &&
-        (booking.total_paid_btc ?? 0) < booking.price_btc &&
+        isBookingPayable(booking) &&
         (receive === undefined ? (
           <Card>
             <CardContent className="pt-6 flex items-center gap-2 text-sm text-fg-secondary">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading payment details…
             </CardContent>
           </Card>
-        ) : receive?.address &&
-          (receive.method === 'onchain' || receive.method === 'lightning_address') ? (
-          <PublicPayPanel
-            entityTitle={serviceTitle}
-            isContribution={false}
-            priceAmount={booking.price_btc}
-            priceCurrency="BTC"
-            amountBtc={booking.price_btc}
-            method={receive.method}
-            address={receive.address}
-          />
         ) : (
-          <Card>
-            <CardContent className="pt-6 text-sm text-fg-secondary">
-              The provider hasn&apos;t set up a payable Bitcoin address for this booking yet.
-            </CardContent>
-          </Card>
+          <BookingPayCard
+            bookingId={id}
+            title={serviceTitle}
+            amountDueBtc={bookingAmountDueBtc(booking)}
+            providerHasWallet={!!receive?.hasWallet}
+            onDone={() => void loadBooking()}
+          />
         ))}
+
+      {/* Before the provider answers, say when the payment comes. */}
+      {!isProvider && booking.status === STATUS.BOOKINGS.PENDING && booking.price_btc > 0 && (
+        <p className="mb-0 text-sm text-fg-secondary">
+          Nothing to pay yet. You pay here once the provider accepts.
+        </p>
+      )}
 
       {(booking.customer_notes || booking.provider_notes || booking.cancellation_reason) && (
         <Card>

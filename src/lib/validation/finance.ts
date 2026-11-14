@@ -12,6 +12,8 @@ import {
 } from '@/types/wallet';
 import { WALLET_VISIBILITY_LEVELS } from '@/config/wallet-visibility';
 import { TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
+import { GUEST_ORDER_NOTE_MAX } from '@/config/orders';
+import { GUEST_NAME_MAX } from '@/domain/events/tickets';
 import {
   lightningAddressSchema,
   optionalText,
@@ -390,6 +392,25 @@ export const publicSupportCreateSchema = z.object({
     .number()
     .min(TIP_MIN_BTC, `Minimum support amount is ${TIP_MIN_BTC} BTC`)
     .max(TIP_MAX_BTC, `Maximum support amount is ${TIP_MAX_BTC} BTC`),
+});
+
+/** POST /api/v1/payments/public/purchase — a fixed-price purchase without an account. */
+export const publicPurchaseCreateSchema = z.object({
+  entity_type: z.enum(ENTITY_TYPES, {
+    error: () => 'Invalid entity type',
+  }),
+  entity_id: z.string().guid('entity_id must be a valid UUID'),
+  // The price is never taken from the caller: the server reads the listing's.
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Tell the seller your name')
+    .max(GUEST_NAME_MAX, `Keep the name under ${GUEST_NAME_MAX} characters`),
+  note: z
+    .string()
+    .trim()
+    .max(GUEST_ORDER_NOTE_MAX, `Keep the note under ${GUEST_ORDER_NOTE_MAX} characters`)
+    .nullish(),
 });
 
 export const publicPaymentActionSchema = z.object({

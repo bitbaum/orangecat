@@ -45,6 +45,8 @@ export interface FakeSupabase {
   inserts: Array<{ table: string; values: Row | Row[] }>;
   /** Every `.rpc()` issued, in order. */
   rpcs: RpcCall[];
+  /** Every `.delete()` issued, in order, with the filters it was scoped by. */
+  deletes: Array<{ table: string; match: Row }>;
   /** Tables as they stand now (inserts are appended). */
   tables: FakeTables;
 }
@@ -54,6 +56,8 @@ export interface FakeSupabaseOptions {
   rpc?: Record<string, { data?: unknown; error?: unknown }>;
   /** Force `.update()` to fail, to exercise write-failure paths. */
   updateError?: unknown;
+  /** Force `.insert()` into the named tables to fail, leaving them untouched. */
+  insertError?: Record<string, unknown>;
 }
 
 type Predicate = (row: Row) => boolean;
@@ -95,12 +99,15 @@ export function createFakeSupabase(
   const updates: UpdateCall[] = [];
   const inserts: Array<{ table: string; values: Row | Row[] }> = [];
   const rpcs: RpcCall[] = [];
+  const deletes: Array<{ table: string; match: Row }> = [];
 
   function from(table: string) {
     const predicates: Predicate[] = [];
     const match: Row = {};
     const orders: Array<[string, boolean]> = [];
     let pendingUpdate: Row | null = null;
+    let pendingDelete = false;
+    let insertFailed: unknown = null;
     let limitTo: number | null = null;
 
     const rows = () => {
@@ -113,6 +120,15 @@ export function createFakeSupabase(
     };
 
     const settle = () => {
+      if (insertFailed) {
+        return { data: null, error: insertFailed };
+      }
+      if (pendingDelete) {
+        const doomed = new Set(rows());
+        deletes.push({ table, match: { ...match } });
+        state[table] = (state[table] ?? []).filter(r => !doomed.has(r));
+        return { data: null, error: null };
+      }
       if (pendingUpdate) {
         const affected = rows();
         updates.push({ table, patch: pendingUpdate, match: { ...match } });
@@ -176,13 +192,33 @@ export function createFakeSupabase(
         pendingUpdate = patch;
         return builder;
       },
+      // `a.eq.x,b.eq.y` — the only shape our queries pass to `.or()`.
+      or: (expr: string) => {
+        const terms = expr.split(',').map(term => {
+          const [col, op, ...rest] = term.split('.');
+          return { col, op, val: rest.join('.') };
+        });
+        predicates.push(r => terms.some(t => t.op === 'eq' && String(r[t.col]) === t.val));
+        return builder;
+      },
+      delete: () => {
+        pendingDelete = true;
+        return builder;
+      },
       insert: (values: Row | Row[]) => {
         inserts.push({ table, values });
+        if (options.insertError?.[table]) {
+          insertFailed = options.insertError[table];
+          return builder;
+        }
         const list = Array.isArray(values) ? values : [values];
         state[table] = [...(state[table] ?? []), ...list.map(v => ({ ...v }))];
         return builder;
       },
       single: () => {
+        if (insertFailed) {
+          return Promise.resolve(settle());
+        }
         const found = rows();
         if (pendingUpdate) {
           return Promise.resolve(settle());
@@ -194,7 +230,7 @@ export function createFakeSupabase(
         );
       },
       maybeSingle: () => {
-        if (pendingUpdate) {
+        if (pendingUpdate || insertFailed) {
           return Promise.resolve(settle());
         }
         return Promise.resolve({ data: rows()[0] ?? null, error: null });
@@ -216,6 +252,7 @@ export function createFakeSupabase(
     updates,
     inserts,
     rpcs,
+    deletes,
     tables: state,
   };
 }

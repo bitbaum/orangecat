@@ -206,7 +206,7 @@ export async function initiateTip(
     };
   } catch (err) {
     logger.error('Failed to initiate tip', { err: String(err), username }, 'Tips');
-    return { ok: false, error: 'Could not create a tip request right now. Please try again.' };
+    return { ok: false, error: 'Could not create a payment request right now. Please try again.' };
   }
 }
 

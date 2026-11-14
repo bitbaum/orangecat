@@ -2,8 +2,10 @@
  * PublicEntityPaymentSection — Replaces static PublicEntityCTA on entity pages
  *
  * Shows contextual UI based on auth/ownership state:
- * - Not logged in: pay without an account (support, or a ticket bought by name),
- *   else "Sign in to purchase"
+ * - Not logged in: pay without an account (support, a purchase that is a real
+ *   order, or a ticket bought by name)
+ * - A listing that is booked first (a service): no purchase here at all — the
+ *   page leads with Book and the payment is asked for on the accepted booking
  * - Logged in, IS the seller: SellerWalletBanner (prompt to connect wallet)
  * - Logged in, NOT the seller: PaymentButton (opens PaymentDialog)
  */
@@ -18,17 +20,15 @@ import { PaymentButton } from './PaymentButton';
 import { PaymentExpectationNote } from './PaymentExpectationNote';
 import { SellerWalletBanner } from './SellerWalletBanner';
 import { OwnerCollectPanel } from './OwnerCollectPanel';
-import { PublicPayPanel } from './PublicPayPanel';
+import { GuestPurchasePanel } from './GuestPurchasePanel';
 import { PublicSupportPanel } from './PublicSupportPanel';
 import { OptionalSupportPanel } from './OptionalSupportPanel';
 import { NoWalletYetNotice } from './NoWalletYetNotice';
-import { SharedWalletNotice } from './SharedWalletNotice';
-import { SignInToPurchaseCard } from './SignInToPurchaseCard';
 import GuestTicketPurchase from '@/components/events/GuestTicketPurchase';
-import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
+import { isBookedBeforePaid } from '@/config/payment-flow';
 import { inquiryHref } from '@/features/messaging/lib/draft';
 
 interface PublicEntityPaymentSectionProps {
@@ -46,17 +46,10 @@ interface PublicEntityPaymentSectionProps {
   /** Seller's auth.users ID for self-purchase detection (null if no seller found) */
   sellerUserId: string | null;
   /**
-   * Seller's public receiving info, resolved server-side (no secrets). Drives
-   * the anonymous pay-direct panel. `address` is null for NWC-only sellers.
+   * Seller's public receiving info, resolved server-side (no secrets): whether
+   * a payment can reach them at all. `address` is null for NWC-only sellers.
    */
   sellerReceive: { method: 'nwc' | 'lightning_address' | 'onchain'; address: string | null } | null;
-  /**
-   * How shared the resolved receiving wallet is (resolved server-side).
-   * Drives the backer-facing address-reuse disclosure next to the address.
-   */
-  sharedWalletUsage?: SharedWalletUsage | null;
-  /** Fixed price converted to BTC, for the anonymous BIP21 amount. */
-  priceAmountBtc?: number;
   /** An investment's stated minimum/maximum, in BTC (src/config/contribution-terms.ts). */
   contributionBounds?: ContributionBoundsBtc | null;
   /** Redirect path after sign-in */
@@ -75,8 +68,6 @@ export function PublicEntityPaymentSection({
   sellerProfileId,
   sellerUserId,
   sellerReceive,
-  sharedWalletUsage = null,
-  priceAmountBtc,
   contributionBounds = null,
   signInRedirect,
   supportTitle,
@@ -91,6 +82,7 @@ export function PublicEntityPaymentSection({
   // shows it: signed out, the guest buys by name (the invoice carries it and
   // settlement issues the ticket); signed in, the ticket lands in the account.
   const isTicket = entityType === 'event' && !!priceAmount;
+  const bookedFirst = isBookedBeforePaid(entityType);
 
   // No wallet a payment can reach: say so, and give the visitor the one thing
   // that still moves them forward — a message to the owner about this listing,
@@ -122,10 +114,9 @@ export function PublicEntityPaymentSection({
     );
   }
 
-  // Not logged in — permissionless by default: let anyone pay direct to the
-  // seller's public address (no account). Falls back to sign-in only when there
-  // is no static address to reveal (NWC-only seller), and to an honest notice
-  // when the seller has no wallet at all.
+  // Not logged in — permissionless by default: anyone can pay without an
+  // account, through a code minted on the seller's own wallet. An honest
+  // notice stands in when the seller has no wallet at all.
   if (!isAuthenticated) {
     if (meta.canReceiveSupport && meta.paymentPattern !== 'fixed_price') {
       return sellerReceive ? (
@@ -142,32 +133,37 @@ export function PublicEntityPaymentSection({
       );
     }
 
-    if (
-      !isTicket &&
-      sellerReceive?.address &&
-      (sellerReceive.method === 'onchain' || sellerReceive.method === 'lightning_address')
-    ) {
+    const optionalSupport = sellerReceive && meta.canReceiveSupport && (
+      <OptionalSupportPanel
+        entityType={entityType}
+        entityId={entityId}
+        entityTitle={entityTitle}
+        recipientName={recipientName}
+      />
+    );
+
+    // Booked first, paid once the provider accepts: the page's one action is
+    // Book (in the lead), so there is no purchase here, with or without a wallet.
+    if (bookedFirst) {
+      return optionalSupport || null;
+    }
+
+    // A purchase without an account is a real order: a code for exactly the
+    // price, minted on the seller's wallet (any kind of wallet, since the
+    // server mints it), and the order the seller sees.
+    if (!isTicket && sellerReceive && priceAmount) {
       return (
         <div className="space-y-4">
-          <PublicPayPanel
+          <GuestPurchasePanel
+            entityType={entityType}
+            entityId={entityId}
             entityTitle={entityTitle}
-            isContribution={meta.paymentPattern === 'contribution'}
+            recipientName={recipientName}
             priceAmount={priceAmount}
             priceCurrency={priceCurrency}
-            amountBtc={priceAmountBtc}
-            method={sellerReceive.method}
-            address={sellerReceive.address}
             signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
           />
-          <SharedWalletNotice usage={sharedWalletUsage} method={sellerReceive.method} />
-          {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
-            <OptionalSupportPanel
-              entityType={entityType}
-              entityId={entityId}
-              entityTitle={entityTitle}
-              recipientName={recipientName}
-            />
-          )}
+          {optionalSupport}
         </div>
       );
     }
@@ -188,24 +184,9 @@ export function PublicEntityPaymentSection({
       );
     }
 
-    const purchaseFallback = !sellerReceive ? (
-      noWalletNotice
-    ) : (
-      <SignInToPurchaseCard signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`} />
-    );
-    return sellerReceive && meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' ? (
-      <div className="space-y-4">
-        {purchaseFallback}
-        <OptionalSupportPanel
-          entityType={entityType}
-          entityId={entityId}
-          entityTitle={entityTitle}
-          recipientName={recipientName}
-        />
-      </div>
-    ) : (
-      purchaseFallback
-    );
+    // No wallet: say so, with the message to the owner. A wallet but no price
+    // (or a ticket with no wallet resolved above): nothing to buy here.
+    return !sellerReceive ? noWalletNotice : optionalSupport || null;
   }
 
   // Wait for wallet check before determining owner vs buyer UI
@@ -236,6 +217,19 @@ export function PublicEntityPaymentSection({
         priceCurrency={priceCurrency}
       />
     );
+  }
+
+  // Booked first, paid once the provider accepts (the booking carries the
+  // payment): no purchase on the page, only the optional extra support.
+  if (bookedFirst) {
+    return hasWallet && meta.canReceiveSupport ? (
+      <OptionalSupportPanel
+        entityType={entityType}
+        entityId={entityId}
+        entityTitle={entityTitle}
+        recipientName={recipientName}
+      />
+    ) : null;
   }
 
   // Logged in, NOT the seller, seller has no wallet — no purchase CTA. A greyed
@@ -269,6 +263,7 @@ export function PublicEntityPaymentSection({
             priceBtc={priceAmount}
             priceCurrency={priceCurrency}
             sellerProfileId={sellerProfileId ?? undefined}
+            recipientName={recipientName}
             sellerHasWallet={hasWallet}
             contributionBounds={contributionBounds}
             className="w-full min-h-11"

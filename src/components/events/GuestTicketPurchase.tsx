@@ -124,6 +124,7 @@ export default function GuestTicketPurchase({ eventId, eventPath }: GuestTicketP
 
         <PublicPaymentProgress
           payment={payment}
+          fixedAmount
           confirmationNote="The organizer confirms this Lightning Address payment by hand. Keep this page: your ticket opens here when they do."
         />
 

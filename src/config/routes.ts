@@ -624,6 +624,8 @@ export const ROUTES = {
     FINANCES: '/dashboard/finances',
     /** Every deal you were part of, and reviewing the other side (ADR-0010). */
     DEALS: '/dashboard/deals',
+    /** Every paid order you are a side of: who, what, their note, the reference. */
+    ORDERS: '/dashboard/orders',
     /** Where a person declares how they would split their public money. */
     CIVIC_SPLIT: '/dashboard/civic-split',
     /** Where an invitee answers a group invitation (the notification links here). */
