@@ -55,11 +55,15 @@ export function EventSheet({
                 <dd className="m-0 text-base text-fg-primary">{row.location}</dd>
               </div>
             )}
-            {(row.madeBy || CALENDAR_COPY.source[row.source]) && (
+            {(row.madeBy || row.calendarName || CALENDAR_COPY.source[row.source]) && (
               <div>
                 <dt className="text-xs uppercase tracking-wide text-fg-tertiary">From</dt>
                 <dd className="m-0 text-base text-fg-primary">
-                  {row.madeBy ? CALENDAR_COPY.madeBy(row.madeBy) : CALENDAR_COPY.source[row.source]}
+                  {row.madeBy
+                    ? CALENDAR_COPY.madeBy(row.madeBy)
+                    : row.calendarName
+                      ? `Your ${row.calendarName} calendar`
+                      : CALENDAR_COPY.source[row.source]}
                 </dd>
               </div>
             )}

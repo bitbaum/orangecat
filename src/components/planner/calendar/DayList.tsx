@@ -88,9 +88,9 @@ export function DayList({
                         <span className="block truncate text-base text-fg-primary">
                           {row.title}
                         </span>
-                        {(row.location || CALENDAR_COPY.source[row.source]) && (
+                        {(row.location || row.calendarName || CALENDAR_COPY.source[row.source]) && (
                           <span className="block truncate text-sm text-fg-secondary">
-                            {[CALENDAR_COPY.source[row.source], row.location]
+                            {[row.calendarName ?? CALENDAR_COPY.source[row.source], row.location]
                               .filter(Boolean)
                               .join(' · ')}
                           </span>

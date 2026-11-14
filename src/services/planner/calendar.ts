@@ -16,6 +16,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
 import { listCalendarEvents } from '@/services/connectors/google-read';
+import { readLinkedCalendars } from './feeds';
 import { getGoogleConnection } from '@/services/google/connection';
 import { hasUtcOffset, instantToWallTime, isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
 import type { PlannerOutcome } from './tasks';
@@ -27,7 +28,8 @@ const ENTRIES_MAX = 200;
 const DAY_MS = 86_400_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type AgendaSource = 'calendar' | 'task' | 'reminder' | 'google';
+/** Own entries, what falls due, a connected Google account, and calendars linked by their iCal address. */
+export type AgendaSource = 'calendar' | 'task' | 'reminder' | 'google' | 'linked';
 
 export interface AgendaItem {
   source: AgendaSource;
@@ -41,6 +43,8 @@ export interface AgendaItem {
   location?: string | null;
   /** Who wrote an own entry: 'me', 'cat', or a bot's id. */
   madeBy?: string;
+  /** The name a linked calendar was given ("Work", "Family"). */
+  calendarName?: string;
 }
 
 /** How many days ahead, from what was asked: 1 to 62, a week when unsaid. Pure. */
@@ -234,7 +238,7 @@ export async function readAgenda(
   userId: string,
   daysAsked: unknown,
   now: Date = new Date(),
-  deps: { google?: typeof readGoogleEvents } = {}
+  deps: { google?: typeof readGoogleEvents; linked?: typeof readLinkedCalendars } = {}
 ): Promise<Agenda> {
   const days = agendaDays(daysAsked);
   const until = new Date(now.getTime() + days * DAY_MS);
@@ -275,19 +279,23 @@ export async function readAgendaBetween(
   userId: string,
   fromDate: Date,
   untilDate: Date,
-  deps: { google?: typeof readGoogleEvents } = {}
+  deps: { google?: typeof readGoogleEvents; linked?: typeof readLinkedCalendars } = {}
 ): Promise<Agenda> {
   const span = Math.min(
     RANGE_DAYS_MAX,
     Math.max(1, Math.ceil((untilDate.getTime() - fromDate.getTime()) / DAY_MS))
   );
   const until = new Date(fromDate.getTime() + span * DAY_MS);
-  const [entries, tasks, google] = await Promise.all([
+  const [entries, tasks, google, linked] = await Promise.all([
     ownEntries(supabase, userId, fromDate, until.toISOString()),
     dueTasks(supabase, userId, fromDate.toISOString(), until.toISOString()),
     (deps.google ?? readGoogleEvents)(userId, span, fromDate).catch(() => ({
       items: [],
       note: null,
+    })),
+    (deps.linked ?? readLinkedCalendars)(supabase, userId, fromDate, until).catch(() => ({
+      items: [] as AgendaItem[],
+      notes: [] as string[],
     })),
   ]);
   const items: AgendaItem[] = [
@@ -311,8 +319,10 @@ export async function readAgendaBetween(
       allDay: false,
     })),
     ...google.items,
+    ...linked.items,
   ].sort((a, b) => at(a) - at(b));
-  return { days: span, items, googleNote: google.note };
+  const notes = [google.note, ...linked.notes].filter(Boolean);
+  return { days: span, items, googleNote: notes.length > 0 ? notes.join(' ') : null };
 }
 
 /** The connected Google calendar as agenda items; nothing, silently, when none is connected. */
@@ -368,6 +378,7 @@ const SOURCE_WORD: Record<AgendaSource, string> = {
   task: ' · task due',
   reminder: ' · reminder',
   google: ' · Google calendar',
+  linked: '',
 };
 
 /** The agenda as a model and a person both read it. Pure. */
@@ -380,7 +391,8 @@ export function agendaText(agenda: Agenda, zone: string | null): string {
         : '';
     const id =
       i.id && i.source === 'calendar' ? ` [entry_id: ${i.id}]` : i.id ? ` [task_id: ${i.id}]` : '';
-    return `- ${whenText(i.start, i.allDay, zone)}${end} · ${i.title}${i.location ? ` · ${i.location}` : ''}${SOURCE_WORD[i.source]}${id}`;
+    const from = i.calendarName ? ` · ${i.calendarName} calendar` : SOURCE_WORD[i.source];
+    return `- ${whenText(i.start, i.allDay, zone)}${end} · ${i.title}${i.location ? ` · ${i.location}` : ''}${from}${id}`;
   });
   return [
     lines.length > 0

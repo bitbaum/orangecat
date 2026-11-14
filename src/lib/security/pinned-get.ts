@@ -89,3 +89,98 @@ export function pinnedGetStatus(rawUrl: string, timeoutMs: number): Promise<numb
     req.end();
   });
 }
+
+export interface PinnedText {
+  status: number;
+  contentType: string;
+  text: string;
+  /** The address the body finally came from, after redirects. */
+  url: string;
+}
+
+const REDIRECTS = new Set([301, 302, 303, 307, 308]);
+
+/**
+ * GET the URL and read its body as text, from public addresses only, through
+ * the same pinned lookup. Follows up to `maxRedirects` redirects, each one
+ * checked again (a calendar host often answers from another server). Stops
+ * reading past `maxBytes` and rejects: a calendar file, not a download.
+ */
+export async function pinnedGetText(
+  rawUrl: string,
+  opts: { timeoutMs: number; maxBytes: number; maxRedirects?: number; accept?: string }
+): Promise<PinnedText> {
+  let current = rawUrl;
+  for (let hop = 0; hop <= (opts.maxRedirects ?? 3); hop++) {
+    const answer = await getOnce(current, opts);
+    if (!REDIRECTS.has(answer.status) || !answer.location) {
+      return { ...answer, url: current };
+    }
+    current = new URL(answer.location, current).toString();
+  }
+  throw new PinnedGetRefused('too many redirects');
+}
+
+function getOnce(
+  rawUrl: string,
+  opts: { timeoutMs: number; maxBytes: number; accept?: string }
+): Promise<{ status: number; contentType: string; text: string; location: string | null }> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return Promise.reject(new PinnedGetRefused('not a valid URL'));
+  }
+  const https = url.protocol === 'https:';
+  if (!https && url.protocol !== 'http:') {
+    return Promise.reject(new PinnedGetRefused('only http(s) URLs are allowed'));
+  }
+  if (url.port && url.port !== (https ? '443' : '80')) {
+    return Promise.reject(new PinnedGetRefused('only the default port is asked'));
+  }
+  const host = url.hostname.replace(/^\[|\]$/g, '');
+  if (isIP(host) && isPrivateAddress(host)) {
+    return Promise.reject(new PinnedGetRefused('IP address is private or reserved'));
+  }
+  return new Promise((resolve, reject) => {
+    const req = (https ? httpsRequest : httpRequest)(
+      url,
+      {
+        method: 'GET',
+        headers: { accept: opts.accept ?? '*/*', 'user-agent': 'OrangeCat calendar' },
+        lookup: publicOnlyLookup as never,
+        timeout: opts.timeoutMs,
+      },
+      res => {
+        const status = res.statusCode ?? 0;
+        const location = typeof res.headers.location === 'string' ? res.headers.location : null;
+        const contentType = String(res.headers['content-type'] ?? '');
+        if (REDIRECTS.has(status)) {
+          res.destroy();
+          resolve({ status, contentType, text: '', location });
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        res.on('data', (chunk: Buffer) => {
+          size += chunk.length;
+          if (size > opts.maxBytes) {
+            res.destroy();
+            reject(new PinnedGetRefused('the answer is larger than allowed'));
+            return;
+          }
+          chunks.push(chunk);
+        });
+        res.on('end', () =>
+          resolve({ status, contentType, text: Buffer.concat(chunks).toString('utf8'), location })
+        );
+        res.on('error', reject);
+      }
+    );
+    req.on('timeout', () =>
+      req.destroy(Object.assign(new Error('timeout'), { name: 'TimeoutError' }))
+    );
+    req.on('error', reject);
+    req.end();
+  });
+}

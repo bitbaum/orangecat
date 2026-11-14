@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Link2, Plus } from 'lucide-react';
 import { formatTime, type ISODate } from '@bitbaum/whenkit';
 import { API_ROUTES } from '@/config/api-routes';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -20,6 +20,8 @@ import { parseQuickAdd, type QuickAdd as Parsed } from '@/services/planner/quick
 import { APP_LOCALE } from '@/utils/locale';
 import { browserTimeZone } from '@/utils/timezone';
 import { AddSheet } from './calendar/AddSheet';
+import { ConnectSheet } from './calendar/ConnectSheet';
+import { CONNECT_COPY } from './calendar/connect-copy';
 import { CALENDAR_COPY } from './calendar/copy';
 import { DayList } from './calendar/DayList';
 import { EventSheet } from './calendar/EventSheet';
@@ -38,6 +40,8 @@ import { VoiceButton } from './calendar/VoiceButton';
 import { WeekView } from './calendar/WeekView';
 import { browserToday, dayHeading } from './days';
 
+const CONNECT_OPEN = CONNECT_COPY.open;
+
 const MODES = (['month', 'week', 'list'] as const).map(value => ({
   value,
   label: CALENDAR_COPY.modes[value],
@@ -51,6 +55,7 @@ export function CalendarView() {
   const [adding, setAdding] = useState<{ day: ISODate; time: string | null } | null>(null);
   const [opened, setOpened] = useState<{ row: CalendarPageRow; day: ISODate } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   const range = rangeFor(mode, anchor, weekWidth);
   const data = useCalendarData(range.from, range.to);
@@ -153,6 +158,15 @@ export function CalendarView() {
         />
         <button
           type="button"
+          onClick={() => setConnecting(true)}
+          aria-label={CONNECT_OPEN}
+          title={CONNECT_OPEN}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-default text-fg-primary hover:bg-surface-raised"
+        >
+          <Link2 className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           onClick={() => setAdding({ day: anchor, time: null })}
           className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-fg-primary px-4 text-sm font-medium text-fg-inverted"
         >
@@ -236,6 +250,11 @@ export function CalendarView() {
         busy={busy}
         onClose={() => setAdding(null)}
         onAdd={add}
+      />
+      <ConnectSheet
+        open={connecting}
+        onClose={() => setConnecting(false)}
+        onChanged={() => void data.reload()}
       />
       <EventSheet
         open={opened !== null}

@@ -127,6 +127,10 @@ export const DATABASE_TABLES = {
   TASKS: 'tasks',
   /** A person's own calendar: entries they, their Cat or a bot wrote. */
   CALENDAR_ENTRIES: 'calendar_entries',
+  /** Other calendars a person linked by their private iCal address. */
+  CALENDAR_FEEDS: 'calendar_feeds',
+  /** The secret behind a person's own calendar as an iCal feed. */
+  CALENDAR_SHARE_TOKENS: 'calendar_share_tokens',
   TASK_COMPLETIONS: 'task_completions',
   TASK_ATTENTION_FLAGS: 'task_attention_flags',
   TASK_REQUESTS: 'task_requests',
