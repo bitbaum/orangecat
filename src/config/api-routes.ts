@@ -12,6 +12,8 @@ export const API_ROUTES = {
   MCP: '/api/mcp',
   CAT: {
     CHAT: '/api/cat/chat',
+    /** One answer for a visitor with no account (the home page's door). */
+    FIRST_ANSWER: '/api/cat/first-answer',
     PREPARE: '/api/cat/prepare',
     LOCAL_COMPLETE: '/api/cat/local-complete',
     TRANSCRIBE: '/api/cat/transcribe',
@@ -50,6 +52,8 @@ export const API_ROUTES = {
   PEOPLE: '/api/people',
   // Public feedback + Ask Cat (no auth required)
   FEEDBACK: '/api/feedback',
+  /** Is this pay-link name free to claim? `?name=` */
+  PAY_NAME: '/api/pay/name',
   NEWSLETTER_SUBSCRIBE: '/api/newsletter/subscribe',
   INTEGRATION_KEYS: {
     BASE: '/api/integration-keys',

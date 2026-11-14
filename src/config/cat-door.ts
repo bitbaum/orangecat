@@ -24,3 +24,32 @@ export const CAT_DOOR = {
   minLength: 3,
   maxLength: 500,
 } as const;
+
+/** Where the Cat lives; the door sends a sentence there. Spelled as ROUTES.DASHBOARD.CAT. */
+const CAT_PATH = '/dashboard/cat';
+
+/** The Cat, with a sentence already asked. */
+export function catHrefWithSentence(sentence: string): string {
+  return `${CAT_PATH}?${CAT_QUERY_PARAM}=${encodeURIComponent(sentence)}`;
+}
+
+/**
+ * The register form for a visitor who already typed something: after sign-up
+ * they land on the Cat with that sentence asked, so nothing typed is lost.
+ */
+export function registerHrefKeepingSentence(sentence: string): string {
+  return `/auth?mode=register&from=${encodeURIComponent(catHrefWithSentence(sentence))}`;
+}
+
+/**
+ * The sentence a return path carries to the Cat, or null. The account screen
+ * shows it, so the visitor sees their words were kept (they used to survive
+ * only inside `from=`, which nobody reads).
+ */
+export function sentenceFromReturnPath(from: string | null | undefined): string | null {
+  if (!from || !from.startsWith(`${CAT_PATH}?`)) {
+    return null;
+  }
+  const sentence = new URLSearchParams(from.slice(CAT_PATH.length + 1)).get(CAT_QUERY_PARAM);
+  return sentence?.trim() ? sentence.trim().slice(0, CAT_DOOR.maxLength) : null;
+}
