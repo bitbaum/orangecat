@@ -60,8 +60,10 @@ describe('the sidebar after the fold', () => {
 
   // Seven since Discover moved up from "More" (full-path review 2026-11-13):
   // the shelf where makers are found was two clicks away and never lit up.
+  // Eight since Calendar moved up (walked live 2026-11-14): folded inside
+  // "Money and work", a new person could not find their calendar.
   it('keeps the primary section short enough to read at a glance', () => {
-    expect(hrefs.length).toBeLessThanOrEqual(7);
+    expect(hrefs.length).toBeLessThanOrEqual(8);
   });
 
   it('no longer lists entity types one by one', () => {
