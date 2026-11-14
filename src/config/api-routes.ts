@@ -161,6 +161,13 @@ export const API_ROUTES = {
   CALENDAR: {
     BASE: '/api/calendar',
     BY_ID: (id: string) => `/api/calendar/${id}`,
+    /** Other calendars linked by their iCal address: GET list, POST link. */
+    LINKED: '/api/calendar/linked',
+    LINKED_BY_ID: (id: string) => `/api/calendar/linked/${id}`,
+    /** The person's own calendar as a link: GET, POST make anew, DELETE stop. */
+    SHARE: '/api/calendar/share',
+    /** The feed a calendar app subscribes to (no sign-in; the secret is the key). */
+    FEED: (token: string) => `/api/calendar/feed/${token}.ics`,
   },
   /** The person's own to-do list, as the planner pages use it (services/planner). */
   PLANNER_TASKS: {

@@ -18,6 +18,8 @@ export interface CalendarPageRow {
   location: string | null;
   /** Who wrote an own entry: 'me', 'cat', or a bot's id. */
   madeBy?: string;
+  /** The name of the linked calendar it came from. */
+  calendarName?: string;
   /** Minutes after midnight in the person's clock, for placing it on a time grid; null = all day. */
   startMinute: number | null;
   /** Where it ends on that grid; never past midnight, at least a quarter hour after it starts. */
@@ -68,6 +70,7 @@ function rowOf(item: AgendaItem, zone: string | null): { day: string; row: Calen
       time: end && end !== clock ? `${clock} to ${end}` : clock,
       location: item.location ?? null,
       ...(item.madeBy ? { madeBy: item.madeBy } : {}),
+      ...(item.calendarName ? { calendarName: item.calendarName } : {}),
       startMinute,
       endMinute: endMinute === null ? null : Math.min(endMinute, 24 * 60),
     },

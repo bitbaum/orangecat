@@ -183,6 +183,7 @@
     "framer-motion": "^13.4.0",
     "glob": "^11.0.3",
     "hono": "^4.13.7",
+    "ical.js": "^2.2.1",
     "jose": "^6.2.12",
     "jsqr": "^1.4.0",
     "listkit": "npm:@bitbaum/listkit@^0.2.2",
