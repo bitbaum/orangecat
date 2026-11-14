@@ -450,7 +450,7 @@ async function prepareTurn(
     conversationId: prepared.conversationId,
     baseMessages,
     withDraftPhoto,
-    doneInCode: written?.reply ?? null,
+    doneInCode: written?.reply ?? preRead?.plain ?? null,
   };
 }
 

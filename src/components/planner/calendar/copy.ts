@@ -22,6 +22,7 @@ export const CALENDAR_COPY = {
   allDay: 'All day',
   more: (n: number) => `+${n} more`,
   remove: 'Remove from calendar',
+  removed: (what: string) => `Removed: ${what}`,
   close: 'Close',
   openTasks: 'Open your to-do list',
   source: {

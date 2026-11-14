@@ -59,20 +59,16 @@ export async function writeCalendarFromChat(
       ? `Added to your calendar: ${entry.title}, ${when}.`
       : `I could not add that to your calendar: ${added.error ?? 'no reason given'}.`;
     const said = added.success
-      ? `Added to their calendar just now: "${entry.title}" on ${whenText(
-          row?.starts_at ?? '',
-          !entry.time,
-          zone
-        )}${entry.time ? ` for ${entry.minutes ?? 60} minutes` : ''}${
-          entry.place ? ` at ${entry.place}` : ''
-        } [entry_id: ${row?.id ?? ''}].`
+      ? `Added to their calendar just now: "${entry.title}", ${when}${
+          entry.time ? `, for ${entry.minutes ?? 60} minutes` : ''
+        } [entry_id: ${row?.id ?? ''}; starts ${whenText(row?.starts_at ?? '', !entry.time, zone)}].`
       : `Their calendar could not be written just now: ${added.error ?? 'no reason given'}.`;
     return {
       block: [
         '## Done just now, for this message',
         said,
         added.success
-          ? 'Confirm it in one short sentence with the day and time as written above. Do not call calendar_add for it again. If the day or time looks wrong to you, say so and offer to change it.'
+          ? 'Confirm it in one short sentence, with the day and time in the words written above (not as a date like 2026-11-20). Do not call calendar_add for it again. If the day or time looks wrong to you, say so and offer to change it.'
           : 'Say so in one plain sentence; nothing was added.',
       ].join('\n\n'),
       evidence: [said, reply],
