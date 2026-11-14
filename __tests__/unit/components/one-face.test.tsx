@@ -14,7 +14,7 @@ import AvatarLink from '@/components/ui/AvatarLink';
 import { CatAvatar } from '@/components/cat/CatAvatar';
 import CatIsAnswering from '@/components/timeline/CatIsAnswering';
 import { PostHeader } from '@/components/timeline/PostHeader';
-import { CAT_AVATAR_PATH, CAT_USERNAME, avatarUrlFor } from '@/config/cat-identity';
+import { CAT_AVATAR_SRC, CAT_USERNAME, avatarUrlFor } from '@/config/cat-identity';
 import type { TimelineDisplayEvent } from '@/types/timeline';
 
 describe('the Cat has one face', () => {
@@ -41,11 +41,11 @@ describe('the Cat has one face', () => {
   });
 
   it('has the same drawing as a picture URL, for slots that only take one', () => {
-    expect(avatarUrlFor('cat', null)).toBe(CAT_AVATAR_PATH);
-    expect(avatarUrlFor('Cat', 'https://example.com/other.png')).toBe(CAT_AVATAR_PATH);
+    expect(avatarUrlFor('cat', null)).toBe(CAT_AVATAR_SRC);
+    expect(avatarUrlFor('Cat', 'https://example.com/other.png')).toBe(CAT_AVATAR_SRC);
     expect(avatarUrlFor('mao', 'https://example.com/mao.png')).toBe('https://example.com/mao.png');
     expect(avatarUrlFor('mao', null)).toBeNull();
-    expect(existsSync(join(process.cwd(), 'public', CAT_AVATAR_PATH))).toBe(true);
+    expect(existsSync(join(process.cwd(), 'public', CAT_AVATAR_SRC))).toBe(true);
   });
 });
 

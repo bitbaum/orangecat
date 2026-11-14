@@ -11,7 +11,7 @@
  * icon is.
  *
  * Where only a picture URL fits (a package's avatar slot, a share card), use
- * `CAT_AVATAR_PATH` / `avatarUrlFor` from config/cat-identity.ts: the same
+ * `CAT_AVATAR_SRC` / `avatarUrlFor` from config/cat-identity.ts: the same
  * drawing, as the generated static asset.
  */
 

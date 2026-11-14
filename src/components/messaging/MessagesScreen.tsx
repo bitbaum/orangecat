@@ -24,7 +24,7 @@ import '@bitbaum/chatkit/styles/messenger.css';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
 import { textareaSurface } from '@/components/mentions/caret';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
-import { CAT_AVATAR_PATH, CAT_DISPLAY_NAME, CAT_MENTION } from '@/config/cat-identity';
+import { CAT_AVATAR_SRC, CAT_DISPLAY_NAME, CAT_MENTION } from '@/config/cat-identity';
 import { APP_CONTENT_HEIGHT_CLASS, IMMERSIVE_CHAT_ATTR } from '@/config/layout-chrome';
 import {
   MESSAGE_ATTACHMENT_POLICY,
@@ -121,7 +121,7 @@ export default function MessagesScreen({
               name: agent.name || CAT_DISPLAY_NAME,
               mention: CAT_MENTION,
               // One face for the Cat: list, picker and thread all draw this picture.
-              avatarUrl: CAT_AVATAR_PATH,
+              avatarUrl: CAT_AVATAR_SRC,
               hint: 'Everyone in the conversation sees its answer',
             },
           ]

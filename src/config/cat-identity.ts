@@ -49,7 +49,7 @@ export function isCatUsername(username: string | null | undefined): boolean {
  * <CatAvatar> (components/cat/CatAvatar.tsx), which is the same drawing; this
  * is for the places that only take a URL.
  */
-export const CAT_AVATAR_PATH = '/icons/icon-512-maskable.png';
+export const CAT_AVATAR_SRC = '/icons/icon-512-maskable.png';
 
 /**
  * The picture a profile is shown with. The Cat always wears its own face,
@@ -59,5 +59,5 @@ export function avatarUrlFor(
   username: string | null | undefined,
   avatarUrl: string | null | undefined
 ): string | null {
-  return isCatUsername(username) ? CAT_AVATAR_PATH : avatarUrl || null;
+  return isCatUsername(username) ? CAT_AVATAR_SRC : avatarUrl || null;
 }
