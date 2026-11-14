@@ -4,7 +4,14 @@
  * the span, with their moved and cancelled occurrences applied; each time is
  * read in the zone the file names (from its own VTIMEZONE blocks).
  *
- * The parsing is ical.js (Mozilla's). Pure apart from it: no fetch here.
+ * The parsing is ical.js (Mozilla's). No fetch here.
+ *
+ * Reading runs on the server's one thread, so it is bounded and polite: a
+ * series that ended before the span is skipped without walking it, the whole
+ * file gets a fixed number of recurrence steps, and the walk hands the thread
+ * back every few milliseconds. A big calendar is read in part (and says so)
+ * instead of freezing every other request — on 14 Nov 2026 one did, and
+ * orangecat.ch answered nothing for about 25 minutes.
  */
 
 import ICAL from 'ical.js';
@@ -14,6 +21,20 @@ import type { AgendaItem } from './calendar';
 const OCCURRENCES_MAX = 400;
 /** Items one calendar file may contribute to one span. */
 const ITEMS_MAX = 500;
+/** Recurrence steps one file may take in all (each is ~25 µs of ical.js, so a few seconds at most, given back in slices). */
+export const STEPS_MAX = 150_000;
+/** Steps between handing the thread back to other requests (~25 ms). */
+const STEPS_PER_SLICE = 1_000;
+/** Events looked at between handing the thread back, for files of many short series. */
+const EVENTS_PER_SLICE = 200;
+
+/** What a file gave for a span; `complete` is false when the step budget ran out first. */
+export interface CalendarRead {
+  items: AgendaItem[];
+  complete: boolean;
+}
+
+const yieldThread = () => new Promise<void>(resolve => setImmediate(resolve));
 
 type ICALTime = InstanceType<typeof ICAL.Time>;
 type ICALEvent = InstanceType<typeof ICAL.Event>;
@@ -55,13 +76,32 @@ function touches(start: ICALTime, end: ICALTime | null, from: Date, until: Date)
 
 export class CalendarFileError extends Error {}
 
+/** A repeating rule that ended (UNTIL) before the span, with no extra dates: nothing to walk. */
+function endedBefore(event: ICALEvent, from: Date): boolean {
+  const comp = event.component;
+  if (comp.hasProperty('rdate')) {
+    return false;
+  }
+  const rules = comp.getAllProperties('rrule').map(p => p.getFirstValue() as { until?: ICALTime });
+  return (
+    rules.length > 0 && rules.every(r => r.until && r.until.toJSDate().getTime() < from.getTime())
+  );
+}
+
+/** An occurrence of a series with exceptions: does it (as moved) end on or after `fromMs`? */
+function mayReach(event: ICALEvent, next: ICALTime, fromMs: number): boolean {
+  const d = event.getOccurrenceDetails(next);
+  return !d.endDate || d.endDate.toJSDate().getTime() >= fromMs;
+}
+
 /** Read a calendar file. Throws CalendarFileError when it is not one. */
-export function readCalendarFile(
+export async function readCalendarFile(
   text: string,
   from: Date,
   until: Date,
-  calendarName: string
-): AgendaItem[] {
+  calendarName: string,
+  stepsMax: number = STEPS_MAX
+): Promise<CalendarRead> {
   let root: InstanceType<typeof ICAL.Component>;
   try {
     root = new ICAL.Component(ICAL.parse(text));
@@ -95,10 +135,17 @@ export function readCalendarFile(
   }
 
   const out: AgendaItem[] = [];
-  const fromTime = ICAL.Time.fromJSDate(from, true);
-  for (const event of masters.values()) {
+  let steps = 0;
+  let complete = true;
+  const fromMs = from.getTime();
+  const untilMs = until.getTime();
+  let seen = 0;
+  walk: for (const event of masters.values()) {
     if (out.length >= ITEMS_MAX) {
       break;
+    }
+    if (++seen % EVENTS_PER_SLICE === 0) {
+      await yieldThread();
     }
     const status = String(event.component.getFirstPropertyValue('status') ?? '').toUpperCase();
     if (status === 'CANCELLED' || !event.startDate) {
@@ -110,18 +157,38 @@ export function readCalendarFile(
       }
       continue;
     }
+    if (endedBefore(event, from)) {
+      continue;
+    }
+    // How long an occurrence can run, plus two days for all-day and
+    // zone-shifted ones, so one that started before the span is only looked
+    // at closely when it could still reach into it. A series with moved or
+    // changed occurrences (exceptions) is always looked at closely.
+    const reachMs = (Math.max(event.duration?.toSeconds() ?? 0, 0) + 2 * 86_400) * 1000;
+    const plain = Object.keys(event.exceptions).length === 0;
     const it = event.iterator();
     for (let n = 0; n < OCCURRENCES_MAX * 20; n++) {
+      if (steps >= stepsMax) {
+        complete = false;
+        break walk;
+      }
+      if (++steps % STEPS_PER_SLICE === 0) {
+        await yieldThread();
+      }
       const next = it.next();
-      if (!next || next.toJSDate().getTime() >= until.getTime()) {
+      if (!next) {
+        break;
+      }
+      const nextMs = next.toJSDate().getTime();
+      if (nextMs >= untilMs) {
         break;
       }
       // Fast-forward past occurrences that ended before the span, cheaply.
-      if (next.compare(fromTime) < 0 && !next.isDate) {
-        const d = event.getOccurrenceDetails(next);
-        if (d.endDate && d.endDate.toJSDate().getTime() < from.getTime()) {
-          continue;
-        }
+      if (plain && nextMs + reachMs < fromMs) {
+        continue;
+      }
+      if (!plain && nextMs < fromMs && !mayReach(event, next, fromMs)) {
+        continue;
       }
       const d = event.getOccurrenceDetails(next);
       const cancelled =
@@ -135,5 +202,5 @@ export function readCalendarFile(
       }
     }
   }
-  return out;
+  return { items: out, complete };
 }

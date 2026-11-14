@@ -29,7 +29,7 @@ const from = new Date('2026-11-14T00:00:00Z');
 const until = new Date('2026-12-14T00:00:00Z');
 
 describe('reading a calendar from elsewhere', () => {
-  it('expands a weekly meeting in its own time zone, with a moved one and a cancelled one', () => {
+  it('expands a weekly meeting in its own time zone, with a moved one and a cancelled one', async () => {
     const text = ics(
       [
         ZURICH,
@@ -56,7 +56,7 @@ describe('reading a calendar from elsewhere', () => {
         'END:VEVENT',
       ].join('\r\n')
     );
-    const items = readCalendarFile(text, from, until, 'Work');
+    const { items } = await readCalendarFile(text, from, until, 'Work');
     expect(items.map(i => [i.title, i.start])).toEqual([
       ['Standup', '2026-11-16T08:00:00.000Z'],
       ['Standup (late)', '2026-11-30T10:00:00.000Z'],
@@ -65,8 +65,8 @@ describe('reading a calendar from elsewhere', () => {
     expect(items[0]).toMatchObject({ source: 'linked', calendarName: 'Work', allDay: false });
   });
 
-  it('keeps an all-day entry as a day', () => {
-    const items = readCalendarFile(
+  it('keeps an all-day entry as a day', async () => {
+    const { items } = await readCalendarFile(
       ics(
         [
           'BEGIN:VEVENT',
@@ -86,10 +86,78 @@ describe('reading a calendar from elsewhere', () => {
     ]);
   });
 
-  it('refuses a page that is not a calendar', () => {
-    expect(() => readCalendarFile('<html>sign in</html>', from, until, 'x')).toThrow(
+  it('refuses a page that is not a calendar', async () => {
+    await expect(readCalendarFile('<html>sign in</html>', from, until, 'x')).rejects.toThrow(
       CalendarFileError
     );
+  });
+});
+
+const series = (uid: string, start: string, rule: string, end?: string) =>
+  [
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `SUMMARY:${uid}`,
+    `DTSTART${start.length === 8 ? ';VALUE=DATE' : ''}:${start}`,
+    ...(end ? [`DTEND${end.length === 8 ? ';VALUE=DATE' : ''}:${end}`] : []),
+    `RRULE:${rule}`,
+    'END:VEVENT',
+  ].join('\r\n');
+
+describe('a big calendar never holds the server', () => {
+  it('skips a series that ended before the span without walking it', async () => {
+    const text = ics(
+      [
+        series('old', '20000103T090000Z', 'FREQ=DAILY;UNTIL=20200101T000000Z', '20000103T100000Z'),
+        'BEGIN:VEVENT\r\nUID:now\r\nSUMMARY:now\r\nDTSTART:20261120T100000Z\r\nEND:VEVENT',
+      ].join('\r\n')
+    );
+    const read = await readCalendarFile(text, from, until, 'x', 5);
+    expect(read).toMatchObject({
+      complete: true,
+      items: [expect.objectContaining({ title: 'now' })],
+    });
+  });
+
+  it('finds the span of a series that began years ago, timed and all-day', async () => {
+    const text = ics(
+      [
+        series('gym', '20100104T170000Z', 'FREQ=WEEKLY;BYDAY=MO', '20100104T180000Z'),
+        series('pill', '20150101', 'FREQ=DAILY', '20150102'),
+      ].join('\r\n')
+    );
+    const { items, complete } = await readCalendarFile(text, from, until, 'x');
+    expect(complete).toBe(true);
+    const gym = items.filter(i => i.title === 'gym').map(i => i.start);
+    expect(gym[0]).toBe('2026-11-16T17:00:00.000Z');
+    expect(gym).toHaveLength(4);
+    const pill = items.filter(i => i.title === 'pill').map(i => i.start);
+    expect(pill).toContain('2026-11-14');
+    expect(pill.at(-1)).toBe('2026-12-13');
+  });
+
+  it('stops at its step budget and says it read only part', async () => {
+    const text = ics(
+      Array.from({ length: 20 }, (_, i) =>
+        series(`m${i}`, '20000101T080000Z', 'FREQ=DAILY', '20000101T081500Z')
+      ).join('\r\n')
+    );
+    const read = await readCalendarFile(text, from, until, 'x', 3_000);
+    expect(read.complete).toBe(false);
+  });
+
+  it('hands the thread back while it reads, so other requests are answered', async () => {
+    const text = ics(series('d', '20200101T080000Z', 'FREQ=DAILY', '20200101T081500Z'));
+    let done = false;
+    let doneWhenOthersRan: boolean | null = null;
+    const reading = readCalendarFile(text, from, until, 'x').then(() => {
+      done = true;
+    });
+    setImmediate(() => {
+      doneWhenOthersRan = done;
+    });
+    await reading;
+    expect(doneWhenOthersRan).toBe(false);
   });
 });
 
@@ -104,7 +172,7 @@ describe('writing the OrangeCat calendar as a file', () => {
     expect(folded.replace(/\r\n /g, '')).toBe(long);
   });
 
-  it('writes timed and all-day entries a calendar app reads back', () => {
+  it('writes timed and all-day entries a calendar app reads back', async () => {
     const file = writeCalendarFile('George', [
       {
         uid: 'a1',
@@ -132,7 +200,7 @@ describe('writing the OrangeCat calendar as a file', () => {
     expect(file).toContain('SUMMARY:Dentist\\, Dr. Ries');
     expect(file).toContain('DTSTART;VALUE=DATE:20261208');
     expect(file).toContain('DTEND;VALUE=DATE:20261209');
-    const back = readCalendarFile(file, from, until, 'George');
+    const { items: back } = await readCalendarFile(file, from, until, 'George');
     expect(back.map(i => i.title)).toEqual(['Dentist, Dr. Ries', 'Trip']);
   });
 });
