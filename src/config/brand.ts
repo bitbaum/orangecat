@@ -15,9 +15,25 @@ export const APP_NAME = 'OrangeCat';
 export const APP_SLUG = 'orangecat';
 export const APP_DOMAIN = 'orangecat.ch';
 export const APP_KICKER = 'AI economic agent';
-export const APP_TAGLINE = 'Your AI economic agent';
-export const APP_DESCRIPTION =
-  'Fund, lend, invest, and coordinate with any identity. Cat is your private AI agent for practical economic next steps.';
+/**
+ * The promise, written once. The home hero, the browser title, every share
+ * card and description, the sign-in panel, About and the footer read these
+ * three; none of them words it again. It was written four ways (2026-11-13
+ * review): "Turn who you are into income" on the home page, "Fund, lend,
+ * invest, trade, and govern" beside the sign-in form, a third sentence in the
+ * share text and "Fund · Invest · Lend · Coordinate" on the share card.
+ *
+ * APP_PROMISE is the claim. APP_PROMISE_HOW is how it comes true, and every
+ * part of it is a thing the product does today: a public pay page per account
+ * (/pay/<username>), payment to the person's own wallet, no platform fee on
+ * payments between people (config/commerce.ts).
+ */
+export const APP_PROMISE = 'Turn who you are into income.';
+export const APP_PROMISE_HOW =
+  'Make something, share one link, and get paid in Bitcoin, straight to your own wallet. 0% platform fee.';
+/** The promise as a title part: no closing full stop. */
+export const APP_TAGLINE = APP_PROMISE.replace(/\.$/, '');
+export const APP_DESCRIPTION = `${APP_PROMISE} ${APP_PROMISE_HOW}`;
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || `https://${APP_DOMAIN}`;
 

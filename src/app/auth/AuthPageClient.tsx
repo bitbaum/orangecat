@@ -11,6 +11,7 @@ import { MFAVerify } from '@/components/auth/MFAVerify';
 import { AuthHeroPanel } from './AuthHeroPanel';
 import { AnonymousEntry, AuthNotices } from './AuthNotices';
 import { AuthTitle } from './AuthTitle';
+import { KeptSentence } from './KeptSentence';
 import { AuthDivider } from './AuthDivider';
 import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
@@ -150,6 +151,8 @@ export default function AuthPageClient({
                     : `Create your ${APP_NAME} account`
             }
           />
+
+          {mode !== 'forgot' && !clientName && <KeptSentence />}
 
           {/* Which side you are on, and the other one, before anything else:
               the switch used to be a text link under the provider buttons,

@@ -1,25 +1,26 @@
 import HeroSection from '@/components/home/sections/HeroSection';
-import StudioSection from '@/components/home/sections/StudioSection';
+import MakersSection from '@/components/home/sections/MakersSection';
+import FirstAnswerSection from '@/components/home/sections/FirstAnswerSection';
 import ProblemsSection from '@/components/home/sections/ProblemsSection';
 
 /**
- * Public home page — one fold, then what it solves, then the studio behind it.
+ * Public home page: the outcome, the proof, a first answer, then what it solves.
  *
- * The fold carries the three first moves itself (meet your Cat, see what
- * exists, how it works). "What it solves" comes next, for the visitor who
- * needs to know what this is for before they act. On a phone it used to sit
- * under about 4,100px of studio products, a dozen screens down; the owner
- * chose this order on 2026-11-12. The studio follows: the products built on
- * this stack, live, each with its own mark — the proof that this is a
- * working economy and not a pitch. Longer explanation (steps, comparison)
- * still lives on /how-it-works and /discover.
+ * The fold is the promise and the one action that delivers it (claim your pay
+ * link). Under it, what people have actually listed, from Discover. Then the
+ * Cat's door, where a visitor's own sentence gets one real answer before any
+ * account. "What it solves" follows for the visitor who needs to know what
+ * this is for, and ends on the one start action. The studio's own products
+ * used to stand here as the proof; they are on /ecosystem, and the longer
+ * explanation (steps, comparison) is on /how-it-works.
  */
 export default function HomePublic() {
   return (
     <div className="min-h-screen">
       <HeroSection />
+      <MakersSection />
+      <FirstAnswerSection />
       <ProblemsSection />
-      <StudioSection />
     </div>
   );
 }

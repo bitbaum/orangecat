@@ -8,20 +8,35 @@ import {
   CAT_FREE_DAILY_LIMIT,
   CAT_SUPPORTER_DAILY_LIMIT,
   CAT_FRONTIER_MODELS_OR,
+  getCatPlan,
   type CatPlan,
+  type CatPlanId,
 } from '@/config/cat-plans';
+import { COMMERCE_CLOSED } from '@/config/commerce';
+import { PRICING_COPY } from '@/config/landing-page';
 import { PRO_DESTINATION_COPY } from '@/config/public-content';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 
 export const metadata = {
-  title: 'Cat plans',
-  description:
-    'OrangeCat Cat is free for everyone — 10 messages a day, no card. Go further with your own API key, Cat Credits, or a Supporter pass in Bitcoin.',
+  title: 'Pricing',
+  description: PRICING_COPY.description,
 };
 
 /**
- * /pricing — honest tier card layout, rendered 1:1 from the CAT_PLANS SSOT
+ * " Not open yet." after a way to get more Cat that cannot be bought today,
+ * read from the plan's own status: the prose under the cards used to offer
+ * Cat Credits and the Supporter pass as open while their cards said otherwise.
+ */
+function NotOpenYet({ plan }: { plan: CatPlanId }) {
+  return getCatPlan(plan).status === 'coming-soon' ? <em> {COMMERCE_CLOSED.badge}.</em> : null;
+}
+
+/**
+ * /pricing opens on what a maker asks: what does it cost to sell and get
+ * paid? Nothing (PRICING_COPY). The Cat's plans follow under "More Cat".
+ *
+ * Honest tier card layout, rendered 1:1 from the CAT_PLANS SSOT
  * (config/cat-plans.ts): every number, status, and CTA comes from there;
  * this file owns layout only. "Pro" in the prose below refers to the FUTURE
  * managed-frontier tier — distinct from the Supporter pass, which is a plan
@@ -34,16 +49,18 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-surface-page">
       <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-12')}>
-        <PublicPageHeader
-          title="Your AI, your bill, your choice"
-          lede={
-            <>
-              Cat works any way you want. Free out of the box, or bring your own key from{' '}
-              {CAT_WIRED_PROVIDERS.length} wired providers — {CAT_WIRED_PROVIDERS.join(', ')}.
-              OrangeCat doesn&apos;t mark up inference; we earn from the platform, not your AI bill.
-            </>
-          }
-        />
+        <PublicPageHeader title={PRICING_COPY.title} lede={PRICING_COPY.lede} />
+
+        <header className="mx-auto mb-10 max-w-3xl text-center">
+          <h2 className="font-heading text-2xl font-bold tracking-display text-fg-primary sm:text-3xl">
+            {PRICING_COPY.moreCat}
+          </h2>
+          <p className="mb-0 mt-3 text-fg-secondary">
+            Cat works any way you want. Free out of the box, or bring your own key from{' '}
+            {CAT_WIRED_PROVIDERS.length} wired providers: {CAT_WIRED_PROVIDERS.join(', ')}.
+            OrangeCat doesn&apos;t mark up inference.
+          </p>
+        </header>
 
         {/* Plan cards */}
         {/* From lg the cards are one row, and each card is a subgrid of four
@@ -80,11 +97,13 @@ export default function PricingPage() {
               <li>
                 <strong className="text-fg-primary">Cat Credits</strong> — prepaid Bitcoin balance,
                 metered per message: managed frontier AI without a subscription.
+                <NotOpenYet plan="credits" />
               </li>
               <li>
                 <strong className="text-fg-primary">Become a Supporter</strong> — a flat monthly in
                 Bitcoin for a {Math.round(CAT_SUPPORTER_DAILY_LIMIT / CAT_FREE_DAILY_LIMIT)}× daily
                 cap, funding the platform AI budget — and first access the day Pro ships.
+                <NotOpenYet plan="supporter" />
               </li>
             </ul>
           </div>

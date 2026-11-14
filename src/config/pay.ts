@@ -15,7 +15,7 @@
  */
 
 import { TIP_MAX_BTC, TIP_MIN_BTC } from './tips';
-import { SITE_URL } from './brand';
+import { APP_DOMAIN, SITE_URL } from './brand';
 
 export const PAY_MIN_BTC = TIP_MIN_BTC;
 export const PAY_MAX_BTC = TIP_MAX_BTC;
@@ -107,6 +107,14 @@ export function parsePayPrefill(params: { get(name: string): string | null }): P
   return prefill;
 }
 
+/** The stand-in for a name in "orangecat.ch/pay/your-name", wherever that is written. */
+export const PAY_LINK_PLACEHOLDER = 'your-name';
+
+/** A pay link as people read it, without the scheme: "orangecat.ch/pay/<name>". */
+export function payLinkDisplay(name: string): string {
+  return `${APP_DOMAIN}/pay/${name}`;
+}
+
 export const PAY_COPY = {
   title: (name: string) => `Pay ${name}`,
   subtitle: 'Bitcoin, straight to their wallet.',
@@ -185,8 +193,7 @@ export function renamedPayHref(
 /** Copy for /pay — one explanation, not a second product. */
 export const PAY_LANDING_COPY = {
   title: 'Get paid',
-  subtitle:
-    'Your page is orangecat.ch/pay/your-name. The money goes to the wallet you connected. OrangeCat does not hold it.',
+  subtitle: `Your page is ${payLinkDisplay(PAY_LINK_PLACEHOLDER)}. The money goes to the wallet you connected. OrangeCat does not hold it.`,
   points: [
     {
       // The address needs a wallet that takes Lightning; the link does not

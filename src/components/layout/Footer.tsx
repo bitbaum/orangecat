@@ -7,7 +7,7 @@ import { getRouteSurface, type RouteSurface } from '@/config/routes';
 import Logo from './Logo';
 import { useShellPathname } from '@/hooks/useShellPathname';
 import { ArrowUp } from 'lucide-react';
-import { APP_NAME } from '@/config/brand';
+import { APP_NAME, APP_PROMISE } from '@/config/brand';
 import { useAuth } from '@/hooks/useAuth';
 import { scrollBehavior } from '@/lib/scroll-behavior';
 
@@ -126,9 +126,7 @@ const Footer = React.memo(function Footer({ clearsMobileNav = false }: FooterPro
               <div className="flex items-center space-x-4 mb-2">
                 <Logo />
               </div>
-              <p className="text-fg-secondary text-base leading-relaxed max-w-xs">
-                Your AI economic agent — and the platform where it operates.
-              </p>
+              <p className="text-fg-secondary text-base leading-relaxed max-w-xs">{APP_PROMISE}</p>
             </div>
 
             {/* Social Links */}

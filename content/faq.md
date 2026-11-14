@@ -5,8 +5,10 @@ title: Frequently Asked Questions
 <!--
   The questions and answers at /faq. `# Section`, `## Question`, then the
   answer as ordinary markdown until the next heading. {{CAT_FREE_DAILY_LIMIT}}
-  and {{CAT_CREDITS_MARKUP_LABEL}} are filled in from src/config/cat-plans.ts,
-  so the numbers cannot drift from what Cat actually allows.
+  {{CAT_CREDITS_MARKUP_LABEL}}, {{CAT_BEYOND_FREE}} and {{CAT_ROUTES}} are filled
+  in from src/config/cat-plans.ts, so the numbers cannot drift from what Cat
+  actually allows, and Cat Credits are offered here only while /pricing sells
+  them.
   {{ENTITY_VISIBILITY_SUMMARY}} comes from src/config/public-visibility.ts, the
   same words /docs shows.
 -->
@@ -23,11 +25,11 @@ Anyone who wants to participate in economic activity without gatekeepers. Creato
 
 ## Is OrangeCat free to use?
 
-Yes. Creating a profile and using the platform is free, and OrangeCat does not take a cut of Bitcoin or Lightning payments — you send and receive directly. Cat, the AI agent, gives you {{CAT_FREE_DAILY_LIMIT}} free messages a day; beyond that you can add credits, bring your own API key, or run a model on your own machine. See "How Cat runs" for what each of those costs and means.
+Yes. Creating a profile and using the platform is free, and OrangeCat does not take a cut of Bitcoin or Lightning payments — you send and receive directly. Cat, the AI agent, gives you {{CAT_FREE_DAILY_LIMIT}} free messages a day; {{CAT_BEYOND_FREE}}. See "How Cat runs" for what each of those costs and means.
 
 ## What powers Cat, and who pays for it?
 
-Four routes, and you can mix them: OrangeCat's free pool ({{CAT_FREE_DAILY_LIMIT}} messages a day, no setup), Cat Credits ({{CAT_CREDITS_MARKUP_LABEL}}, paid in Bitcoin), your own API key (you pay the provider directly, OrangeCat takes nothing), or a model running on your own computer (nothing leaves your machine). "How Cat runs" explains the trade-offs of each — including what local models are bad at.
+{{CAT_ROUTES}} "How Cat runs" explains the trade-offs of each — including what local models are bad at.
 
 ## Do I need to use my real name?
 

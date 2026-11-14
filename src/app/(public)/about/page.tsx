@@ -3,7 +3,7 @@ import React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Zap, Lock } from 'lucide-react';
-import { CONTACT_EMAIL, SOURCE_REPO_URL } from '@/config/brand';
+import { APP_DESCRIPTION, CONTACT_EMAIL, SOURCE_REPO_URL } from '@/config/brand';
 import { ECOSYSTEM } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
@@ -13,8 +13,7 @@ import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'About',
-  description:
-    'OrangeCat is your AI economic agent — buy, sell, fund, lend, invest, and govern with any identity. Bitcoin is the first live payment rail.',
+  description: APP_DESCRIPTION,
 };
 
 /**
@@ -49,10 +48,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-surface-page">
       <div className={PUBLIC_PAGE_WIDTH.wide}>
-        <PublicPageHeader
-          title="About OrangeCat"
-          lede="Your AI economic agent — and the platform where it operates."
-        />
+        <PublicPageHeader title="About OrangeCat" lede={APP_DESCRIPTION} />
       </div>
 
       {/* Mission & Values */}
