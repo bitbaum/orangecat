@@ -20,7 +20,7 @@
 import { Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
-import { PaymentQRCode } from '@/components/payment/PaymentQRCode';
+import { PayCodeStep, PayExpiredStep } from '@/components/payment/PaySteps';
 import { AmountField } from '@/components/money/AmountField';
 import { isAmountInRange } from '@/components/money/amount-draft';
 import { usePayFlow } from '@/components/payment/usePayFlow';
@@ -75,6 +75,8 @@ interface PayFlowProps {
   requestId?: string;
   /** Rendered above the amount input; the "what is this for" from the link. */
   noteSlot?: React.ReactNode;
+  /** The same reason in words, for the receipt's "For" row. */
+  receiptNote?: string | null;
   /** Extra content under the amount input (e.g. a link-prefill warning). */
   beforeActionSlot?: React.ReactNode;
   /** Shown alongside the confirmation — lets a modal offer "Done". */
@@ -102,6 +104,7 @@ export function PayFlow({
   initialAmountBtc,
   requestId,
   noteSlot,
+  receiptNote,
   beforeActionSlot,
   renderDone,
   onAmountChange,
@@ -141,6 +144,7 @@ export function PayFlow({
         title={words.paidTitle}
         amountBtc={invoice.amountBtc}
         counterparty={recipientName}
+        note={receiptNote}
         fallbackBody={words.paidBody(recipientName)}
       >
         {renderDone?.(reset)}
@@ -150,14 +154,12 @@ export function PayFlow({
 
   if (invoice && settleState === 'expired') {
     return (
-      <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <Clock className="h-12 w-12 text-fg-tertiary" />
-        <p className="text-lg font-semibold text-fg-primary">{words.expiredTitle}</p>
-        <p className="text-sm text-fg-secondary">{words.expiredBody}</p>
-        <Button variant="outline" className="mt-2" onClick={reset}>
-          {words.again}
-        </Button>
-      </div>
+      <PayExpiredStep
+        title={words.expiredTitle}
+        body={words.expiredBody}
+        againLabel={words.again}
+        onAgain={reset}
+      />
     );
   }
 
@@ -192,32 +194,29 @@ export function PayFlow({
 
   if (invoice) {
     return (
-      <div className="space-y-4">
-        {flow.walletNote && (
-          <p className="rounded-md border border-status-warning/40 bg-status-warning-subtle px-3 py-2 text-sm text-fg-secondary">
-            {words.walletDeclined(flow.walletNote)}
-          </p>
-        )}
-        {/* What the payment is for stays on the step where the payer decides. */}
-        {noteSlot}
-        <PaymentQRCode
-          qrData={invoice.qrData}
-          methodLabel={invoice.methodLabel}
-          amountBtc={invoice.amountBtc}
-          expiresInSeconds={invoice.expiresInSeconds ?? undefined}
-        />
-        <p className="flex items-center justify-center gap-2 text-center text-sm text-fg-secondary">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {words.scan}
-        </p>
-        <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>
-        <div className="flex justify-center gap-3">
-          <Button variant="outline" onClick={reset}>
-            {words.again}
-          </Button>
-          {renderDone?.(reset)}
-        </div>
-      </div>
+      <PayCodeStep
+        qrData={invoice.qrData}
+        methodLabel={invoice.methodLabel}
+        amountBtc={invoice.amountBtc}
+        expiresInSeconds={invoice.expiresInSeconds ?? undefined}
+        // What the payment is for stays on the step where the payer decides.
+        note={
+          <>
+            {flow.walletNote && (
+              <p className="rounded-md border border-status-warning/40 bg-status-warning-subtle px-3 py-2 text-sm text-fg-secondary">
+                {words.walletDeclined(flow.walletNote)}
+              </p>
+            )}
+            {noteSlot}
+          </>
+        }
+        waitingLabel={words.scan}
+        custodyLine={words.disclaimer}
+        backLabel={words.again}
+        onBack={reset}
+      >
+        {renderDone?.(reset)}
+      </PayCodeStep>
     );
   }
 

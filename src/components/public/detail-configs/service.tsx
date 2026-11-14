@@ -11,6 +11,7 @@ import { hasAvailability, formatAvailabilityLines } from '@/lib/availability';
 import { formatDurationMinutes } from '@/utils/dates';
 import { SERVICE_LOCATION_TYPES } from '@/config/services';
 import { getEntityPrimaryCta } from '@/config/entity-cta';
+import { PAY_AFTER_ACCEPT_LINE } from '@/config/payment-flow';
 
 /** Label for a stored location-type value, from the config SSOT. */
 const locationTypeLabel = (value: unknown): string | null =>
@@ -79,6 +80,10 @@ export const serviceDetailConfig: EntityDetailConfig = {
             priceCurrency={currency}
             shape={serviceBookingShape(entity)}
           />
+          {/* Booked first, paid on acceptance: the page has no separate "pay". */}
+          {amount > 0 && (
+            <p className="mb-0 text-center text-xs text-fg-tertiary">{PAY_AFTER_ACCEPT_LINE}</p>
+          )}
         </CardContent>
       </Card>
     );

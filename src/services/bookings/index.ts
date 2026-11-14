@@ -18,6 +18,7 @@ import type { CurrencyCode } from '@/config/currencies';
 import { APP_LOCALE } from '@/utils/locale';
 import { getActorStewardUserId } from '@/domain/profileClaims/stewardship';
 import { getUserActorIds } from '@/domain/actors';
+import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStewardedProviderBookings } from './stewardBookings';
 
 // Types
@@ -183,7 +184,9 @@ class BookingService {
       return { success: false, error: 'Time slot is already booked' };
     }
 
-    const { data: booking, error: insertErr } = await this.supabase
+    // Written by the server: the provider and the price were derived above,
+    // and clients may not insert bookings (migration 20261114104100).
+    const { data: booking, error: insertErr } = await (getAdminClient() as AnySupabaseClient)
       .from(DATABASE_TABLES.BOOKINGS)
       .insert({
         bookable_type: input.bookable_type,
@@ -280,7 +283,8 @@ class BookingService {
       case STATUS.BOOKINGS.CONFIRMED:
         userId = booking.customer_user_id;
         title = 'Booking confirmed';
-        message = `Your ${booking.bookable_type} booking starting ${startLocal} was confirmed.`;
+        // Booked first, paid on acceptance: this is the moment the payment is asked for.
+        message = `Your ${booking.bookable_type} booking starting ${startLocal} was confirmed.${Number(booking.price_btc) > 0 ? ' You can pay for it now.' : ''}`;
         break;
       case STATUS.BOOKINGS.REJECTED:
         userId = booking.customer_user_id;
@@ -317,7 +321,7 @@ class BookingService {
       },
       sourceEntityType: booking.bookable_type,
       sourceEntityId: booking.bookable_id,
-      actionUrl: ROUTES.DASHBOARD.BOOKINGS,
+      actionUrl: ROUTES.DASHBOARD.BOOKINGS_VIEW(booking.id),
     });
   }
 

@@ -26,6 +26,8 @@ import { enqueuePaymentSettledWebhook } from '@/services/webhooks/paymentSettled
 import { formatBtcForUser } from '@/services/currency/format-for-user.server';
 import { settlePaymentRequest } from './paymentRequestService';
 import { payerLabel } from './payerLabel';
+import { settleOrderOfPayment } from './bookingSettlement';
+import { ROUTES } from '@/config/routes';
 import { ratesAtReceiptOrNull } from '@/services/currency/rates.server';
 
 /**
@@ -192,25 +194,16 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
 
   const meta = getEntityMetadata(entityType);
 
-  if (paymentIntent.intent_kind === 'purchase' && meta.paymentPattern === 'fixed_price') {
-    // Update order status. The payment is already verified+paid, so we must NOT
-    // throw here (that would 500 the buyer's status check after a successful
-    // payment, and the terminal-status short-circuit means a retry wouldn't
-    // re-run this anyway). But a silent failure left the order stuck in
-    // pending_payment with no trace — log it loudly so it can be reconciled.
-    const { error: orderError } = await admin
-      .from(DATABASE_TABLES.ORDERS)
-      .update({ status: STATUS.ORDERS.PAID })
-      .eq('payment_intent_id', piId);
-    if (orderError) {
-      logger.error('Order status update failed after confirmed payment — needs reconciliation', {
-        paymentIntentId: piId,
-        entityType,
-        entityId,
-        error: orderError,
-      });
-    }
+  // A purchase has an order (signed in, without an account, or as the payment
+  // of an accepted booking): mark it paid, and the booking with it. Not gated
+  // on the registry's pattern — an asset rental is booked and paid, never
+  // "bought". The payment is already verified+paid, so this never throws; a
+  // failure is logged loudly so it can be reconciled.
+  if (paymentIntent.intent_kind === 'purchase') {
+    await settleOrderOfPayment(admin, paymentIntent);
+  }
 
+  if (paymentIntent.intent_kind === 'purchase' && meta.paymentPattern === 'fixed_price') {
     // A ticket purchase issues the ticket: the buyer is now on the guest list
     // with a code the door scans. Same non-throwing rule as the order above.
     if (entityType === 'event' && paymentIntent.buyer_id) {
@@ -299,15 +292,22 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
   // Also create in-app notification for the seller
   const entityTitle = paymentIntent.description?.split(': ')[1] || 'your listing';
   const amount = paymentIntent.amount_btc;
+  // A purchase leads the seller to its order: who bought, and their note. A
+  // buyer without an account is named here, since there is no profile to open.
+  const isOrder = paymentIntent.intent_kind === 'purchase' && entityType !== 'event';
+  const guestBuyer =
+    isOrder && !paymentIntent.buyer_id && paymentIntent.guest_name
+      ? ` Bought by ${paymentIntent.guest_name}, without an account.`
+      : '';
   void NotificationDispatcher.dispatch({
     userId: paymentIntent.seller_id,
     type: 'payment',
     title: `Payment received: ${amount} BTC`,
-    message: `You received ${amount} BTC for ${entityTitle}.`,
+    message: `You received ${amount} BTC for ${entityTitle}.${guestBuyer}`,
     data: { paymentIntentId: piId, amount_btc: amount },
     sourceEntityType: entityType,
     sourceEntityId: entityId,
-    actionUrl: `/dashboard`,
+    actionUrl: isOrder ? ROUTES.DASHBOARD.ORDERS : `/dashboard`,
   });
 
   await markSideEffectsComplete(piId, admin);

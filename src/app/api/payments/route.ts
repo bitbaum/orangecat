@@ -16,6 +16,7 @@ import { initiatePayment } from '@/domain/payments';
 import { mapKnownPaymentError } from '@/domain/payments/knownPaymentErrors';
 import { paymentCreateSchema } from '@/lib/validation/finance';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { BOOK_FIRST_MESSAGE, isBookedBeforePaid } from '@/config/payment-flow';
 import { logger } from '@/utils/logger';
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
@@ -38,6 +39,16 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
 
     const validated = result.data;
+
+    // Booked first, paid once the provider accepts: the web app has no
+    // "buy" for these, so a purchase here would be the pay-without-a-booking
+    // path the page no longer offers. The booking carries its own payment
+    // (POST /api/bookings/[id]/pay). The public contract (/api/v1/payments,
+    // L402) keeps selling a service outright: Loki pays a builder that way,
+    // with the booking held on Loki's side.
+    if (isBookedBeforePaid(validated.entity_type)) {
+      return apiBadRequest(BOOK_FIRST_MESSAGE);
+    }
 
     const paymentResult = await initiatePayment(supabase, user.id, {
       entity_type: validated.entity_type,

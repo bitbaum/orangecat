@@ -20,10 +20,7 @@ import PublicEntityHero from '@/components/public/PublicEntityHero';
 import { entityCoverImages } from '@/lib/entities/cover';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import { resolveSellerReceiveInfo, type SellerReceiveInfo } from '@/domain/payments';
-import { getSharedWalletUsage, type SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import { resolveContributionBoundsBtc } from '@/domain/payments/contributionTerms';
-import { convertToBtcOrNull } from '@/services/currency/rates.server';
-import { type CurrencyCode } from '@/config/currencies';
 import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { fetchEntityOwner } from '@/lib/entities/fetchEntityOwner';
 import { inquiryHref } from '@/features/messaging/lib/draft';
@@ -31,6 +28,7 @@ import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
+import { grantsToAnAccount } from '@/config/account-bound-products';
 import { SITE_URL } from '@/config/brand';
 import { Breadcrumb, PUBLIC_BREADCRUMB_ROOT } from '@/components/ui/Breadcrumb';
 import { PublicEntityOwnerBar } from './PublicEntityOwnerBar';
@@ -150,8 +148,6 @@ export default async function PublicEntityDetailPage({
   const price = config.getPrice?.(entity) ?? null;
   const priceAmount = price && price.amount > 0 ? price.amount : undefined;
   let sellerReceive: SellerReceiveInfo | null = null;
-  let sharedWalletUsage: SharedWalletUsage | null = null;
-  let priceAmountBtc: number | undefined;
   let contributionBounds: ContributionBoundsBtc | null = null;
   const hasPaymentSurface =
     (config.showPaymentSection !== false || meta.canReceiveSupport) &&
@@ -161,17 +157,6 @@ export default async function PublicEntityDetailPage({
     : (entity.status as string | null);
   if (hasPaymentSurface) {
     sellerReceive = await resolveSellerReceiveInfo(config.entityType, id);
-    // Address-reuse disclosure — only worth resolving when an address will
-    // actually be shown (NWC reveals no static address to link).
-    if (sellerReceive?.address) {
-      sharedWalletUsage = await getSharedWalletUsage(supabase, config.entityType, id);
-    }
-    if (priceAmount !== undefined && price) {
-      priceAmountBtc =
-        (price.currency || 'BTC') === 'BTC'
-          ? priceAmount
-          : ((await convertToBtcOrNull(priceAmount, price.currency as CurrencyCode)) ?? undefined);
-    }
     // An investment's stated minimum and maximum bound what its card takes.
     // No rate → no bounds here; the server still refuses rather than guess.
     contributionBounds = await resolveContributionBoundsBtc(config.entityType, entity).catch(
@@ -335,10 +320,11 @@ export default async function PublicEntityDetailPage({
                     sellerProfileId={owner?.id ?? null}
                     sellerUserId={owner?.user_id ?? null}
                     sellerReceive={sellerReceive}
-                    sharedWalletUsage={sharedWalletUsage}
-                    priceAmountBtc={priceAmountBtc}
                     contributionBounds={contributionBounds}
                     signInRedirect={viewRoute}
+                    purchaseNeedsAccount={
+                      config.entityType === 'product' && grantsToAnAccount(entity.tags)
+                    }
                     supportTitle={config.supportTitle?.(entity)}
                   />
                 </div>

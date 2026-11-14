@@ -20,31 +20,13 @@ import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { CAT_SUPPORTER_DAILY_LIMIT } from '@/config/cat-plans';
 import { logger } from '@/utils/logger';
 import type { PaymentIntent } from '@/domain/payments/types';
+import { parseSupporterPass } from '@/config/account-bound-products';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** `{days}` if the product's tags mark it a Supporter pass, else null. */
-export function parseSupporterPass(tags: unknown): { days: number } | null {
-  if (!Array.isArray(tags)) {
-    return null;
-  }
-  let isSupporter = false;
-  let days: number | null = null;
-  for (const raw of tags) {
-    if (typeof raw !== 'string') {
-      continue;
-    }
-    const t = raw.trim();
-    if (t === 'supporter-plan') {
-      isSupporter = true;
-    }
-    const d = /^supporter-days:(\d{1,4})$/.exec(t);
-    if (d) {
-      days = parseInt(d[1], 10);
-    }
-  }
-  return isSupporter && days ? { days } : null;
-}
+// parseSupporterPass lives in the config SSOT (the purchase paths read the
+// same tags to know a pass needs an account), re-exported for importers.
+export { parseSupporterPass };
 
 export async function grantSupporterPlan(pi: PaymentIntent): Promise<void> {
   if (pi.entity_type !== 'product') {

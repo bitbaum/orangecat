@@ -78,8 +78,17 @@ describe('failMention', () => {
 });
 
 describe('noteCatMention', () => {
-  /** Resolver + profile lookup + insert, in the shape the service chains them. */
-  function admin({ username = 'alice', mentionsCat = true } = {}) {
+  /**
+   * Resolver + profile lookup + who is in the conversation + insert, in the
+   * shape the service chains them. `members` is the conversation's active
+   * participants; `usernames` names them (the sender's is `username`).
+   */
+  function admin({
+    username = 'alice',
+    mentionsCat = true,
+    members = ['u1', 'u2'],
+    usernames = {} as Record<string, string>,
+  } = {}) {
     const insert = vi.fn().mockResolvedValue({ error: null });
     return {
       insert,
@@ -87,6 +96,16 @@ describe('noteCatMention', () => {
         from: (table: string) => {
           if (table === 'mention_queue') {
             return { insert };
+          }
+          if (table === 'conversation_participants') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  eq: () =>
+                    Promise.resolve({ data: members.map(user_id => ({ user_id })), error: null }),
+                }),
+              }),
+            };
           }
           return {
             select: () => ({
@@ -97,8 +116,9 @@ describe('noteCatMention', () => {
                     error: null,
                   }),
               }),
-              eq: () => ({
-                maybeSingle: () => Promise.resolve({ data: { username }, error: null }),
+              eq: (_column: string, id: string) => ({
+                maybeSingle: () =>
+                  Promise.resolve({ data: { username: usernames[id] ?? username }, error: null }),
               }),
             }),
           };
@@ -120,7 +140,7 @@ describe('noteCatMention', () => {
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ source_id: 'm2' }));
   });
 
-  it('skips messages with no @ at all without touching the database', async () => {
+  it('skips a message that names nobody in a conversation between people', async () => {
     const { client, insert } = admin();
     const noted = await noteCatMention(client, {
       conversationId: 'c1',
@@ -129,6 +149,55 @@ describe('noteCatMention', () => {
       content: 'just talking',
     });
     expect(noted).toBe(false);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it('alone with the Cat, every message is owed an answer: no tag needed', async () => {
+    const { client, insert } = admin({
+      members: ['u1', 'cat-id'],
+      usernames: { 'cat-id': 'cat' },
+    });
+    const noted = await noteCatMention(client, {
+      conversationId: 'c1',
+      messageId: 'm7',
+      senderId: 'u1',
+      content: 'hello',
+    });
+    expect(noted).toBe(true);
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ source_id: 'm7', requester_id: 'u1', conversation_id: 'c1' })
+    );
+  });
+
+  it('with a third member the Cat waits to be tagged, and it never answers its own line', async () => {
+    const group = admin({ members: ['u1', 'u2', 'cat-id'], usernames: { 'cat-id': 'cat' } });
+    await expect(
+      noteCatMention(group.client, {
+        conversationId: 'c1',
+        messageId: 'm1',
+        senderId: 'u1',
+        content: 'hello',
+      })
+    ).resolves.toBe(false);
+    // The Cat's reply in its own one-to-one: the other member is the person.
+    const own = admin({ members: ['u1', 'cat-id'], usernames: { 'cat-id': 'cat', u1: 'alice' } });
+    await expect(
+      noteCatMention(own.client, {
+        conversationId: 'c1',
+        messageId: 'm2',
+        senderId: 'cat-id',
+        content: 'Hello to you.',
+      })
+    ).resolves.toBe(false);
+    expect(group.insert).not.toHaveBeenCalled();
+    expect(own.insert).not.toHaveBeenCalled();
+  });
+
+  it('a message of only files asks nothing, even alone with the Cat', async () => {
+    const { client, insert } = admin({ members: ['u1', 'cat-id'], usernames: { 'cat-id': 'cat' } });
+    await expect(
+      noteCatMention(client, { conversationId: 'c1', messageId: 'm1', senderId: 'u1', content: '' })
+    ).resolves.toBe(false);
     expect(insert).not.toHaveBeenCalled();
   });
 

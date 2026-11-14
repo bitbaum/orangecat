@@ -14,6 +14,7 @@
  * the group-name check below repeats what SQL already did, from the same list.
  */
 
+import { isMintedHandle } from '@/config/usernames';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import {
   EXACT_FIXTURE_USERNAMES,
@@ -44,7 +45,7 @@ export interface PublicHit {
   startsAt: string | null;
   place: string | null;
   createdAt: string | null;
-  /** The profile's username, for an "@handle" line. */
+  /** The profile's chosen username, for an "@handle" line; null when it was minted. */
   handle: string | null;
   rank: number;
 }
@@ -158,7 +159,11 @@ export function toPublicHit(row: SearchRow): PublicHit {
     startsAt: row.starts_at,
     place: row.place,
     createdAt: row.created_at,
-    handle: row.entity_type === 'profile' ? row.path_key : null,
+    // A minted `user_<hex>` handle is an account id, not a name: no "@" line for it.
+    handle:
+      row.entity_type === 'profile' && row.path_key && !isMintedHandle(row.path_key)
+        ? row.path_key
+        : null,
     rank: row.rank ?? 0,
   };
 }

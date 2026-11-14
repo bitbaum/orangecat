@@ -70,6 +70,10 @@ const AUTH_ALLOWLIST: Record<string, string> = {
   // The same flow for a ticket: a guest buys by name, no account; limited per
   // IP and per event, and the invoice pays the organizer's own wallet.
   'events/[id]/ticket/purchase/route.ts': 'anonymous ticket purchase by name by design',
+  // And for a fixed-price listing: a purchase without an account is a real
+  // order. The price is read on the server; limited per IP and per listing,
+  // and the invoice pays the seller's own wallet.
+  'v1/payments/public/purchase/route.ts': 'anonymous purchase by name by design',
   // Handing an identity over (ADR-0014 D9): whoever accepts has no session in
   // the account yet. The hand-over link is the whole credential (256 bits,
   // stored only as a hash, one use, seven days); limited per IP.

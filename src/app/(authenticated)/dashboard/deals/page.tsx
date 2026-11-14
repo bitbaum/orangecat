@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Handshake } from 'lucide-react';
 import { PageHeading } from '@/components/layout/PageHeading';
 import EmptyState from '@/components/ui/EmptyState';
 import { DealCard } from '@/components/deals/DealCard';
 import { DEALS_PAGE } from '@/config/reputation';
+import { ORDERS_PAGE } from '@/config/orders';
 import { ROUTES } from '@/config/routes';
 import { getUserActorIds } from '@/domain/actors';
 import { listMyDeals } from '@/domain/reputation/service';
@@ -30,6 +32,14 @@ export default async function DealsPage() {
         <header>
           <PageHeading>{DEALS_PAGE.title}</PageHeading>
           <p className="mt-1 max-w-2xl text-sm text-fg-secondary">{DEALS_PAGE.lede}</p>
+          <p className="mb-0 mt-1 text-sm text-fg-secondary">
+            <Link
+              href={ROUTES.DASHBOARD.ORDERS}
+              className="-my-3 inline-flex min-h-11 items-center underline underline-offset-2"
+            >
+              {ORDERS_PAGE.fromDeals}
+            </Link>
+          </p>
         </header>
         {deals.length === 0 ? (
           <EmptyState icon={Handshake} title="No deals yet" description={DEALS_PAGE.empty} />
