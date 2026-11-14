@@ -73,3 +73,35 @@ jobs:
               /oom-kill|Out of memory: Killed process/ && /next-server|node|orangecat/ { print ts, "kernel-oom-kill"; next }
             ' | uniq -c -f1 | tail -80
 
+      - name: What the app is waiting on, as kernel names and counts only
+        # A process that holds every request at ~5% CPU is waiting, not
+        # working. Per thread: its name, state and the kernel function it
+        # sleeps in; the listening socket's queued connections; and the
+        # process's sockets counted by state and remote port (no addresses).
+        shell: bash
+        run: |
+          set -euo pipefail
+          unit=$(sed -n 's/^OC_SERVICE=.*:-\([^}]*\)}.*$/\1/p' scripts/deploy-selfhost.sh)
+          port=$(sed -n 's/^OC_PORT=.*:-\([0-9]*\)}.*$/\1/p' scripts/deploy-selfhost.sh)
+          test -n "$unit" && test -n "$port"
+          case "$unit$port" in *[!a-zA-Z0-9_.@-]*) exit 1 ;; esac
+          ssh -i ~/.ssh/id_deploy -o BatchMode=yes -o ConnectTimeout=10 "$OC_BOX" "sudo -n bash -s" <<REMOTE \
+            | grep -E '^(== .*|thread [A-Za-z0-9 ()._:-]{0,40} state=[A-Z] wchan=[a-z0-9_]{0,40} syscall=[0-9-]{0,4}|listen recvq=[0-9]+ backlog=[0-9]+|established-to-app [0-9]+|sockets [A-Z0-9_-]+ remote-port=[0-9*]+ count=[0-9]+)$' || true
+          pid=\$(systemctl show -p MainPID --value '$unit')
+          [ "\$pid" != 0 ] || { echo "== no main pid"; exit 0; }
+          echo "== threads"
+          for t in /proc/\$pid/task/*; do
+            name=\$(tr -d '\n' < \$t/comm | tr -c 'A-Za-z0-9 ()._:-' '_' | head -c 40)
+            st=\$(awk '{print \$3}' \$t/stat 2>/dev/null)
+            wc=\$(cat \$t/wchan 2>/dev/null | tr -c 'a-z0-9_' '_' | head -c 40)
+            sc=\$(awk '{print \$1}' \$t/syscall 2>/dev/null | head -c 4)
+            echo "thread \$name state=\$st wchan=\$wc syscall=\$sc"
+          done
+          echo "== listening socket"
+          ss -Hltn "sport = :$port" | awk '{print "listen recvq=" \$2 " backlog=" \$3}'
+          echo "established-to-app \$(ss -Htn state established "sport = :$port" | wc -l)"
+          echo "== process sockets by state and remote port"
+          ss -Htanp | grep "pid=\$pid," | awk '{n=split(\$5,a,":"); print \$1, a[n]}' | sort | uniq -c \
+            | awk '{print "sockets " \$2 " remote-port=" \$3 " count=" \$1}'
+          REMOTE
+
