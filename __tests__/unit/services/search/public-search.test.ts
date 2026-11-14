@@ -72,6 +72,13 @@ describe('searchPublic', () => {
     expect(await searchPublic({ rpc: throwing } as never)).toEqual({ hits: [], total: 0 });
   });
 
+  it('keeps the link but drops the "@" line for a minted handle', () => {
+    const hit = toPublicHit(
+      row({ entity_type: 'profile', title: 'Ada', path_key: 'user_3a43c48d5102' })
+    );
+    expect(hit).toMatchObject({ href: '/profiles/user_3a43c48d5102', handle: null });
+  });
+
   it('maps a group by its slug and an unpriceable amount to null', () => {
     expect(
       toPublicHit(row({ entity_type: 'group', path_key: 'bitbaum', amount: null }))
