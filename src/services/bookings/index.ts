@@ -18,6 +18,7 @@ import type { CurrencyCode } from '@/config/currencies';
 import { APP_LOCALE } from '@/utils/locale';
 import { getActorStewardUserId } from '@/domain/profileClaims/stewardship';
 import { getUserActorIds } from '@/domain/actors';
+import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStewardedProviderBookings } from './stewardBookings';
 
 // Types
@@ -183,7 +184,9 @@ class BookingService {
       return { success: false, error: 'Time slot is already booked' };
     }
 
-    const { data: booking, error: insertErr } = await this.supabase
+    // Written by the server: the provider and the price were derived above,
+    // and clients may not insert bookings (migration 20261114104100).
+    const { data: booking, error: insertErr } = await (getAdminClient() as AnySupabaseClient)
       .from(DATABASE_TABLES.BOOKINGS)
       .insert({
         bookable_type: input.bookable_type,

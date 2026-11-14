@@ -11,6 +11,17 @@
  *
  * Who is paid and what is charged are what the booking page already asked for:
  * the wallet resolved for the booked listing, and the booking's own price_btc.
+ *
+ * What is trusted. The customer's own session only proves they may see the
+ * booking. The price is then read with the service role (a booking's money
+ * columns are server-written: migration 20261114104100), and what has been
+ * paid is the sum of the booking's paid orders — never `total_paid_btc`,
+ * which is a display value.
+ *
+ * One live invoice. Asking again returns the request that is already open
+ * rather than minting another: two payable invoices for one booking is how a
+ * booking gets paid twice. An open request is first checked against its rail,
+ * so one that was paid meanwhile settles instead of being offered again.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -19,12 +30,18 @@ import { STATUS } from '@/config/database-constants';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/utils/logger';
-import { bookingAmountDueBtc, isBookingPayable } from '@/domain/bookings/payment';
+import {
+  bookingAmountDueBtc,
+  isBookingCalledOff,
+  isBookingPayable,
+} from '@/domain/bookings/payment';
 import { resolveSellerWallet, getSellerUserId } from './walletResolutionService';
-import { generateInvoice } from './invoiceGenerationService';
+import { generateInvoice, onchainPaymentUri } from './invoiceGenerationService';
 import { resolveIntentExpiry, expiresInSecondsFrom } from './intentExpiry';
 import { METHOD_LABELS, getEntityTitle } from './paymentFlowHelpers';
-import type { InitiatePaymentResult, PaymentIntent } from './types';
+import { reconcilePaymentIntent } from './paymentStatusFlow';
+import { bookingPaidBtc } from './bookingSettlement';
+import type { InitiatePaymentResult, Order, PaymentIntent } from './types';
 
 export class BookingPaymentError extends Error {
   constructor(
@@ -43,41 +60,154 @@ interface BookingRow {
   customer_user_id: string;
   status: string;
   price_btc: number | string | null;
-  total_paid_btc: number | string | null;
+}
+
+/** Intent states in which a payment may still arrive or be confirmed. */
+const OPEN_INTENT_STATUSES: string[] = [
+  STATUS.PAYMENT_INTENTS.CREATED,
+  STATUS.PAYMENT_INTENTS.INVOICE_READY,
+  STATUS.PAYMENT_INTENTS.PENDING_CONFIRMATION,
+  STATUS.PAYMENT_INTENTS.BUYER_CONFIRMED,
+];
+
+/** The code a payer is shown for an intent, exactly as it was minted. */
+function qrDataOf(intent: PaymentIntent): string | null {
+  if (intent.bolt11) {
+    return intent.bolt11.toUpperCase();
+  }
+  return intent.onchain_address
+    ? onchainPaymentUri(intent.onchain_address, Number(intent.amount_btc), intent.description ?? '')
+    : null;
+}
+
+function asResult(intent: PaymentIntent, order: Order | undefined): InitiatePaymentResult | null {
+  const qrData = qrDataOf(intent);
+  return qrData
+    ? {
+        payment_intent: intent,
+        order,
+        qr_data: qrData,
+        method_label: METHOD_LABELS[intent.payment_method] || intent.payment_method,
+        expires_in_seconds: expiresInSecondsFrom(intent.expires_at),
+      }
+    : null;
 }
 
 /**
- * Start the customer's payment of an accepted booking. `supabase` is the
- * customer's own session: its RLS read of the booking is the access check.
+ * The booking's requests that are still open, each checked against its rail
+ * first (which settles one that was paid, and expires one that is dead).
+ */
+async function openBookingPayments(
+  admin: SupabaseClient,
+  bookingId: string
+): Promise<Array<{ intent: PaymentIntent; order: Order }>> {
+  const { data: orders } = await admin
+    .from(DATABASE_TABLES.ORDERS)
+    .select('*')
+    .eq('booking_id', bookingId)
+    .eq('status', STATUS.ORDERS.PENDING_PAYMENT);
+  const pending = (orders ?? []) as Order[];
+  if (pending.length === 0) {
+    return [];
+  }
+  const { data: intents } = await admin
+    .from(DATABASE_TABLES.PAYMENT_INTENTS)
+    .select('*')
+    .in(
+      'id',
+      pending.map(o => o.payment_intent_id)
+    )
+    .in('status', OPEN_INTENT_STATUSES);
+
+  const open: Array<{ intent: PaymentIntent; order: Order }> = [];
+  for (const intent of (intents ?? []) as PaymentIntent[]) {
+    // A rail that cannot be asked right now leaves the request as it stands:
+    // still open, so no second invoice is minted on a guess.
+    const { status } = await reconcilePaymentIntent(intent).catch(() => ({
+      status: intent.status,
+    }));
+    const order = pending.find(o => o.payment_intent_id === intent.id);
+    if (order && OPEN_INTENT_STATUSES.includes(status)) {
+      open.push({ intent: { ...intent, status }, order });
+    }
+  }
+  return open;
+}
+
+/**
+ * Start the customer's payment of an accepted booking, or hand back the
+ * request that is already open. `supabase` is the customer's own session: its
+ * RLS read of the booking is the access check and nothing more.
  */
 export async function initiateBookingPayment(
   supabase: SupabaseClient,
   customerUserId: string,
   bookingId: string
 ): Promise<InitiatePaymentResult> {
-  const { data } = await supabase
+  const { data: visible } = await supabase
     .from(DATABASE_TABLES.BOOKINGS)
-    .select('id, bookable_type, bookable_id, customer_user_id, status, price_btc, total_paid_btc')
+    .select('id, customer_user_id')
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (!visible) {
+    throw new BookingPaymentError('Booking not found', 404);
+  }
+  if ((visible as { customer_user_id: string }).customer_user_id !== customerUserId) {
+    throw new BookingPaymentError('Only the customer pays a booking', 403);
+  }
+
+  const admin = getAdminClient() as unknown as SupabaseClient;
+  const { data } = await admin
+    .from(DATABASE_TABLES.BOOKINGS)
+    .select('id, bookable_type, bookable_id, customer_user_id, status, price_btc')
     .eq('id', bookingId)
     .maybeSingle();
   const booking = data as BookingRow | null;
-  if (!booking) {
+  if (!booking || booking.customer_user_id !== customerUserId) {
     throw new BookingPaymentError('Booking not found', 404);
-  }
-  if (booking.customer_user_id !== customerUserId) {
-    throw new BookingPaymentError('Only the customer pays a booking', 403);
   }
   if (booking.status === STATUS.BOOKINGS.PENDING) {
     throw new BookingPaymentError('This booking is paid once the provider accepts it', 409);
   }
-  if (!isBookingPayable(booking)) {
+  if (isBookingCalledOff(booking.status)) {
+    throw new BookingPaymentError('This booking is off, so there is nothing to pay', 409);
+  }
+
+  // Before reading what is paid: a request paid a moment ago settles here.
+  const open = await openBookingPayments(admin, bookingId);
+  const owed = { ...booking, total_paid_btc: await bookingPaidBtc(admin, bookingId) };
+  if (!isBookingPayable(owed)) {
     throw new BookingPaymentError('This booking has nothing left to pay', 409);
+  }
+  const amountBtc = bookingAmountDueBtc(owed);
+
+  for (const { intent, order } of open) {
+    if (intent.status === STATUS.PAYMENT_INTENTS.BUYER_CONFIRMED) {
+      throw new BookingPaymentError(
+        'You said you paid this booking. The provider confirms it once it shows in their wallet; you do not need to pay again.',
+        409
+      );
+    }
+    if (intent.status === STATUS.PAYMENT_INTENTS.PENDING_CONFIRMATION) {
+      throw new BookingPaymentError(
+        'A payment for this booking is on its way and is being confirmed. You do not need to pay again.',
+        409
+      );
+    }
+    // Still payable (a dead Lightning invoice is not: its rail check above
+    // leaves it open only for the payer's late "I've paid").
+    const alive = !intent.expires_at || new Date(intent.expires_at) > new Date();
+    const existing =
+      alive && Number(intent.amount_btc) === amountBtc ? asResult(intent, order) : null;
+    if (existing) {
+      return existing;
+    }
   }
 
   const entityType = booking.bookable_type as EntityType;
   const entityId = booking.bookable_id;
   const meta = getEntityMetadata(entityType);
-  const sellerId = await getSellerUserId(supabase, entityType, entityId);
+  const sellerId = await getSellerUserId(admin, entityType, entityId);
   const wallet = sellerId ? await resolveSellerWallet(entityType, entityId) : null;
   if (!sellerId || !wallet) {
     throw new BookingPaymentError(
@@ -86,11 +216,9 @@ export async function initiateBookingPayment(
     );
   }
 
-  const amountBtc = bookingAmountDueBtc(booking);
-  const title = await getEntityTitle(supabase, entityType, entityId);
+  const title = await getEntityTitle(admin, entityType, entityId);
   const description = `${meta.name}: ${title}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
-  const admin = getAdminClient() as unknown as SupabaseClient;
 
   const { data: paymentIntent, error: intentError } = await admin
     .from(DATABASE_TABLES.PAYMENT_INTENTS)
@@ -150,61 +278,4 @@ export async function initiateBookingPayment(
     method_label: METHOD_LABELS[invoice.method] || invoice.method,
     expires_in_seconds: expiresInSecondsFrom(paymentIntent.expires_at),
   };
-}
-
-/**
- * Settlement's half: the order of a paid intent, and the booking it pays.
- *
- * Runs for every settled purchase. It marks the intent's order paid — also
- * for a listing whose registry pattern is not fixed_price (an asset rental is
- * booked and paid, never bought) — and, when the order pays a booking, records
- * the amount on the booking. Never throws: the money has already moved.
- */
-export async function settleOrderOfPayment(
-  admin: SupabaseClient,
-  paymentIntent: Pick<PaymentIntent, 'id' | 'amount_btc'>
-): Promise<void> {
-  try {
-    const { data, error } = await admin
-      .from(DATABASE_TABLES.ORDERS)
-      .update({ status: STATUS.ORDERS.PAID })
-      .eq('payment_intent_id', paymentIntent.id)
-      .eq('status', STATUS.ORDERS.PENDING_PAYMENT)
-      .select('id, booking_id');
-    if (error) {
-      logger.error('Order status update failed after confirmed payment — needs reconciliation', {
-        paymentIntentId: paymentIntent.id,
-        error,
-      });
-      return;
-    }
-
-    for (const order of (data ?? []) as Array<{ id: string; booking_id: string | null }>) {
-      if (!order.booking_id) {
-        continue;
-      }
-      const { data: booking } = await admin
-        .from(DATABASE_TABLES.BOOKINGS)
-        .select('total_paid_btc')
-        .eq('id', order.booking_id)
-        .maybeSingle();
-      const paid = Number(booking?.total_paid_btc ?? 0) + Number(paymentIntent.amount_btc);
-      const { error: bookingError } = await admin
-        .from(DATABASE_TABLES.BOOKINGS)
-        .update({ total_paid_btc: Number(paid.toFixed(8)) })
-        .eq('id', order.booking_id);
-      if (bookingError) {
-        logger.error('Booking not marked paid after confirmed payment — needs reconciliation', {
-          paymentIntentId: paymentIntent.id,
-          bookingId: order.booking_id,
-          error: bookingError,
-        });
-      }
-    }
-  } catch (error) {
-    logger.error('Order settlement failed after confirmed payment — needs reconciliation', {
-      paymentIntentId: paymentIntent.id,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
 }
