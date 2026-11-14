@@ -20,7 +20,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import type { AgendaItem } from './calendar';
-import { CalendarFileError, readCalendarFile } from './ics-read';
+import { type CalendarRead, CalendarFileError, readCalendarFile } from './ics-read';
 
 export const FEEDS_MAX = 10;
 const FETCH_TIMEOUT_MS = 8_000;
@@ -85,6 +85,24 @@ const DEFAULT_NAME: Record<FeedProvider, string> = {
 };
 
 const cache = new Map<string, { at: number; text: string }>();
+/** What a file gave for one span, so a redraw does not walk its repeating events again. */
+const readCache = new Map<string, { at: number; read: CalendarRead }>();
+
+/** A file read for a span, from the cache when the same file was read for it lately. */
+async function readFeed(url: string, from: Date, until: Date, name: string): Promise<CalendarRead> {
+  const now = Date.now();
+  const key = `${url}\n${from.toISOString()}\n${until.toISOString()}`;
+  const hit = readCache.get(key);
+  if (hit && now - hit.at < CACHE_MS) {
+    return hit.read;
+  }
+  const read = await readCalendarFile(await fetchFile(url, now), from, until, name);
+  if (readCache.size >= CACHE_ENTRIES) {
+    readCache.clear();
+  }
+  readCache.set(key, { at: now, read });
+  return read;
+}
 
 /** The file behind an address, from the cache when fresh. Throws a sentence for the person. */
 async function fetchFile(url: string, now: number = Date.now()): Promise<string> {
@@ -188,7 +206,8 @@ export async function linkCalendar(
   let events = 0;
   try {
     const text = await fetchFile(url, now.getTime());
-    events = readCalendarFile(text, now, new Date(now.getTime() + 31 * 86_400_000), name).length;
+    events = (await readCalendarFile(text, now, new Date(now.getTime() + 31 * 86_400_000), name))
+      .items.length;
   } catch (error) {
     return {
       ok: false,
@@ -243,13 +262,18 @@ export async function readLinkedCalendars(
   const results = await Promise.all(
     rows.map(async row => {
       try {
-        const items = readCalendarFile(await fetchFile(row.url), from, until, row.name);
+        const { items, complete } = await readFeed(row.url, from, until, row.name);
         if (row.last_error) {
           await fromTable(supabase, DATABASE_TABLES.CALENDAR_FEEDS)
             .update({ last_error: null, last_ok_at: new Date().toISOString() })
             .eq('id', row.id);
         }
-        return { items, note: null };
+        return {
+          items,
+          note: complete
+            ? null
+            : `Your ${row.name} calendar is too large to read in full here; some repeating events may be missing.`,
+        };
       } catch (error) {
         const reason =
           error instanceof CalendarFileError ? error.message : 'It could not be read just now.';
