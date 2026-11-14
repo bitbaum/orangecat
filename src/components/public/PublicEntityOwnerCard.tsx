@@ -6,6 +6,7 @@ import { APP_NAME } from '@/config/brand';
 import type { EntityOwner } from '@/lib/entities/fetchEntityOwner';
 import { inquiryHref } from '@/features/messaging/lib/draft';
 import { APP_LOCALE } from '@/utils/locale';
+import { postAuthor } from '@/utils/byline';
 
 interface PublicEntityOwnerCardProps {
   owner: EntityOwner;
@@ -38,6 +39,8 @@ export default function PublicEntityOwnerCard({
   const memberSince = owner.created_at
     ? new Date(owner.created_at).toLocaleDateString(APP_LOCALE, { month: 'long', year: 'numeric' })
     : null;
+  // A minted `user_<hex>` handle is an account id, not a name: never printed.
+  const shown = postAuthor({ name: owner.name, username: owner.username });
   const showListings = typeof activeListingCount === 'number' && activeListingCount > 0;
 
   return (
@@ -54,7 +57,7 @@ export default function PublicEntityOwnerCard({
             // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
             <img
               src={owner.avatar_url}
-              alt={owner.name || owner.username || label}
+              alt={shown.name}
               className="w-12 h-12 rounded-full object-cover"
             />
           ) : (
@@ -63,10 +66,8 @@ export default function PublicEntityOwnerCard({
             </div>
           )}
           <div>
-            <div className="font-medium text-fg-primary">
-              {owner.name || owner.username || 'Anonymous'}
-            </div>
-            {owner.username && <div className="text-sm text-fg-secondary">@{owner.username}</div>}
+            <div className="font-medium text-fg-primary">{shown.name}</div>
+            {shown.handle && <div className="text-sm text-fg-secondary">@{shown.handle}</div>}
           </div>
         </Link>
 
@@ -97,7 +98,7 @@ export default function PublicEntityOwnerCard({
             className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-default px-4 py-2 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
           >
             <MessageCircle className="h-4 w-4" />
-            Ask {owner.name || (owner.username ? `@${owner.username}` : 'the seller')} about this
+            Ask {shown.anonymous ? 'the seller' : shown.name} about this
           </Link>
         )}
       </CardContent>

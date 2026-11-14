@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-14
 
+- **A seller is never shown as a raw account handle** on a listing page or a person's card on Discover; the page shows their name, or asks you to "Ask the seller".
 - **One way to pay.** Buying, supporting and investing now use the same steps, the same words and the same receipt as a pay link. "Tip" is called "Support" everywhere.
 - **Buy without an account, and it is a real order.** A buyer gives a name and, if they like, how the seller can reach them; they get a receipt with an order reference, and the seller sees the order under Orders, with the buyer's name and note.
 - **A service is booked first and paid when the provider accepts.** The booking page then shows a pay card; money still goes straight to the provider's wallet. A booking can only be marked paid by a payment that arrived.
