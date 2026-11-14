@@ -33,7 +33,8 @@ Messages on OrangeCat are a messenger in their own right: people, bots and group
 - [x] React to a message with an emoji. {#messenger-reactions}
 - [x] Ask for money in a conversation: a card with a Pay button, marked paid when it is. Send money from the same menu. {#messenger-money}
 - [x] Voice messages. {#messenger-voice}
-- [ ] Search inside a conversation; forward a message; pin and mute a conversation. {#messenger-search}
+- [x] Search inside a conversation. {#messenger-search}
+- [ ] Forward a message; pin and mute a conversation. {#messenger-forward}
 - [ ] A payment made from a conversation shows in it as a card; gifts. {#messenger-gifts}
 - [ ] Disappearing messages, with a timer per conversation. {#messenger-disappearing}
 - [ ] Link previews made by the sender's device, never by the server. {#messenger-previews}

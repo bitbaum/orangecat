@@ -79,6 +79,8 @@ export const API_ROUTES = {
     CONVERSATION: (id: string) => `/api/messages/${id}`,
     CONVERSATION_READ: (id: string) => `/api/messages/${id}/read`,
     CONVERSATION_SUMMARY: (id: string) => `/api/messages/${id}/summary`,
+    /** GET ?q=: the messages of a conversation that hold these words. */
+    CONVERSATION_SEARCH: (id: string) => `/api/messages/${id}/search`,
     EDIT: (id: string) => `/api/messages/edit/${encodeURIComponent(id)}`,
     OPEN: '/api/messages/open',
     SELF: '/api/messages/self',

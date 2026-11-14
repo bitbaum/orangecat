@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-14
 
+- **Search inside a conversation.** The magnifier at the top of a conversation finds a message by its words, forgiving a typing slip. Tap a result and the conversation scrolls to that message and marks it, loading earlier messages if it has to. {#messenger-search}
 - **The home page shows what you get.** It opens with "Turn who you are into income" and a field to claim your own pay link, orangecat.ch/pay/your-name, shows the newest things people have listed, and the Cat answers a visitor's first sentence once before any sign-up. The same promise now reads the same on every page.
 - **Pricing starts with what selling costs: 0%.** The Cat's plans follow below it, and the FAQ and the pricing page say the same about Cat Credits.
 - **A picture for every kind.** Every create form now takes a cover picture; it is the large image on the page, the image on Discover and on the share card. Without a picture, a card shows its kind's icon instead of a letter. Removing a picture now really removes it.

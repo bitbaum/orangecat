@@ -382,3 +382,32 @@ describe('other people’s public bots, and who New offers first (ADR-0015)', ()
     expect(offered).toEqual([{ id: 'bot:b1', name: 'Chef', avatarUrl: null, kind: 'agent' }]);
   });
 });
+
+describe('searching a conversation', () => {
+  it('asks the conversation’s search route and returns messages in the Messenger’s shape', async () => {
+    fetchMock.mockResolvedValueOnce(
+      ok({
+        messages: [
+          {
+            id: 'm9',
+            conversation_id: 'c1',
+            sender_id: 'ada',
+            content: 'Penguins are birds',
+            message_type: 'text',
+            metadata: null,
+            created_at: '2026-11-13T10:00:00Z',
+            updated_at: '2026-11-13T10:00:00Z',
+            is_deleted: false,
+            edited_at: null,
+          },
+        ],
+        searched: 40,
+      })
+    );
+    const found = await transport().search!('c1', 'pengiun birds', {});
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/messages/c1/search?q=pengiun%20birds');
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ id: 'm9', threadId: 'c1', authorId: 'ada' });
+    expect(found[0]!.createdAt).toBeInstanceOf(Date);
+  });
+});
