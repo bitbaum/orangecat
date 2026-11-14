@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-14
+
+- **Search inside a conversation.** The magnifier at the top of a conversation finds a message by its words, forgiving a typing slip. Tap a result and the conversation scrolls to that message and marks it, loading earlier messages if it has to. {#messenger-search}
+
 ## 2026-11-13
 
 - **Send a voice message.** In a conversation, tap the paperclip and choose Voice message: one button starts and stops the recording, you can listen to it, then add it to your message or record again. It is sent like a photo, with or without words, and plays in the conversation. The microphone is on only while you record. {#messenger-voice}
