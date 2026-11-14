@@ -334,6 +334,14 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
       };
     },
 
+    async search(conversationId, query, { signal }) {
+      const data = await api<{ messages: Message[] }>(
+        `${API_ROUTES.MESSAGES.CONVERSATION_SEARCH(conversationId)}?q=${encodeURIComponent(query)}`,
+        { signal }
+      );
+      return (data.messages ?? []).map(m => reviveMessage(toMessengerMessage(m, userId)));
+    },
+
     async react(message, emoji) {
       await api<{ saved: boolean }>(API_ROUTES.MESSAGES.REACTIONS, {
         method: 'PUT',

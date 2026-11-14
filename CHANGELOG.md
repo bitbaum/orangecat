@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-14
 
+- **Search inside a conversation.** The magnifier at the top of a conversation finds a message by its words, forgiving a typing slip. Tap a result and the conversation scrolls to that message and marks it, loading earlier messages if it has to. {#messenger-search}
 - **A calendar of your own, and your bots can use your to-do list.** OrangeCat now has your calendar at orangecat.ch/dashboard/calendar: add an entry yourself, or tell your Cat or one of your bots ("put dentist on Monday at 9 in my calendar"). It shows your entries, the tasks and reminders that fall due, and your Google calendar if you connected it, in one list. It needs no outside account. Your bots can now read your to-do list, add a task, change one and tick one off, and in a bot's details you choose whether it asks first or does it on its own. Asking "what is on my to-do list?" or "what do I have tomorrow?" is read for whichever model answers.
 
 ## 2026-11-13
