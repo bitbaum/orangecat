@@ -128,10 +128,10 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
-    "@bitbaum/accountkit": "^0.31.0",
+    "@bitbaum/accountkit": "^0.32.0",
     "@bitbaum/ai-kit": "^1.29.0",
     "@bitbaum/bip-kit": "^0.9.1",
-    "@bitbaum/chatkit": "^0.35.0",
+    "@bitbaum/chatkit": "^0.36.0",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",
     "@bitbaum/design-tokens": "^1.7.1",
