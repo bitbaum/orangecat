@@ -21,6 +21,7 @@ import { PaymentExpectationNote } from './PaymentExpectationNote';
 import { SellerWalletBanner } from './SellerWalletBanner';
 import { OwnerCollectPanel } from './OwnerCollectPanel';
 import { GuestPurchasePanel } from './GuestPurchasePanel';
+import { AccountPurchaseCard } from './AccountPurchaseCard';
 import { PublicSupportPanel } from './PublicSupportPanel';
 import { OptionalSupportPanel } from './OptionalSupportPanel';
 import { NoWalletYetNotice } from './NoWalletYetNotice';
@@ -54,6 +55,11 @@ interface PublicEntityPaymentSectionProps {
   contributionBounds?: ContributionBoundsBtc | null;
   /** Redirect path after sign-in */
   signInRedirect: string;
+  /**
+   * Paying for this grants something to the buyer's account (a pass), so it
+   * cannot be bought without one: signed out, the way forward is signing in.
+   */
+  purchaseNeedsAccount?: boolean;
   /** The support card's title when the entity itself is supported ("Support Mira"). */
   supportTitle?: string;
 }
@@ -70,6 +76,7 @@ export function PublicEntityPaymentSection({
   sellerReceive,
   contributionBounds = null,
   signInRedirect,
+  purchaseNeedsAccount = false,
   supportTitle,
 }: PublicEntityPaymentSectionProps) {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -154,15 +161,19 @@ export function PublicEntityPaymentSection({
     if (!isTicket && sellerReceive && priceAmount) {
       return (
         <div className="space-y-4">
-          <GuestPurchasePanel
-            entityType={entityType}
-            entityId={entityId}
-            entityTitle={entityTitle}
-            recipientName={recipientName}
-            priceAmount={priceAmount}
-            priceCurrency={priceCurrency}
-            signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
-          />
+          {purchaseNeedsAccount ? (
+            <AccountPurchaseCard signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`} />
+          ) : (
+            <GuestPurchasePanel
+              entityType={entityType}
+              entityId={entityId}
+              entityTitle={entityTitle}
+              recipientName={recipientName}
+              priceAmount={priceAmount}
+              priceCurrency={priceCurrency}
+              signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
+            />
+          )}
           {optionalSupport}
         </div>
       );

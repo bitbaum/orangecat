@@ -32,6 +32,8 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { GuestPurchaseError, initiateGuestPurchase } from '@/domain/payments/guestPurchase';
 import { hashPublicStatusToken } from '@/domain/payments/paymentFlowHelpers';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { ACCOUNT_PURCHASE_COPY, grantsToAnAccount } from '@/config/account-bound-products';
+import { passTags } from '@/config/loki-passes';
 import { STATUS } from '@/config/database-constants';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { createFakeSupabase, type FakeSupabaseOptions } from '../../../../test-utils/fakeSupabase';
@@ -165,6 +167,27 @@ describe('a purchase without an account', () => {
     expect(admin.inserts).toEqual([]);
   });
 
+  it.each([
+    ['a Supporter pass', ['supporter-plan', 'supporter-days:30']],
+    ['a Loki pass', passTags('pro', 30)],
+  ])('refuses %s: it is granted to an account, and a guest has none', async (_label, tags) => {
+    // Settlement grants a pass to the buyer's account. With buyer_id null the
+    // money would arrive and nothing would be granted.
+    const { pub, admin } = world();
+    admin.tables[ENTITY_REGISTRY.product.tableName] = [{ id: PRODUCT_ID, tags }];
+    const error = await buy(pub).catch(e => e);
+    expect(error).toBeInstanceOf(GuestPurchaseError);
+    expect(error).toMatchObject({ status: 409, message: ACCOUNT_PURCHASE_COPY.refusal });
+    expect(generateInvoice).not.toHaveBeenCalled();
+    expect(admin.inserts).toEqual([]);
+  });
+
+  it('sells an ordinary tagged product', async () => {
+    const { pub, admin } = world();
+    admin.tables[ENTITY_REGISTRY.product.tableName] = [{ id: PRODUCT_ID, tags: ['art', 'print'] }];
+    await expect(buy(pub)).resolves.toMatchObject({ qr_data: 'LNBC1' });
+  });
+
   it('takes an order with no note', async () => {
     const { pub, admin } = world();
     await buy(pub, { note: null });
@@ -191,5 +214,17 @@ describe('a purchase without an account', () => {
     expect(error).toBeInstanceOf(GuestPurchaseError);
     expect(error.message).toMatch(/wallet/);
     expect(admin.inserts).toEqual([]);
+  });
+});
+
+describe('which products are granted to an account', () => {
+  it.each([
+    [['supporter-plan', 'supporter-days:30'], true],
+    [passTags('team', 30), true],
+    [['supporter-plan'], false], // no period: not a pass
+    [['art'], false],
+    [null, false],
+  ])('%j → %s', (tags, expected) => {
+    expect(grantsToAnAccount(tags)).toBe(expected);
   });
 });
