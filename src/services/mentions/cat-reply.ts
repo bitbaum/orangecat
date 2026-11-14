@@ -15,6 +15,7 @@
 import { CAT_CONTEXT_MESSAGE_WINDOW, CAT_DISPLAY_NAME, CAT_MENTION } from '@/config/cat-identity';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { callPlatformJson, parseJsonLoose } from '@/services/cat/platform-llm';
+import { isAloneWithCat } from '@/services/mentions/cat-direct';
 import { writeMessage } from '@/features/messaging/server/write-message';
 import { logger } from '@/utils/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -23,14 +24,21 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export const CAT_FALLBACK_REPLY =
   "I couldn't work that one out just now — ask me again in a moment?";
 
-const SYSTEM_PROMPT = [
-  `You are ${CAT_DISPLAY_NAME}, the OrangeCat agent, replying inside someone's private conversation.`,
-  `You were tagged with ${CAT_MENTION}. Answer the question that was asked of you, using the conversation for context.`,
-  'Be brief and concrete — this is a chat, not an essay. Two or three sentences unless asked for more.',
-  'Never repeat the conversation back to them. Never mention that you are an AI model.',
-  'If the question needs information you do not have, say so plainly and say what would answer it.',
-  'Respond as JSON: {"reply": "<your message>"}',
-].join('\n');
+/** What the Cat is told: tagged in other people's conversation, or written to directly. */
+export function systemPrompt(direct: boolean): string {
+  return [
+    direct
+      ? `You are ${CAT_DISPLAY_NAME}, the OrangeCat agent, in a conversation between you and one person.`
+      : `You are ${CAT_DISPLAY_NAME}, the OrangeCat agent, replying inside someone's private conversation.`,
+    direct
+      ? 'Every message here is written to you. Answer their newest message, using the conversation for context.'
+      : `You were tagged with ${CAT_MENTION}. Answer the question that was asked of you, using the conversation for context.`,
+    'Be brief and concrete — this is a chat, not an essay. Two or three sentences unless asked for more.',
+    'Never repeat the conversation back to them. Never mention that you are an AI model.',
+    'If the question needs information you do not have, say so plainly and say what would answer it.',
+    'Respond as JSON: {"reply": "<your message>"}',
+  ].join('\n');
+}
 
 export interface ConversationMessage {
   sender_id: string;
@@ -63,7 +71,8 @@ export async function loadConversationContext(
 export function buildPrompt(
   messages: ConversationMessage[],
   requesterId: string,
-  catId: string
+  catId: string,
+  direct = false
 ): string {
   const lines = messages.map(m => {
     const who =
@@ -78,7 +87,9 @@ export function buildPrompt(
     'Conversation so far (oldest first):',
     lines.join('\n'),
     '',
-    `Reply to the most recent message that tagged ${CAT_MENTION}.`,
+    direct
+      ? 'Reply to their most recent message.'
+      : `Reply to the most recent message that tagged ${CAT_MENTION}.`,
   ].join('\n');
 }
 
@@ -102,11 +113,16 @@ export async function replyToConversationMention(
     return false;
   }
 
+  // Alone with the person, nothing tagged it: every message is for the Cat.
+  const direct = await isAloneWithCat(admin, conversationId, requesterId).catch(() => false);
+
   let reply = '';
   try {
-    const raw = await callPlatformJson(SYSTEM_PROMPT, buildPrompt(context, requesterId, catId), {
-      timeoutMs: 30_000,
-    });
+    const raw = await callPlatformJson(
+      systemPrompt(direct),
+      buildPrompt(context, requesterId, catId, direct),
+      { timeoutMs: 30_000 }
+    );
     const parsed = parseJsonLoose<{ reply?: string }>(raw);
     reply = (parsed?.reply ?? '').trim();
   } catch (error) {
@@ -130,8 +146,9 @@ export async function replyToConversationMention(
     senderId: catId,
     content: reply,
     // `requested_by`: an agent's words are never unattributed in a shared
-    // room — the thread shows "Cat · for <the person who tagged it>".
-    metadata: { is_cat_reply: true, requested_by: requesterId },
+    // room — the thread shows "Cat · for <the person who tagged it>". Alone
+    // with one person there is nobody else it could have answered for.
+    metadata: direct ? { is_cat_reply: true } : { is_cat_reply: true, requested_by: requesterId },
   });
   return true;
 }

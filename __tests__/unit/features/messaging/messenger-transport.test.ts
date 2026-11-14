@@ -375,10 +375,120 @@ describe('other people’s public bots, and who New offers first (ADR-0015)', ()
     expect(fetchMock.mock.calls.map(c => c[0])).toContain('/api/ai-assistants?limit=10&q=ada');
   });
 
-  it('before anything is typed, New offers the viewer’s own bots', async () => {
-    fetchMock.mockResolvedValueOnce(json([{ id: 'b1', title: 'Chef' }]));
+  it('before anything is typed, New offers the Cat, own bots, recent people and followed people', async () => {
+    const seat = (user_id: string, name: string) => ({
+      user_id,
+      username: user_id,
+      name,
+      avatar_url: null,
+      role: 'member',
+      joined_at: '2026-11-13T10:00:00Z',
+      last_read_at: '',
+      is_active: true,
+    });
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url === '/api/ai-assistants?limit=50&user_id=me') {
+        return json([{ id: 'b1', title: 'Chef' }]);
+      }
+      if (url === '/api/messages?limit=100') {
+        return json({
+          conversations: [
+            {
+              id: 'c1',
+              is_group: false,
+              last_message_at: '2026-11-13T10:00:00Z',
+              participants: [seat('me', 'Me'), seat('ben', 'Ben Ito')],
+            },
+          ],
+        });
+      }
+      if (url === '/api/social/following/me?limit=20') {
+        return json({
+          data: [
+            { profile: { id: 'ben', username: 'ben', name: 'Ben Ito' } },
+            { profile: { id: 'ada', username: 'ada', name: 'Ada Okafor' } },
+          ],
+        });
+      }
+      return new Response('{}', { status: 404 });
+    });
+    const cat = { id: 'cat-id', name: 'Cat', handle: 'cat', kind: 'agent' as const };
+    const offered = await createMessengerTransport({ userId: 'me', cat: () => cat }).suggestions!(
+      {}
+    );
+    expect(offered.map(p => p.id)).toEqual(['cat-id', 'bot:b1', 'ben', 'ada']);
+    expect(offered[1]).toEqual({ id: 'bot:b1', name: 'Chef', avatarUrl: null, kind: 'agent' });
+  });
+
+  it('a list that cannot be read is left out, and the rest is still offered', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.startsWith('/api/ai-assistants')
+        ? json([{ id: 'b1', title: 'Chef' }])
+        : new Response('{}', { status: 500 })
+    );
     const offered = await transport().suggestions!({});
-    expect(fetchMock.mock.calls[0]![0]).toBe('/api/ai-assistants?limit=50&user_id=me');
-    expect(offered).toEqual([{ id: 'bot:b1', name: 'Chef', avatarUrl: null, kind: 'agent' }]);
+    expect(offered.map(p => p.id)).toEqual(['bot:b1']);
+  });
+
+  it('the Cat found by search is shown as the agent it is', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json([{ id: 'cat-id', username: 'cat', name: 'Cat' }]))
+      .mockImplementation(async () => json([]));
+    const cat = { id: 'cat-id', name: 'Cat', handle: 'cat', kind: 'agent' as const };
+    const found = await createMessengerTransport({ userId: 'me', cat: () => cat }).people!(
+      'cat',
+      {}
+    );
+    expect(found).toEqual([cat]);
+  });
+});
+
+describe('alone with the Cat', () => {
+  const seat = (user_id: string, extra: Record<string, unknown> = {}) => ({
+    user_id,
+    username: user_id,
+    name: user_id,
+    avatar_url: null,
+    role: 'member',
+    joined_at: '2026-11-13T10:00:00Z',
+    last_read_at: '',
+    is_active: true,
+    ...extra,
+  });
+  const room = (participants: unknown[]) =>
+    ok({
+      conversation: {
+        id: 'c1',
+        last_message_at: null,
+        last_message_preview: null,
+        unread_count: 0,
+        participants,
+      },
+    });
+  const typingAfterSend = async (participants: unknown[]) => {
+    fetchMock
+      .mockResolvedValueOnce(room(participants))
+      .mockResolvedValueOnce(ok({ id: 'srv-1', attachments: [] }, 201));
+    const t = transport();
+    const events: Array<{ type: string; actorId?: string; typing?: boolean }> = [];
+    const stop = t.subscribe!({ conversationId: null }, e => events.push(e as never));
+    await t.conversation!('c1', {});
+    await t.send('c1', { clientId: 'tmp-1', body: 'hello', attachments: [] });
+    stop();
+    return events.filter(e => e.type === 'typing' && e.typing);
+  };
+
+  it('a message that does not tag it still shows the Cat writing', async () => {
+    const typing = await typingAfterSend([seat('me'), seat('cat', { is_agent: true })]);
+    expect(typing).toContainEqual(expect.objectContaining({ actorId: 'cat' }));
+  });
+
+  it('with a person there too, an untagged message does not', async () => {
+    const typing = await typingAfterSend([
+      seat('me'),
+      seat('maya'),
+      seat('cat', { is_agent: true }),
+    ]);
+    expect(typing).toEqual([]);
   });
 });

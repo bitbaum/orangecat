@@ -11,6 +11,7 @@
 import { CAT_USERNAME } from '@/config/cat-identity';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { normalizeUsername } from '@/config/usernames';
+import { isAloneWithCat } from '@/services/mentions/cat-direct';
 import { resolveMentions } from '@/services/mentions/resolve';
 import { enqueueMention } from '@/services/mentions/queue';
 import { logger } from '@/utils/logger';
@@ -30,7 +31,9 @@ export interface NoteMentionInput {
 }
 
 /**
- * Notice that a message tagged the Cat, and record that a reply is owed.
+ * Notice that a message is for the Cat, and record that a reply is owed: it
+ * tagged the Cat, or it was written in a conversation with only the Cat,
+ * where every message is for it.
  *
  * Never throws: a message is a person's words and must be stored whatever the
  * Cat is doing. Everything here is best-effort around a write that has already
@@ -41,20 +44,23 @@ export async function noteCatMention(
   input: NoteMentionInput
 ): Promise<boolean> {
   try {
-    // Cheap exit for the overwhelming majority of messages: no '@', no lookup.
-    if (!input.content.includes('@')) {
+    // A message of only files has no question in it.
+    if (!input.content.trim()) {
       return false;
     }
 
-    const { mentionsCat } = await resolveMentions(admin, input.content);
-    if (!mentionsCat) {
-      return false;
-    }
-
-    // The Cat does not answer itself — otherwise a reply containing the handle
-    // would queue another reply, forever.
-    const isFromCat = await senderIsCat(admin, input.senderId);
-    if (isFromCat) {
+    // No '@', no resolver: most messages name nobody.
+    const tagged =
+      input.content.includes('@') && (await resolveMentions(admin, input.content)).mentionsCat;
+    if (tagged) {
+      // The Cat does not answer itself — otherwise a reply containing the
+      // handle would queue another reply, forever.
+      if (await senderIsCat(admin, input.senderId)) {
+        return false;
+      }
+    } else if (!(await isAloneWithCat(admin, input.conversationId, input.senderId))) {
+      // The Cat's own line is never "alone with the Cat": the other member
+      // of its conversation is the person, so it cannot answer itself here.
       return false;
     }
 
