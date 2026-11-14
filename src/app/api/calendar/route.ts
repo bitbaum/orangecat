@@ -1,8 +1,10 @@
 /**
  * The person's own calendar.
  *
- * GET  /api/calendar?days=30&zone=Europe/Zurich — the agenda: own entries,
+ * GET  /api/calendar?days=30&zone=Europe/Zurich — the coming days: own entries,
  *      tasks and reminders that fall due, and a connected Google calendar
+ * GET  /api/calendar?from=2026-11-01&to=2026-12-06&zone=… — the same for a span of
+ *      days, past included (a month or a week view), at most 45 days
  * POST /api/calendar — add an entry: { title, start, minutes?, end?, location?, notes?, zone? }
  *
  * `zone` is the browser's, used only when the person has not set their own
@@ -19,7 +21,12 @@ import {
   apiSuccess,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
-import { addCalendarEntry, readAgenda } from '@/services/planner/calendar';
+import {
+  addCalendarEntry,
+  daySpan,
+  readAgenda,
+  readAgendaBetween,
+} from '@/services/planner/calendar';
 import { agendaForPage } from '@/services/planner/calendar-page';
 import { plannerZone } from '@/services/planner/zone';
 import { logger } from '@/utils/logger';
@@ -39,10 +46,13 @@ const entrySchema = z.object({
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
     const params = new URL((request as NextRequest).url).searchParams;
-    const [agenda, zone] = await Promise.all([
-      readAgenda(request.supabase, request.user.id, params.get('days') ?? 30),
-      plannerZone(request.supabase, request.user.id, params.get('zone')),
-    ]);
+    const zone = await plannerZone(request.supabase, request.user.id, params.get('zone'));
+    const from = params.get('from');
+    const to = params.get('to');
+    const span = from && to ? daySpan(from, to, zone) : null;
+    const agenda = span
+      ? await readAgendaBetween(request.supabase, request.user.id, span.from, span.until)
+      : await readAgenda(request.supabase, request.user.id, params.get('days') ?? 30);
     return apiSuccess(agendaForPage(agenda, zone), {
       headers: { 'Cache-Control': 'private, no-store' },
     });

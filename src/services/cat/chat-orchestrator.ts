@@ -26,6 +26,7 @@ import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
 import { preReadForTurn } from '@/services/connectors/pre-read';
+import { writeCalendarFromChat } from '@/services/planner/chat-write';
 import { actionsViaForModel, observedToolVerdict } from '@/services/cat/tool-capability';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -65,6 +66,8 @@ export const catChatBodySchema = z.object({
    * awareness. See RuntimeContext in document-context-types.ts.
    */
   preferredCurrency: z.string().max(8).optional(),
+  /** The browser's IANA zone, for a time said with no zone ("Monday at 9"). */
+  timeZone: z.string().max(64).optional(),
   locale: z.string().max(20).optional(),
   lastVisitedPath: z.string().max(200).optional(),
   /** The page the user is on right now (global Cat overlay), + its entity if any. */
@@ -397,14 +400,19 @@ async function prepareTurn(
   // A plain ask about the calendar or the mail is read in code, now, and put
   // in front of whichever model answers (connectors/pre-read.ts): the read
   // must not depend on how well that model chooses tools.
-  const preRead = await preReadForTurn(supabase, user.id, message);
-  if (preRead) {
-    prepared.grounding.evidence.push(...preRead.evidence);
+  // And a plain instruction to put something in the calendar is carried out
+  // in code too (planner/chat-write.ts), so it does not depend on the model
+  // choosing a tool. It is a write, so the calendar is not also read for it.
+  const written = await writeCalendarFromChat(supabase, user.id, message, body.timeZone);
+  const preRead = written ? null : await preReadForTurn(supabase, user.id, message);
+  const before = written ?? preRead;
+  if (before) {
+    prepared.grounding.evidence.push(...before.evidence);
   }
-  const baseMessages: ToolAugmentedMessage[] = preRead
+  const baseMessages: ToolAugmentedMessage[] = before
     ? [
         ...prepared.messages.slice(0, -1),
-        { role: 'system', content: preRead.block },
+        { role: 'system', content: before.block },
         ...prepared.messages.slice(-1),
       ]
     : prepared.messages;
