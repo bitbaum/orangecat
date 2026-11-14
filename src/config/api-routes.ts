@@ -151,6 +151,11 @@ export const API_ROUTES = {
     FOLLOW_STATUS: (id: string) => `/api/social/follow-status/${id}`,
     FOLLOWERS: (id: string) => `/api/social/followers/${id}`,
   },
+  /** The person's own calendar (services/planner). */
+  CALENDAR: {
+    BASE: '/api/calendar',
+    BY_ID: (id: string) => `/api/calendar/${id}`,
+  },
   TASKS: {
     BASE: '/api/tasks',
     BY_ID: (id: string) => `/api/tasks/${id}`,

@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-14
+
+- **A calendar of your own, and your bots can use your to-do list.** OrangeCat now has your calendar at orangecat.ch/dashboard/calendar: add an entry yourself, or tell your Cat or one of your bots ("put dentist on Monday at 9 in my calendar"). It shows your entries, the tasks and reminders that fall due, and your Google calendar if you connected it, in one list. It needs no outside account. Your bots can now read your to-do list, add a task, change one and tick one off, and in a bot's details you choose whether it asks first or does it on its own. Asking "what is on my to-do list?" or "what do I have tomorrow?" is read for whichever model answers.
+
 ## 2026-11-13
 
 - **Send a voice message.** In a conversation, tap the paperclip and choose Voice message: one button starts and stops the recording, you can listen to it, then add it to your message or record again. It is sent like a photo, with or without words, and plays in the conversation. The microphone is on only while you record. {#messenger-voice}

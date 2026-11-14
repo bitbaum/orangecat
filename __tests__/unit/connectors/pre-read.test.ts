@@ -55,14 +55,18 @@ describe('what a message plainly asks to have read', () => {
 });
 
 describe('the read itself', () => {
+  const db = {} as never;
   const calendar = vi.fn(async () => ({ success: true, data: { text: '1 events: Dentist' } }));
   const mail = vi.fn(async () => ({ success: true, data: { text: '2 messages' } }));
-  const hands = { calendar_read: calendar, gmail_read: mail };
+  const tasks = vi.fn(async () => ({ success: true, data: { text: '1 open: tax form' } }));
+  const hands = { calendar_read: calendar, gmail_read: mail, tasks_read: tasks };
 
   it('runs what was asked, as the person, and hands the model the result', async () => {
-    const read = await preReadForTurn('u1', 'Check my email. What do I have next week', { hands });
-    expect(calendar).toHaveBeenCalledWith('u1', { days: 14 });
-    expect(mail).toHaveBeenCalledWith('u1', { query: 'in:inbox newer_than:7d' });
+    const read = await preReadForTurn(db, 'u1', 'Check my email. What do I have next week', {
+      hands,
+    });
+    expect(calendar).toHaveBeenCalledWith(db, 'u1', { days: 14 });
+    expect(mail).toHaveBeenCalledWith(db, 'u1', { query: 'in:inbox newer_than:7d' });
     expect(read?.block).toMatch(/## Read just now, for this message/);
     expect(read?.block).toMatch(/### Their calendar\n1 events: Dentist/);
     expect(read?.block).toMatch(/### Their mail\n2 messages/);
@@ -73,7 +77,7 @@ describe('the read itself', () => {
 
   it('reads nothing, and adds nothing, for a message about something else', async () => {
     calendar.mockClear();
-    expect(await preReadForTurn('u1', 'What can I sell?', { hands })).toBeNull();
+    expect(await preReadForTurn(db, 'u1', 'What can I sell?', { hands })).toBeNull();
     expect(calendar).not.toHaveBeenCalled();
   });
 
@@ -81,7 +85,7 @@ describe('the read itself', () => {
     const failing = {
       calendar_read: async () => ({ success: false, error: 'not switched on for OrangeCat yet' }),
     };
-    const read = await preReadForTurn('u1', 'my calendar', { hands: failing });
+    const read = await preReadForTurn(db, 'u1', 'my calendar', { hands: failing });
     expect(read?.block).toMatch(/It could not be read: not switched on for OrangeCat yet/);
     expect(read?.block).not.toContain(OUTSIDE_CONTENT_NOTE);
     expect(read?.evidence).toEqual([]);
@@ -89,19 +93,19 @@ describe('the read itself', () => {
 
   it('leaves out a read that is not allowed here (a hand switched off, an account not connected)', async () => {
     mail.mockClear();
-    const read = await preReadForTurn('u1', 'Check my email and my calendar', {
+    const read = await preReadForTurn(db, 'u1', 'Check my email and my calendar', {
       hands,
       allowed: id => id === 'calendar_read',
     });
     expect(mail).not.toHaveBeenCalled();
     expect(read?.block).not.toMatch(/Their mail/);
     expect(
-      await preReadForTurn('u1', 'Check my email', { hands, allowed: () => false })
+      await preReadForTurn(db, 'u1', 'Check my email', { hands, allowed: () => false })
     ).toBeNull();
   });
 
   it('survives a hand that throws', async () => {
-    const read = await preReadForTurn('u1', 'my calendar', {
+    const read = await preReadForTurn(db, 'u1', 'my calendar', {
       hands: {
         calendar_read: async () => {
           throw new Error('boom');
@@ -109,6 +113,27 @@ describe('the read itself', () => {
       },
     });
     expect(read?.block).toMatch(/It could not be read: the read failed just now/);
+  });
+});
+
+describe('the to-do list', () => {
+  const db = {} as never;
+  it('is heard as a thing to look at, not in an instruction to add to it', () => {
+    expect(connectorIntent('What is on my to-do list?')).toEqual({ tasks: true });
+    expect(connectorIntent('what should I do today')).toEqual({
+      calendar: { days: 1 },
+      tasks: true,
+    });
+    expect(connectorIntent('Was muss ich erledigen?')).toEqual({ tasks: true });
+    expect(connectorIntent('create a task to call the landlord')).toBeNull();
+  });
+
+  it('is read in code, and is the person’s own words, not marked as outside content', async () => {
+    const tasks = vi.fn(async () => ({ success: true, data: { text: '1 open: tax form' } }));
+    const read = await preReadForTurn(db, 'u1', 'my tasks', { hands: { tasks_read: tasks } });
+    expect(tasks).toHaveBeenCalledWith(db, 'u1', {});
+    expect(read?.block).toMatch(/### Their to-do list\n1 open: tax form/);
+    expect(read?.block).not.toContain(OUTSIDE_CONTENT_NOTE);
   });
 });
 

@@ -42,6 +42,7 @@ import {
   BarChart3,
   Handshake,
   CalendarCheck,
+  CalendarDays,
   UserPlus,
   Landmark,
 } from 'lucide-react';
@@ -347,6 +348,13 @@ const moneyAndWorkSection: NavSection = {
       href: ROUTES.DASHBOARD.CIVIC_SPLIT,
       icon: Landmark,
       description: 'Say where your public money should go',
+      requiresAuth: true,
+    },
+    {
+      name: 'Calendar',
+      href: ROUTES.DASHBOARD.CALENDAR,
+      icon: CalendarDays,
+      description: 'Your days: entries, what falls due, bookings',
       requiresAuth: true,
     },
     {

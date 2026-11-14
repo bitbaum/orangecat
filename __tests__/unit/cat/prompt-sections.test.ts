@@ -280,7 +280,14 @@ describe('selection is worth doing', () => {
     // parameter names. What a read returns, how much of it, and what is
     // said when the account is not connected are code
     // (services/connectors), not prose here.
-    expect(remaining).toBeLessThanOrEqual(7_790);
+    //
+    // Raised 7,790 -> 8,110 for the person's own planner: `calendar_add`,
+    // `calendar_remove` and `tasks_read`, and `calendar_read` now reading
+    // their own calendar and what falls due, not Google alone
+    // (services/planner). ~320 characters: one clause each and six short
+    // parameter names. How a time is read in the person's zone, what an
+    // agenda lists and who wrote an entry are code, not prose here.
+    expect(remaining).toBeLessThanOrEqual(8_110);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

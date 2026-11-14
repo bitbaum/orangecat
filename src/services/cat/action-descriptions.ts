@@ -74,7 +74,13 @@ export function generateActionDescription(
         ? 'Read one message in your Gmail'
         : `Search your Gmail for "${String(parameters.query ?? 'this week’s inbox').slice(0, 200)}"`;
     case 'calendar_read':
-      return `Read your Google Calendar for the next ${Number(parameters.days) > 0 ? Math.min(Number(parameters.days), 31) : 7} days`;
+      return `Read your calendar for the next ${Number(parameters.days) > 0 ? Math.min(Number(parameters.days), 62) : 7} days`;
+    case 'calendar_add':
+      return `Put "${String(parameters.title ?? '').slice(0, 120)}" in your calendar for ${String(parameters.start ?? 'a time to be set').slice(0, 40)}`;
+    case 'calendar_remove':
+      return 'Take an entry out of your calendar';
+    case 'tasks_read':
+      return 'Read what is open on your to-do list';
     case 'loki_run_status':
       return `Read where Loki run ${String(parameters.run_id ?? '').slice(0, 8)} is`;
     case 'send_task_to_loki': {

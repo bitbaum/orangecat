@@ -21,6 +21,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import { isConnectorHand } from '@/services/connectors/hands';
 import { isLokiHand } from '@/services/loki/hands';
+import { isPlannerHand } from '@/services/planner/hands';
 import { COMPANION_HANDS } from './hands';
 
 export const HAND_MODES = ['off', 'ask', 'auto'] as const;
@@ -49,9 +50,16 @@ export function isHand(actionId: string): boolean {
  * So can the hands that read an account the owner connected (GitHub, mail,
  * calendar): they only read, as the owner, and a morning routine that waits
  * for a tap before it may look at the calendar is no routine.
+ *
+ * And the owner's own planner (their to-do list and calendar): what a bot
+ * writes there is private to the owner and can be taken out again, so the
+ * reason the "makes something on OrangeCat" hands wait does not apply.
  */
 export function canRunOnItsOwn(actionId: string): boolean {
-  return isHand(actionId) && (isLokiHand(actionId) || isConnectorHand(actionId));
+  return (
+    isHand(actionId) &&
+    (isLokiHand(actionId) || isConnectorHand(actionId) || isPlannerHand(actionId))
+  );
 }
 
 /** The owner's settings for one bot. A failed read is "ask" for everything: never more than a tap allows. */
