@@ -397,7 +397,7 @@ async function prepareTurn(
   // A plain ask about the calendar or the mail is read in code, now, and put
   // in front of whichever model answers (connectors/pre-read.ts): the read
   // must not depend on how well that model chooses tools.
-  const preRead = await preReadForTurn(user.id, message);
+  const preRead = await preReadForTurn(supabase, user.id, message);
   if (preRead) {
     prepared.grounding.evidence.push(...preRead.evidence);
   }

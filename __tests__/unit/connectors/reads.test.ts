@@ -45,7 +45,9 @@ const b64url = (s: string) => Buffer.from(s, 'utf8').toString('base64url');
 describe('connector hands', () => {
   it('are registered actions, held by bots, named by a connection, with a provider each', () => {
     const ids = Object.keys(CONNECTOR_HANDS);
-    expect(ids.sort()).toEqual(['calendar_read', 'github_read', 'gmail_read']);
+    expect(ids.sort()).toEqual(['github_read', 'gmail_read']);
+    // The calendar is the person's own (services/planner); Google is one place it reads.
+    expect(isConnectorHand('calendar_read')).toBe(false);
     const named = CAT_CONNECTIONS.flatMap(c => c.actions);
     for (const id of ids) {
       expect(CAT_ACTIONS[id]?.enabled, id).toBe(true);

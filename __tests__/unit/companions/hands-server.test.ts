@@ -16,6 +16,7 @@ vi.mock('@/services/connectors/token-store', () => ({
 import { COMPANION_HANDS, HANDS_SECTION_HEADING } from '@/services/companions/hands';
 import { handsFor } from '@/services/companions/hands-server';
 import { CONNECTOR_HAND_PROVIDER } from '@/services/connectors/hands';
+import { isPlannerHand } from '@/services/planner/hands';
 import { turnTimer } from '@/services/ai/turn-timer';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -49,7 +50,13 @@ describe('handsFor', () => {
     expect(ids).toEqual(
       COMPANION_HANDS.filter(id => id !== 'send_task_to_loki' && !CONNECTOR_HAND_PROVIDER[id])
     );
-    expect(hands.allowed.every(a => a.grantOnConfirm)).toBe(true);
+    // The person's own planner needs no grant at all (it is on from the
+    // start); every other hand offered here is one a tap would grant.
+    expect(
+      hands.allowed.filter(a => !isPlannerHand(a.action.id)).every(a => a.grantOnConfirm)
+    ).toBe(true);
+    expect(ids).toContain('calendar_read');
+    expect(ids).toContain('create_task');
     expect(hands.section?.startsWith(HANDS_SECTION_HEADING)).toBe(true);
   });
 
@@ -59,7 +66,6 @@ describe('handsFor', () => {
       const { client } = clientWith([]);
       const ids = (await handsFor(client, 'user-1')).allowed.map(a => a.action.id);
       expect(ids).toContain('gmail_read');
-      expect(ids).toContain('calendar_read');
       expect(ids).not.toContain('github_read');
     } finally {
       connected.providers = new Set();

@@ -9,9 +9,10 @@
  *
  * A step never goes through the Cat's executor or handlers (the seam in
  * __tests__/unit/companions/import-boundary.test.ts): it calls the Loki
- * rail's own function for that hand (services/loki/hands.ts), or the read
- * of an account the owner connected (services/connectors/hands.ts): the same
- * bodies the Cat's cards run. So only those hands can be a step; a Loki one
+ * rail's own function for that hand (services/loki/hands.ts), the read of
+ * an account the owner connected (services/connectors/hands.ts), or the
+ * owner's own planner (services/planner/hands.ts): the same bodies the
+ * Cat's cards run. So only those hands can be a step; a Loki one
  * runs as the Loki account linked to the bot's owner, a read with the
  * owner's own token.
  *
@@ -32,6 +33,7 @@ import {
 } from '@/services/connectors/hands';
 import { followLokiRun, runToFollow } from '@/services/loki/follow-run';
 import { LOKI_HANDS, isLokiHand } from '@/services/loki/hands';
+import { PLANNER_HANDS, isPlannerHand } from '@/services/planner/hands';
 import type { LokiSession } from '@/services/loki/sessions';
 import type { LokiTaskProjectResult } from '@/services/loki/task-dispatch';
 import { logger } from '@/utils/logger';
@@ -67,12 +69,16 @@ export async function runAutoStep(
   userId: string,
   actorId: string,
   conversationId: string,
-  proposal: Proposal
+  proposal: Proposal,
+  /** Who is acting, kept on what it writes in the owner's calendar: the bot's id. */
+  madeBy?: string
 ): Promise<{ ok: boolean; text: string }> {
-  // A read of a connected account, or a hand in the owner's Loki.
+  // A read of a connected account, the owner's own planner, or a hand in
+  // the owner's Loki.
   const reads = isConnectorHand(proposal.action);
+  const plans = isPlannerHand(proposal.action);
   const action = CAT_ACTIONS[proposal.action];
-  if ((!reads && !isLokiHand(proposal.action)) || !action) {
+  if ((!reads && !plans && !isLokiHand(proposal.action)) || !action) {
     // Offered as "on its own" but not a hand that can be: never run, say so.
     logger.warn('auto step refused: not an own-run hand', { actionId: proposal.action }, LOG);
     return { ok: false, text: 'That one needs your tap; it was not run.' };
@@ -91,7 +97,9 @@ export async function runAutoStep(
   try {
     outcome = reads
       ? await CONNECTOR_HANDS[proposal.action](userId, proposal.parameters)
-      : await LOKI_HANDS[proposal.action](actorId, proposal.parameters);
+      : plans
+        ? await PLANNER_HANDS[proposal.action](supabase, userId, proposal.parameters, madeBy)
+        : await LOKI_HANDS[proposal.action](actorId, proposal.parameters);
   } catch (error) {
     logger.error('auto step threw', error, LOG);
     outcome = { success: false, error: 'That could not be run just now.' };
@@ -106,6 +114,9 @@ export async function runAutoStep(
   if (reads) {
     // The thread shows what was read; the bot is also told whose words they are.
     return { ok: true, text: `${line}\n\n${OUTSIDE_CONTENT_NOTE}` };
+  }
+  if (plans) {
+    return { ok: true, text: line };
   }
   const target =
     proposal.action === 'send_task_to_loki'

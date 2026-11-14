@@ -1,6 +1,8 @@
 /**
  * What a person can read in the accounts they connected, as functions of
- * the person and the parameters: one body per hand.
+ * the person and the parameters: one body per hand. (Their calendar is not
+ * here: it is their own, services/planner, and a connected Google calendar
+ * is one of the places that agenda reads.)
  *
  * Two callers run them, as with the Loki hands (services/loki/hands.ts):
  * the Cat's handlers when the person taps a card, and a bot's work loop
@@ -18,7 +20,7 @@ import { CAT_HUB_TAB_HREFS } from '@/config/cat-hub';
 import { getGitHubConnection, githubConnectionConfigured } from '@/services/github/connection';
 import { getGoogleConnection, googleConnectionConfigured } from '@/services/google/connection';
 import { parseGitHubRead, readGitHub } from './github-read';
-import { readCalendar, readMail } from './google-read';
+import { readMail } from './google-read';
 import type { ConnectionProvider } from './token-store';
 
 export interface ConnectorHandOutcome {
@@ -36,7 +38,6 @@ export type ConnectorHand = (
 export const CONNECTOR_HAND_PROVIDER: Readonly<Record<string, ConnectionProvider>> = {
   github_read: 'github',
   gmail_read: 'google',
-  calendar_read: 'google',
 };
 
 /** Where a connection is made: the full address, so the sentence can be tapped. */
@@ -99,15 +100,6 @@ export const CONNECTOR_HANDS: Readonly<Record<string, ConnectorHand>> = {
       return { success: false, error: unavailable('google') };
     }
     return shown(await readMail(connection.token, params));
-  },
-
-  /** The coming days of the person's primary calendar. Read-only. */
-  calendar_read: async (userId, params) => {
-    const connection = await getGoogleConnection(getAdminClient(), userId);
-    if (!connection) {
-      return { success: false, error: unavailable('google') };
-    }
-    return shown(await readCalendar(connection.token, params));
   },
 };
 

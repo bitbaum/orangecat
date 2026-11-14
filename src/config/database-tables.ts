@@ -125,6 +125,8 @@ export const DATABASE_TABLES = {
 
   // Task Management
   TASKS: 'tasks',
+  /** A person's own calendar: entries they, their Cat or a bot wrote. */
+  CALENDAR_ENTRIES: 'calendar_entries',
   TASK_COMPLETIONS: 'task_completions',
   TASK_ATTENTION_FLAGS: 'task_attention_flags',
   TASK_REQUESTS: 'task_requests',

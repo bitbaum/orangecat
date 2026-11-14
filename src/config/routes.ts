@@ -600,6 +600,8 @@ export const ROUTES = {
     AI_ASSISTANTS: ENTITY_REGISTRY['ai_assistant'].basePath,
     AI_ASSISTANTS_CREATE: ENTITY_REGISTRY['ai_assistant'].createPath,
     WISHLISTS: ENTITY_REGISTRY['wishlist'].basePath,
+    /** Your own calendar: entries, what falls due, a connected Google calendar. */
+    CALENDAR: '/dashboard/calendar',
     TASKS: '/dashboard/tasks',
     TASKS_NEW: '/dashboard/tasks/new',
     TASKS_VIEW: (id: string) => `/dashboard/tasks/${id}`,

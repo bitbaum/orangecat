@@ -45,7 +45,7 @@ describe('a hand grant', () => {
     expect(isHand('send_payment')).toBe(false);
   });
 
-  it('lets only the Loki hands run on their own: what publishes on OrangeCat always asks', () => {
+  it('lets Loki hands and the owner’s own planner run on their own: what publishes on OrangeCat always asks', () => {
     for (const id of [
       'ask_loki',
       'loki_sessions',
@@ -58,7 +58,27 @@ describe('a hand grant', () => {
     ]) {
       expect(canRunOnItsOwn(id), id).toBe(true);
     }
-    for (const id of COMPANION_HANDS.filter(h => h.startsWith('create_')).concat('send_to_loki')) {
+    // A task or a calendar entry is private to the owner and can be taken
+    // out again, so a bot may write one without a tap.
+    for (const id of [
+      'create_task',
+      'complete_task',
+      'update_task',
+      'calendar_add',
+      'tasks_read',
+    ]) {
+      expect(canRunOnItsOwn(id), id).toBe(true);
+    }
+    // What makes a public thing on OrangeCat still always waits.
+    for (const id of [
+      'create_event',
+      'create_project',
+      'create_product',
+      'create_service',
+      'create_wishlist',
+      'send_to_loki',
+    ]) {
+      expect(COMPANION_HANDS, id).toContain(id);
       expect(canRunOnItsOwn(id), id).toBe(false);
     }
     expect(canRunOnItsOwn('send_payment')).toBe(false);

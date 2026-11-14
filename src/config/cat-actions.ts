@@ -997,22 +997,76 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
   calendar_read: {
     id: 'calendar_read',
     name: 'Read Calendar',
-    description: 'Connected Google Calendar, coming days. Read-only.',
-    summary: 'Read the coming days of your connected Google Calendar. Read-only.',
-    category: 'communication',
+    description:
+      "The user's coming days: own calendar, tasks and reminders due, connected Google calendar. Read-only.",
+    summary:
+      'Read your coming days: your own calendar, tasks and reminders that fall due, and your Google calendar if you connected it. Read-only.',
+    category: 'context',
+    icon: Calendar,
+    riskLevel: 'low',
+    requiresConfirmation: false,
+    parameters: [
+      { name: 'days', type: 'number', required: false, description: 'Days ahead, 1 to 62' },
+    ],
+    examples: ['What is on my calendar this week?', 'What do I have tomorrow?'],
+    enabled: true,
+  },
+
+  calendar_add: {
+    id: 'calendar_add',
+    name: 'Add to Calendar',
+    description: "Put an entry in the user's own calendar (private to them).",
+    summary: 'Put an entry in your own calendar. Only you see it.',
+    category: 'context',
+    icon: Calendar,
+    riskLevel: 'low',
+    requiresConfirmation: false,
+    parameters: [
+      { name: 'title', type: 'string', required: true, description: 'What it is' },
+      {
+        name: 'start',
+        type: 'string',
+        required: true,
+        description: 'YYYY-MM-DDTHH:MM in their time, or a date alone for all day',
+      },
+      { name: 'end', type: 'string', required: false, description: 'Same format' },
+      { name: 'location', type: 'string', required: false, description: 'Where' },
+    ],
+    examples: [
+      'Put dentist on Monday at 9 in my calendar',
+      'Block Friday afternoon for the tax form',
+    ],
+    enabled: true,
+  },
+
+  calendar_remove: {
+    id: 'calendar_remove',
+    name: 'Remove from Calendar',
+    description: "Remove an entry from the user's own calendar, by its entry_id.",
+    summary: 'Take an entry out of your own calendar.',
+    category: 'context',
     icon: Calendar,
     riskLevel: 'low',
     requiresConfirmation: true,
     parameters: [
-      { name: 'days', type: 'number', required: false, description: 'Days ahead, 1 to 31' },
-      {
-        name: 'query',
-        type: 'string',
-        required: false,
-        description: 'Only events with these words',
-      },
+      { name: 'entry_id', type: 'string', required: true, description: 'From calendar_read' },
     ],
-    examples: ['What is on my calendar this week?', 'When is my next dentist appointment?'],
+    examples: ['Take the dentist entry out of my calendar'],
+    enabled: true,
+  },
+
+  tasks_read: {
+    id: 'tasks_read',
+    name: 'Read To-do List',
+    description:
+      "The user's open tasks and reminders, with the task_id each change needs. Read-only.",
+    summary: 'Read what is open on your to-do list. Read-only.',
+    category: 'context',
+    icon: FileText,
+    riskLevel: 'low',
+    requiresConfirmation: false,
+    parameters: [],
+    examples: ['What is on my to-do list?', 'What is overdue?'],
     enabled: true,
   },
 
