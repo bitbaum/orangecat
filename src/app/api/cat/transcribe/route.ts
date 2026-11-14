@@ -35,6 +35,7 @@ import { apiBadRequest, apiError, apiSuccess, apiInternalError } from '@/lib/api
 import { withOptionalAuth } from '@/lib/api/withAuth';
 import { applyRateLimitHeaders, createRateLimitResponse } from '@/lib/rate-limit';
 import { dictationBudget, MAX_VISITOR_AUDIO_BYTES } from '@/lib/api/dictationBudget';
+import { AI_APP } from '@/services/ai/usage-events';
 
 /** Per link, so a stalled model costs one budget and not the whole request. */
 const LINK_TIMEOUT_MS = 30_000;
@@ -90,6 +91,9 @@ export const POST = withOptionalAuth(async request => {
             ? optionalLang
             : undefined,
         chain: speechChain(),
+        // Named in the server's usage log; without it this call read as "AI".
+        app: process.env.AI_APP_ID?.trim() || AI_APP,
+        feature: 'dictation',
         timeoutMs: LINK_TIMEOUT_MS,
         signal: request.signal,
         onLinkFailure: (_link, error) => {
