@@ -238,6 +238,12 @@ interface CatTurn {
   baseMessages: ToolAugmentedMessage[];
   /** Puts the turn's draft photo, if any, on a prefill proposal. */
   withDraftPhoto: (proposal: PrefillProposal) => PrefillProposal;
+  /**
+   * What was already done in code this turn, as the sentence to say when no
+   * model answers: the entry is in the calendar either way, and the person
+   * must not be told only that the Cat could not reach a model.
+   */
+  doneInCode: string | null;
 }
 
 /**
@@ -444,6 +450,7 @@ async function prepareTurn(
     conversationId: prepared.conversationId,
     baseMessages,
     withDraftPhoto,
+    doneInCode: written?.reply ?? null,
   };
 }
 
@@ -862,7 +869,12 @@ async function walkStreamingChain(
     // instead would replace today's polite ending with an error page,
     // which would be a regression for the one case where the apology
     // was always the correct answer.
-    if (lastErr instanceof EmptyCompletion && !state.streamStarted) {
+    if (!state.streamStarted && turn.doneInCode) {
+      // The write happened in code before any model was asked; say so.
+      state.fullContent = turn.doneInCode;
+      sendData(out, { content: state.fullContent });
+      await emitDone(turn, out, state, webEvidence);
+    } else if (lastErr instanceof EmptyCompletion && !state.streamStarted) {
       await emitDone(turn, out, state, webEvidence);
     } else {
       throw lastErr;
