@@ -33,3 +33,53 @@ describe('needsBylineName', () => {
     expect(needsBylineName(null, 'mao')).toBe(false);
   });
 });
+
+describe('postAuthor (every feed card)', () => {
+  const { postAuthor, postAuthorSource } = jest.requireActual('@/utils/byline');
+
+  it('signs a nameless account neutrally and prints no @line', () => {
+    const author = postAuthor({
+      id: 'abc',
+      name: 'user_df091395b2ca',
+      username: 'user_df091395b2ca',
+    });
+    expect(author.name).toBe(ANONYMOUS_BYLINE);
+    expect(author.handle).toBeNull();
+    expect(author.anonymous).toBe(true);
+    // The link still reaches the real profile.
+    expect(author.profileHref).toBe('/profiles/user_df091395b2ca');
+  });
+
+  it('prints a chosen name and a chosen handle', () => {
+    expect(postAuthor({ name: 'Mao Zhang', username: 'mao' })).toEqual({
+      name: 'Mao Zhang',
+      handle: 'mao',
+      profileHref: '/profiles/mao',
+      anonymous: false,
+    });
+  });
+
+  it('keeps a chosen name but drops a minted handle', () => {
+    const author = postAuthor({ name: 'Mao Zhang', username: 'user_df091395b2ca' });
+    expect(author.name).toBe('Mao Zhang');
+    expect(author.handle).toBeNull();
+  });
+
+  it('falls back to the id for the link and has none for nobody', () => {
+    expect(postAuthor({ id: 'abc' }).profileHref).toBe('/profiles/abc');
+    expect(postAuthor(null).profileHref).toBeNull();
+  });
+
+  it('takes the original author on a repost, the poster otherwise', () => {
+    const actor = { id: 'p', name: 'Poster', username: 'poster', avatar: null };
+    const metadata = {
+      original_actor_id: 'o',
+      original_actor_name: 'user_aaaaaaaaaaaa',
+      original_actor_username: 'user_aaaaaaaaaaaa',
+    };
+    expect(postAuthorSource(actor, metadata, false).username).toBe('poster');
+    const original = postAuthorSource(actor, metadata, true);
+    expect(original.id).toBe('o');
+    expect(postAuthor(original).name).toBe(ANONYMOUS_BYLINE);
+  });
+});

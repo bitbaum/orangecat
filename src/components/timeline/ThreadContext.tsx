@@ -10,6 +10,7 @@ import { MessageCircle, ChevronUp, ChevronDown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { postAuthor } from '@/utils/byline';
 
 interface ThreadContextProps {
   threadId: string;
@@ -207,7 +208,7 @@ export function ThreadContext({
         <div className="border-t border-subtle bg-surface-raised p-4">
           <div className="flex items-center gap-2 text-sm text-fg-secondary">
             <div className="h-2 w-2 rounded-sm bg-fg-primary"></div>
-            Currently viewing: {currentPost.actor.name}'s post
+            Currently viewing: {postAuthor(currentPost.actor).name}'s post
           </div>
         </div>
       )}
