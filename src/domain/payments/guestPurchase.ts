@@ -21,6 +21,7 @@ import { STATUS } from '@/config/database-constants';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { isBookedBeforePaid } from '@/config/payment-flow';
 import { GUEST_ORDER_NOTE_MAX } from '@/config/orders';
+import { ACCOUNT_PURCHASE_COPY, grantsToAnAccount } from '@/config/account-bound-products';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/utils/logger';
 import { GUEST_NAME_MAX } from '@/domain/events/tickets';
@@ -94,6 +95,20 @@ export async function initiateGuestPurchase(
     .maybeSingle();
   if (!visible) {
     throw new GuestPurchaseError(`${meta.name} not found`, 404);
+  }
+
+  // A pass is granted to the buyer's account at settlement. With no account
+  // the money would arrive and nothing would be granted, so it is refused
+  // here, before any invoice.
+  if (entityType === 'product') {
+    const { data: product } = await (getAdminClient() as unknown as SupabaseClient)
+      .from(meta.tableName)
+      .select('tags')
+      .eq('id', entityId)
+      .maybeSingle();
+    if (grantsToAnAccount((product as { tags?: unknown } | null)?.tags)) {
+      throw new GuestPurchaseError(ACCOUNT_PURCHASE_COPY.refusal, 409);
+    }
   }
 
   let amountBtc: number;

@@ -53,13 +53,22 @@ export async function sendSellerPaymentNotification(
     }
 
     // 3. Resolve buyer display name (never expose buyer email)
-    const { data: buyerProfile } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('display_name:name, username')
-      .eq('id', paymentIntent.buyer_id)
-      .single();
+    //    A buyer without an account has no profile to read: the name they gave
+    //    at checkout is on the intent. Nobody known → "Anonymous", never a lookup
+    //    by a null id.
+    const { data: buyerProfile } = paymentIntent.buyer_id
+      ? await supabase
+          .from(DATABASE_TABLES.PROFILES)
+          .select('display_name:name, username')
+          .eq('id', paymentIntent.buyer_id)
+          .single()
+      : { data: null };
 
-    const buyerName = buyerProfile?.display_name || buyerProfile?.username || 'Anonymous';
+    const buyerName =
+      buyerProfile?.display_name ||
+      buyerProfile?.username ||
+      paymentIntent.guest_name?.trim() ||
+      'Anonymous';
 
     // 4. Parse entity title from description ("EntityType: Title" → "Title")
     const description = paymentIntent.description ?? '';

@@ -68,6 +68,8 @@ export function usePublicPayment({ resumeKey, onPaid }: UsePublicPaymentOptions 
   const [phase, setPhase] = useState<PublicPaymentPhase>('choose');
   const [intent, setIntent] = useState<PublicIntent | null>(null);
   const [error, setError] = useState('');
+  // The request was never made: no money was in play (see usePaymentFlow).
+  const [notStarted, setNotStarted] = useState(false);
 
   useEffect(() => {
     const saved = readSaved(resumeKey);
@@ -139,6 +141,7 @@ export function usePublicPayment({ resumeKey, onPaid }: UsePublicPaymentOptions 
     async (create: () => Promise<Response>) => {
       setPhase('creating');
       setError('');
+      setNotStarted(false);
       try {
         const response = await create();
         if (!response.ok) {
@@ -150,6 +153,7 @@ export function usePublicPayment({ resumeKey, onPaid }: UsePublicPaymentOptions 
         setPhase('awaiting');
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Could not create the payment request.');
+        setNotStarted(true);
         setPhase('error');
       }
     },
@@ -177,8 +181,9 @@ export function usePublicPayment({ resumeKey, onPaid }: UsePublicPaymentOptions 
     writeSaved(resumeKey, null);
     setIntent(null);
     setError('');
+    setNotStarted(false);
     setPhase('choose');
   }, [resumeKey]);
 
-  return { phase, intent, error, start, acknowledge, reset };
+  return { phase, intent, error, notStarted, start, acknowledge, reset };
 }

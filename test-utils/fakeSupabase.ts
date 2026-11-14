@@ -108,6 +108,8 @@ export function createFakeSupabase(
     let pendingUpdate: Row | null = null;
     let pendingDelete = false;
     let insertFailed: unknown = null;
+    // `.insert(...).select().single()` returns what was inserted, not the table.
+    let inserted: Row[] | null = null;
     let limitTo: number | null = null;
 
     const rows = () => {
@@ -212,12 +214,16 @@ export function createFakeSupabase(
           return builder;
         }
         const list = Array.isArray(values) ? values : [values];
-        state[table] = [...(state[table] ?? []), ...list.map(v => ({ ...v }))];
+        inserted = list.map(v => ({ ...v }));
+        state[table] = [...(state[table] ?? []), ...inserted];
         return builder;
       },
       single: () => {
         if (insertFailed) {
           return Promise.resolve(settle());
+        }
+        if (inserted) {
+          return Promise.resolve({ data: inserted[0] ?? null, error: null });
         }
         const found = rows();
         if (pendingUpdate) {

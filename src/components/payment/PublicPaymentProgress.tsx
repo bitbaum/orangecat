@@ -34,7 +34,7 @@ export function PublicPaymentProgress({
   fixedAmount = false,
   note,
 }: PublicPaymentProgressProps) {
-  const { phase, intent, error, acknowledge, reset } = payment;
+  const { phase, intent, error, notStarted, acknowledge, reset } = payment;
 
   if (phase === 'creating') {
     return <PayPreparingStep />;
@@ -65,7 +65,7 @@ export function PublicPaymentProgress({
   }
 
   if (phase === 'error') {
-    return <PayFailedStep message={error} onAgain={reset} />;
+    return <PayFailedStep message={error} notStarted={notStarted} onAgain={reset} />;
   }
 
   return null;

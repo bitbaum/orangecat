@@ -28,6 +28,7 @@ import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
+import { grantsToAnAccount } from '@/config/account-bound-products';
 import { SITE_URL } from '@/config/brand';
 import { Breadcrumb, PUBLIC_BREADCRUMB_ROOT } from '@/components/ui/Breadcrumb';
 import { PublicEntityOwnerBar } from './PublicEntityOwnerBar';
@@ -321,6 +322,9 @@ export default async function PublicEntityDetailPage({
                     sellerReceive={sellerReceive}
                     contributionBounds={contributionBounds}
                     signInRedirect={viewRoute}
+                    purchaseNeedsAccount={
+                      config.entityType === 'product' && grantsToAnAccount(entity.tags)
+                    }
                     supportTitle={config.supportTitle?.(entity)}
                   />
                 </div>

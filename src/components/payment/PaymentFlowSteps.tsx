@@ -89,7 +89,7 @@ export function PaymentFlowSteps({
   }
 
   if (state.phase === 'error') {
-    return <PayFailedStep message={state.message} onAgain={reset} />;
+    return <PayFailedStep message={state.message} notStarted={state.notStarted} onAgain={reset} />;
   }
 
   return null;

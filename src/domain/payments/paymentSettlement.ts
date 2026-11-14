@@ -26,7 +26,7 @@ import { enqueuePaymentSettledWebhook } from '@/services/webhooks/paymentSettled
 import { formatBtcForUser } from '@/services/currency/format-for-user.server';
 import { settlePaymentRequest } from './paymentRequestService';
 import { payerLabel } from './payerLabel';
-import { settleOrderOfPayment } from './bookingPayment';
+import { settleOrderOfPayment } from './bookingSettlement';
 import { ROUTES } from '@/config/routes';
 import { ratesAtReceiptOrNull } from '@/services/currency/rates.server';
 

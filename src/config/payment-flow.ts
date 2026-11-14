@@ -44,6 +44,8 @@ export const PAYMENT_FLOW_COPY = {
   expiredTitle: PAY_COPY.expiredTitle,
   expiredBody: PAY_COPY.expiredBody,
   failedTitle: 'This payment did not go through',
+  /** The request was never made (no wallet, nothing left to pay): no money was in play. */
+  notStartedTitle: 'This could not be started',
   again: 'Try again',
   done: 'Done',
   /** The honesty line, on every amount step and every code. */
@@ -82,3 +84,7 @@ export function isBookedBeforePaid(entityType: string): boolean {
 
 /** Said under the Book action of a priced listing that is paid on acceptance. */
 export const PAY_AFTER_ACCEPT_LINE = 'You pay once they accept. Paid straight to their wallet.';
+
+/** The refusal when something booked-first is "bought" in the web app. */
+export const BOOK_FIRST_MESSAGE =
+  'This is booked first and paid once the provider accepts. Book it on its page; the payment is asked for on the accepted booking.';
