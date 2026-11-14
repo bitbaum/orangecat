@@ -140,10 +140,13 @@ export function PayExpiredStep({
 /** The request could not be made, or the rail reported a failure. */
 export function PayFailedStep({
   message,
+  notStarted = false,
   againLabel = PAYMENT_FLOW_COPY.again,
   onAgain,
 }: {
   message?: string | null;
+  /** The request was never made: say that, not that a payment failed. */
+  notStarted?: boolean;
   againLabel?: string;
   onAgain: () => void;
 }) {
@@ -151,7 +154,7 @@ export function PayFailedStep({
     <PayOutcome
       icon={AlertCircle}
       tone="text-status-negative"
-      title={PAYMENT_FLOW_COPY.failedTitle}
+      title={notStarted ? PAYMENT_FLOW_COPY.notStartedTitle : PAYMENT_FLOW_COPY.failedTitle}
       body={message}
     >
       <Button variant="outline" onClick={onAgain}>

@@ -34,7 +34,11 @@ type PaymentFlowState =
   /** The buyer said "I've paid"; nothing has verified it. The seller confirms. */
   | { phase: 'claimed'; data: InitiatePaymentResult }
   | { phase: 'expired' }
-  | { phase: 'error'; message: string };
+  /**
+   * `notStarted`: the request was never made (no wallet, nothing left to pay,
+   * unreachable) — no money was in play, so it is not "a payment that failed".
+   */
+  | { phase: 'error'; message: string; notStarted?: boolean };
 
 export function usePaymentFlow() {
   const [state, setState] = useState<PaymentFlowState>({ phase: 'idle' });
@@ -114,6 +118,7 @@ export function usePaymentFlow() {
         if (!res.ok || !json?.success) {
           setState({
             phase: 'error',
+            notStarted: true,
             message: json?.error?.message || 'Could not start the payment. Please try again.',
           });
           return;
@@ -128,6 +133,7 @@ export function usePaymentFlow() {
       } catch {
         setState({
           phase: 'error',
+          notStarted: true,
           message: 'Could not reach OrangeCat. Check your connection and try again.',
         });
       }

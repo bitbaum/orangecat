@@ -35,6 +35,7 @@ import {
   rateLimitIntegrationKeyWrite,
   retryAfterSeconds,
 } from '@/lib/rate-limit';
+import { BOOK_FIRST_MESSAGE, isBookedBeforePaid } from '@/config/payment-flow';
 import { logger } from '@/utils/logger';
 
 const PAYMENTS_WRITE_SCOPE = 'payments.write';
@@ -68,6 +69,16 @@ export async function POST(request: NextRequest) {
       return apiBadRequest('Invalid input', result.error.issues);
     }
     const validated = result.data;
+
+    // Booked first, paid once the provider accepts. A person's own session has
+    // no "buy" for these in the web app, so it gets none here either: it would
+    // be the pay-without-a-booking path under another URL. A key or an OIDC
+    // caller keeps it: that is how Loki pays a builder booked on Loki's side
+    // (the booking is Loki's, the service is the payable; see
+    // src/services/loki/entitlement-notify.ts → notifyLokiProjectFunding).
+    if (auth.source === 'session' && isBookedBeforePaid(validated.entity_type)) {
+      return apiBadRequest(BOOK_FIRST_MESSAGE);
+    }
 
     // Session callers read through their own RLS (public rows + own rows).
     // Key/OIDC callers carry no Supabase session, so writes go through the

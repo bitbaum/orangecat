@@ -210,13 +210,24 @@ export async function acknowledgePublicPayment(
  * only on the actual transition into BUYER_CONFIRMED, never on idempotent
  * re-claims, so the recipient is notified at most once per intent.
  */
+/** Who is claiming to have paid, in the recipient's words. */
+export function claimant(pi: Pick<PaymentIntent, 'intent_kind' | 'guest_name'>): string {
+  if (pi.intent_kind !== 'purchase') {
+    return 'A supporter';
+  }
+  const name = pi.guest_name?.trim();
+  return name ? `${name} (a buyer without an account)` : 'A buyer';
+}
+
 function notifyRecipientOfClaim(pi: PaymentIntent): void {
   const entityTitle = pi.description?.split(': ')[1] || 'your listing';
   void NotificationDispatcher.dispatch({
     userId: pi.seller_id,
     type: 'payment',
     title: `Payment reported: ${pi.amount_btc} BTC`,
-    message: `A supporter says they've paid ${pi.amount_btc} BTC for ${entityTitle}. Check your wallet and confirm receipt.`,
+    // A purchase is claimed by a buyer (named, when they bought without an
+    // account); support by a supporter.
+    message: `${claimant(pi)} says they've paid ${pi.amount_btc} BTC for ${entityTitle}. Check your wallet and confirm receipt.`,
     data: { paymentIntentId: pi.id, amount_btc: pi.amount_btc, kind: 'buyer_claim' },
     sourceEntityType: (pi.entity_type as EntityType) ?? undefined,
     sourceEntityId: pi.entity_id ?? undefined,

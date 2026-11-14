@@ -15,6 +15,8 @@ import { GuestPurchasePanel, GUEST_PURCHASE_COPY } from '@/components/payment/Gu
 import { BookingPayCard, BOOKING_PAY_COPY } from '@/components/bookings/BookingPayCard';
 import { PAYMENT_FLOW_COPY } from '@/config/payment-flow';
 import { API_ROUTES } from '@/config/api-routes';
+import { ACCOUNT_PURCHASE_COPY } from '@/config/account-bound-products';
+import { PaymentFlowSteps } from '@/components/payment/PaymentFlowSteps';
 
 let signedIn = false;
 vi.mock('@/hooks/useAuth', () => ({
@@ -104,6 +106,17 @@ describe('buying a product without an account', () => {
     render(section('product', { sellerReceive: { method: 'nwc', address: null } }));
     expect(screen.getByRole('button', { name: 'Pay CHF 20.00' })).toBeTruthy();
     expect(screen.queryByText(/Sign in to purchase/)).toBeNull();
+  });
+
+  it('a pass is granted to an account, so the guest panel gives way to sign-in, and says why', () => {
+    render(section('product', { purchaseNeedsAccount: true }));
+    expect(screen.getByText(ACCOUNT_PURCHASE_COPY.why)).toBeTruthy();
+    expect(screen.getByRole('link', { name: ACCOUNT_PURCHASE_COPY.signIn })).toHaveAttribute(
+      'href',
+      '/auth?mode=login&from=/products/e1'
+    );
+    expect(screen.queryByText(GUEST_PURCHASE_COPY.title)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Pay / })).toBeNull();
   });
 
   it('sends the name and the note, and never an amount', async () => {
@@ -236,5 +249,30 @@ describe('the accepted booking asks for the payment', () => {
     );
     expect(screen.getByText(BOOKING_PAY_COPY.noWallet)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Pay / })).toBeNull();
+  });
+});
+
+describe('a request that was never made is not "a payment that failed"', () => {
+  const steps = (state: Record<string, unknown>) => (
+    <PaymentFlowSteps flow={{ state, confirmPaid: vi.fn(), reset: vi.fn() } as never} fixedAmount />
+  );
+
+  it('no wallet, or nothing left to pay: says it could not be started', () => {
+    render(
+      steps({
+        phase: 'error',
+        notStarted: true,
+        message:
+          'The provider has not connected a wallet yet, so this booking cannot be paid here.',
+      })
+    );
+    expect(screen.getByText(PAYMENT_FLOW_COPY.notStartedTitle)).toBeTruthy();
+    expect(screen.queryByText(PAYMENT_FLOW_COPY.failedTitle)).toBeNull();
+    expect(screen.getByText(/has not connected a wallet/)).toBeTruthy();
+  });
+
+  it('a failure on the rail keeps its own title', () => {
+    render(steps({ phase: 'error', message: 'Check your wallet history.' }));
+    expect(screen.getByText(PAYMENT_FLOW_COPY.failedTitle)).toBeTruthy();
   });
 });
