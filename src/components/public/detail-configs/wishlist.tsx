@@ -155,21 +155,12 @@ export function buildWishlistDetailConfig(items: WishlistDetailItem[]): EntityDe
       ...(entity.event_date ? { eventDate: entity.event_date } : {}),
       numberOfItems: items.length,
     }),
-    renderHeaderIcon: entity =>
-      entity.cover_image_url ? (
-        <Image
-          src={entity.cover_image_url as string}
-          alt={entity.title}
-          width={64}
-          height={64}
-          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-          unoptimized
-        />
-      ) : (
-        <div className="w-16 h-16 bg-surface-raised rounded-lg flex items-center justify-center flex-shrink-0">
-          <Gift className="w-8 h-8 text-fg-primary" />
-        </div>
-      ),
+    // The cover is the page's hero, like every other kind's (ENTITY_COVER).
+    renderHeaderIcon: () => (
+      <div className="w-16 h-16 bg-surface-raised rounded-lg flex items-center justify-center flex-shrink-0">
+        <Gift className="w-8 h-8 text-fg-primary" />
+      </div>
+    ),
     renderHeaderExtra: entity => (
       <>
         <Badge variant="secondary" className="capitalize">

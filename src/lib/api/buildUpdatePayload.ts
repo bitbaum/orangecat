@@ -23,6 +23,12 @@ interface FieldMapping {
   default?: unknown;
   /** Transform function to apply to the value */
   transform?: (value: unknown) => unknown;
+  /**
+   * An explicit null (or '') in the data clears the column. Without it a null
+   * is skipped, which is right for a partial update and wrong for a picture
+   * someone just removed.
+   */
+  clearable?: boolean;
 }
 
 /**
@@ -59,6 +65,11 @@ export function buildUpdatePayload(
   for (const mapping of mappings) {
     const sourceValue = data[mapping.from];
     const targetKey = mapping.to ?? mapping.from;
+
+    if (mapping.clearable && (sourceValue === null || sourceValue === '')) {
+      payload[targetKey] = null;
+      continue;
+    }
 
     // Normalize empty strings to null for optional fields (unless transform handles it)
     // This prevents database constraint violations for UUID, URL, and other fields

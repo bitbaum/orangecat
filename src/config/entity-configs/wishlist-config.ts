@@ -102,21 +102,6 @@ const fieldGroups: FieldGroup[] = [
   // Receiving wallet — contributors pay toward wishlist items; without this
   // group the wishlist was supportable in the registry but unpayable in practice.
   WALLET_FIELD_GROUP,
-  {
-    id: 'media',
-    title: 'Cover Image',
-    description: 'Optional: Add a cover image to personalize your wishlist',
-    fields: [
-      {
-        name: 'cover_image_url',
-        label: 'Cover Image URL',
-        type: 'url',
-        placeholder: 'https://example.com/your-image.jpg',
-        colSpan: 2,
-        hint: 'Add a relevant image (engagement photo, travel destination, etc.)',
-      },
-    ],
-  },
 ];
 
 // ==================== CONFIGURATION ====================

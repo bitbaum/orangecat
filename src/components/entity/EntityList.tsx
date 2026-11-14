@@ -1,5 +1,7 @@
 'use client';
 
+import type { EntityType } from '@/config/entity-registry';
+import { entityCover } from '@/lib/entities/cover';
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { EntityCard, EntityCardProps } from './EntityCard';
@@ -60,6 +62,11 @@ export interface EntityListProps<T extends EntityItem> {
   // Status change support (publish/pause)
   onStatusChange?: (id: string, newStatus: string) => Promise<void>;
   changingStatusIds?: Set<string>;
+  /**
+   * The kind these items are. With it each card shows the kind's cover
+   * (ENTITY_COVER) and, without one, the kind's icon.
+   */
+  entityType?: EntityType;
 }
 
 const defaultEmptyState = {
@@ -89,6 +96,7 @@ export default function EntityList<T extends EntityItem>({
   togglingVisibilityIds,
   onStatusChange,
   changingStatusIds,
+  entityType,
 }: EntityListProps<T>) {
   // Grid classes - using explicit Tailwind classes
   // Note: Tailwind requires full class names, so we map the numbers to actual classes
@@ -162,7 +170,10 @@ export default function EntityList<T extends EntityItem>({
               id={item.id}
               title={title}
               description={description}
-              thumbnailUrl={item.thumbnail_url ?? undefined}
+              thumbnailUrl={
+                (entityType ? entityCover(entityType, item) : item.thumbnail_url) ?? undefined
+              }
+              entityType={entityType}
               href={makeHref(item)}
               className={isSelected ? 'oc-selection-ring' : undefined}
               onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}

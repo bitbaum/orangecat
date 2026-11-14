@@ -8,6 +8,7 @@
  * After refactoring: ~45 lines (76% reduction)
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { userServiceSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -31,6 +32,7 @@ const buildServiceUpdatePayload = createUpdatePayloadBuilder([
   { from: 'service_location_type' },
   { from: 'service_area', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.arrayField('images', []),
+  ...coverFieldMapping('service'),
   commonFieldMappings.arrayField('portfolio_links', []),
   { from: 'show_on_profile' },
   // Status omitted intentionally — UPDATE that drops the field should keep

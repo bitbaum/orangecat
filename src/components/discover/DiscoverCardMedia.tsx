@@ -1,26 +1,33 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Face } from '@/components/companions/talk/CompanionFace';
+import { EntityCoverPlaceholder } from '@/components/entity/EntityCoverPlaceholder';
 import { cn } from '@/lib/utils';
+import type { EntityType } from '@/config/entity-registry';
 
-/** First letter or digit of a title, for a card with no picture. */
+/** First letter or digit of a name, for a person with no portrait. */
 export function initialOf(title: string): string {
   return (title.match(/[\p{L}\p{N}]/u)?.[0] ?? '·').toUpperCase();
 }
 
 /**
- * A card's picture, or its initial when it has none (or the picture fails to
- * load) — the same stand-in the home page's studio tiles and profile project
- * cards use, so a listing without a photo still has a face.
+ * A card's picture. Without one (or when it fails to load) a thing shows its
+ * kind's icon — the same stand-in on every list (EntityCoverPlaceholder) —
+ * and a person their initial in a round, as avatars do everywhere else. A
+ * person and a bot are met by a face: theirs is a round portrait, not a cover.
  */
 export function DiscoverCardMedia({
   src,
   title,
+  type,
   round = false,
 }: {
   src: string | null;
   title: string;
-  /** A person: a round portrait on the card's surface, not a cover. */
+  /** The kind, for the stand-in. A person has none. */
+  type?: EntityType | null;
+  /** A face (a person, a bot): a round portrait on the card's surface, not a cover. */
   round?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
@@ -57,19 +64,18 @@ export function DiscoverCardMedia({
           )}
           onError={() => setFailed(true)}
         />
-      ) : (
+      ) : type === 'ai_assistant' ? (
+        // A bot with no picture wears the face its name picks, as in Talk.
+        <Face name={title} size={72} />
+      ) : round ? (
         <span
           aria-hidden
-          className={cn(
-            'oc-mark-monogram text-fg-primary/40',
-            // A small bordered tile, not a letter filling half the card: a
-            // missing picture should look intended, and take little room.
-            'flex items-center justify-center border border-border-subtle',
-            round ? 'h-18 w-18 rounded-full text-3xl' : 'h-12 w-12 rounded-md text-2xl'
-          )}
+          className="oc-mark-monogram flex h-18 w-18 items-center justify-center rounded-full border border-border-subtle text-3xl text-fg-secondary"
         >
           {initialOf(title)}
         </span>
+      ) : (
+        <EntityCoverPlaceholder type={type} className="absolute inset-0" />
       )}
     </div>
   );

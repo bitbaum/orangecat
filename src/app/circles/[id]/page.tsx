@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { circleDetailConfig } from '@/components/public/detail-configs/circle';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const entity = await fetchEntityForMetadata('circle', id, 'title, description');
   if (!entity) {
-    return { title: 'Circle Not Found' };
+    return { title: notFoundTitle('circle') };
   }
   return generateEntityMetadata({
     type: 'circle',

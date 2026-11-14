@@ -7,6 +7,7 @@
  * GET /api/profiles/[userId]/entities/[entityType]
  */
 
+import { ENTITY_COVER } from '@/config/entity-cover';
 import { logger } from '@/utils/logger';
 import { apiSuccess, apiInternalError, apiBadRequest } from '@/lib/api/standardResponse';
 import { withOptionalAuth } from '@/lib/api/withAuth';
@@ -77,7 +78,15 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
 
     const { supabase } = request;
     const tableName = getTableName(entityType as EntityType);
-    const columns = ENTITY_COLUMNS[entityType as EntityType];
+    // Each kind's cover (and gallery) columns ride along, so a profile's shelf
+    // shows the picture the page and the Discover card show.
+    const cover = ENTITY_COVER[entityType as EntityType];
+    const columns = [
+      ...new Set([
+        ...ENTITY_COLUMNS[entityType as EntityType].split(',').map(column => column.trim()),
+        ...(cover ? [cover.field, ...(cover.gallery ?? [])] : []),
+      ]),
+    ].join(', ');
     // Ownership column comes from the entity registry (SSOT) — this route
     // previously kept its own copy of the mapping, which drifted
     const userIdField = getUserIdField(entityType as EntityType);

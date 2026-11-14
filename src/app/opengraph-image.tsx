@@ -3,12 +3,14 @@
  * shares `orangecat.ch` itself. Per-profile and per-group share cards
  * live at /api/og/{profile,group}/[id].
  *
- * Last updated 2026-06-03 — switched from 🐾 emoji + hardcoded strings
- * to the geometric BrandMarkIcon + brand SSOT (APP_NAME / APP_TAGLINE).
+ * The card says the promise (APP_PROMISE) and shows the thing it is about:
+ * the pay link. It used to carry four chips, "Fund · Invest · Lend ·
+ * Coordinate", a fourth wording of what the home page promises.
  */
 
 import { ImageResponse } from 'next/og';
-import { APP_NAME, APP_TAGLINE } from '@/config/brand';
+import { APP_NAME, APP_PROMISE, APP_TAGLINE } from '@/config/brand';
+import { PAY_LINK_PLACEHOLDER, payLinkDisplay } from '@/config/pay';
 import { OG_SIZE, OG_COLOR, BrandMarkSvg } from '@/lib/og/branding';
 
 // Must be a string literal — Next.js static-analyzes `runtime` at build
@@ -67,26 +69,21 @@ export default function Image() {
           marginBottom: 48,
         }}
       >
-        {APP_TAGLINE}
+        {APP_PROMISE}
       </div>
-      <div style={{ display: 'flex', gap: 16 }}>
-        {['Fund', 'Invest', 'Lend', 'Coordinate'].map(feature => (
-          <div
-            key={feature}
-            style={{
-              display: 'flex',
-              padding: '10px 24px',
-              borderRadius: 100,
-              background: OG_COLOR.glass,
-              border: `1px solid ${OG_COLOR.border}`,
-              color: OG_COLOR.text,
-              fontSize: 20,
-              fontWeight: 600,
-            }}
-          >
-            {feature}
-          </div>
-        ))}
+      <div
+        style={{
+          display: 'flex',
+          padding: '12px 28px',
+          borderRadius: 100,
+          background: OG_COLOR.glass,
+          border: `1px solid ${OG_COLOR.border}`,
+          color: OG_COLOR.text,
+          fontSize: 24,
+          fontWeight: 600,
+        }}
+      >
+        {payLinkDisplay(PAY_LINK_PLACEHOLDER)}
       </div>
     </div>,
     { ...size }

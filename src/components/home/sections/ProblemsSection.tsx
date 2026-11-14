@@ -1,4 +1,5 @@
 import { PublicStartBand } from '@/components/layout/PublicStartBand';
+import { FEE_CLAIMS } from '@/config/landing-page';
 import { PROBLEMS_SECTION } from '@/config/problems-we-solve';
 import ProblemsExplorer from './ProblemsExplorer';
 
@@ -28,8 +29,8 @@ export default function ProblemsSection() {
         <ProblemsExplorer />
 
         <PublicStartBand className="mt-12 sm:mt-16">
-          Don’t see your problem? Describe it to your Cat. It will tell you which of these fits, and
-          set it up.
+          Whichever one is yours, it starts the same way: a free account and a page of your own.
+          Selling on it costs {FEE_CLAIMS.platformFee}.
         </PublicStartBand>
       </div>
     </section>

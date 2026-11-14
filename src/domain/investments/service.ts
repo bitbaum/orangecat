@@ -1,3 +1,4 @@
+import { coverColumn } from '@/lib/entities/cover';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { STATUS } from '@/config/database-constants';
 import { entityTransforms } from '@/lib/api/normalizeEntityData';
@@ -32,6 +33,7 @@ export async function createInvestment(
       end_date: normalizeToNull(input.end_date),
       risk_level: normalizeToNull(input.risk_level),
       terms: normalizeToNull(input.terms),
+      ...coverColumn('investment', input),
       is_public: input.is_public ?? false,
       bitcoin_address: normalizeToNull(input.bitcoin_address),
       lightning_address: normalizeToNull(input.lightning_address),

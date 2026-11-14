@@ -1,3 +1,4 @@
+import { optionalUrl } from '@/lib/validation/base';
 import { EntityConfig } from '@/types/entity';
 import { ResearchEntity } from '@/types/research';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -99,6 +100,7 @@ export const researchEntitySchema = z.object({
   // pre-registration are server-set and deliberately absent: zod strips them.
   // What the researcher says is done now; a Solon milestone vote cites it.
   current_milestone: z.string().trim().max(300).nullable().optional(),
+  cover_image_url: optionalUrl(),
   ...openScienceFields,
 });
 

@@ -119,7 +119,7 @@ export const PUBLIC_PAGES = {
   [ROUTES.BUILDERS]: { name: 'Builders', description: 'Independent builders the studio approves' },
   [ROUTES.PRICING]: {
     name: 'Pricing',
-    description: 'Cat plans — free, BYOK, credits, supporter',
+    description: 'Free to sell, 0% fee. Cat plans',
     keywords: 'plans cost price subscription free',
   },
   [ROUTES.BLOG]: { name: 'Blog', description: 'Guides and stories from the build' },

@@ -1,71 +1,55 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
-import Button from '@/components/ui/Button';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { ROUTES } from '@/config/routes';
-import { CTA_LABELS, FEE_CLAIMS, HERO_COPY } from '@/config/landing-page';
-import HomePulse from './HomePulse';
+import { CTA_LABELS, HERO_COPY } from '@/config/landing-page';
+import ClaimLinkForm from './ClaimLinkForm';
 
 /**
- * The first screen: one statement, the mark alive above it, two actions,
- * and what is on OrangeCat right now.
+ * The first screen: the promise, then the thing it gets you.
  *
- * It replaced a two-column template — headline on the left, a mock "Cat"
- * card with three bullet points and a fee table on the right — that read as
- * a SaaS pricing page while Loki's and Solon's first screens read as
- * products with a point of view. The structure is theirs now, deliberately:
- * centred, viewport-relative display type, one warm action, depth behind it
- * instead of a card beside it. All copy comes from HERO_COPY / CTA_LABELS /
- * FEE_CLAIMS; this file arranges, it does not write.
+ * It used to end in "Meet your Cat", a button that named a mascot the page
+ * had not introduced, under a mark that took a third of a phone's screen, and
+ * nowhere did it show what a person would have afterwards (2026-11-13
+ * review). Now the one action is the outcome itself: type a name, claim
+ * orangecat.ch/pay/<name>, and see the page that name makes as you type.
+ * Discover and "How it works" stay one tap away, as plain links, so the fold
+ * has one button. All copy comes from HERO_COPY, whose statement is the brand
+ * promise (config/brand.ts); this file arranges, it does not write.
  */
 export default function HeroSection() {
   return (
     <section className="oc-public-hero" aria-labelledby="hero-heading">
       <div className="oc-public-backdrop" aria-hidden="true" />
-      <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pb-12 pt-12 text-center sm:px-6 sm:pb-20 sm:pt-20 lg:px-8">
+      <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 pb-12 pt-10 text-center sm:px-6 sm:pb-20 sm:pt-16 lg:px-8">
         <div className="oc-public-hero-mark">
-          <BrandMarkIcon size={128} animated />
+          <BrandMarkIcon size={56} animated />
         </div>
 
-        <p className="oc-public-hero-badge">
-          {/* One line at every width: on a phone the badge carries the lead
-              alone — the three-part version ran off a 390px screen. */}
-          <span>{HERO_COPY.badgeLead}</span>
-          <span className="hidden sm:inline" aria-hidden="true">
-            ·
-          </span>
-          <span className="hidden sm:inline">{HERO_COPY.badgeIdentity}</span>
-          <span className="hidden sm:inline" aria-hidden="true">
-            ·
-          </span>
-          <span className="hidden sm:inline">{FEE_CLAIMS.feeBadgeLabel}</span>
-        </p>
-
         <h1 id="hero-heading" className="oc-public-hero-title">
-          {HERO_COPY.headlineLead}{' '}
-          <span className="oc-public-hero-title-dim sm:block">{HERO_COPY.headlineTail}</span>
+          {HERO_COPY.headline}
         </h1>
 
         <p className="oc-public-hero-lede">{HERO_COPY.lede}</p>
 
-        <div className="oc-public-hero-actions">
-          <Button href={ROUTES.AUTH_REGISTER} variant="accent" size="xl">
-            {CTA_LABELS.primaryAction}
-            <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
-          </Button>
-          <Button href={ROUTES.DISCOVER} variant="outline" size="xl">
-            {CTA_LABELS.discoverAction}
-          </Button>
-        </div>
+        <ClaimLinkForm />
 
-        <Link
-          href={ROUTES.HOW_IT_WORKS}
-          className="mt-5 inline-flex min-h-11 items-center text-sm text-fg-secondary transition-colors hover:text-fg-primary sm:mt-6"
+        <nav
+          aria-label="Look around first"
+          className="mt-6 flex items-center gap-6 text-sm text-fg-secondary"
         >
-          {CTA_LABELS.learnMore} →
-        </Link>
-
-        <HomePulse />
+          <Link
+            href={ROUTES.DISCOVER}
+            className="inline-flex min-h-11 items-center transition-colors hover:text-fg-primary"
+          >
+            {CTA_LABELS.discoverAction} →
+          </Link>
+          <Link
+            href={ROUTES.HOW_IT_WORKS}
+            className="inline-flex min-h-11 items-center transition-colors hover:text-fg-primary"
+          >
+            {CTA_LABELS.learnMore} →
+          </Link>
+        </nav>
       </div>
     </section>
   );

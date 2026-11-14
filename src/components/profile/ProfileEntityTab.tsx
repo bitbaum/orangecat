@@ -1,5 +1,6 @@
 'use client';
 
+import { EntityCoverPlaceholder } from '@/components/entity/EntityCoverPlaceholder';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Calendar, MapPin, Globe, Tag } from 'lucide-react';
@@ -102,9 +103,7 @@ export default function ProfileEntityTab({
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Icon className="w-10 h-10 text-fg-tertiary" />
-                    </div>
+                    <EntityCoverPlaceholder type={entityType} />
                   )}
                   {entity.category && (
                     <div className="absolute top-2 left-2">

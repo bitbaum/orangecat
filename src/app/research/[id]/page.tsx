@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { researchDetailConfig } from '@/components/public/detail-configs/research';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const entity = await fetchEntityForMetadata('research', id, 'title, description');
   if (!entity) {
-    return { title: 'Research Not Found' };
+    return { title: notFoundTitle('research') };
   }
   return generateEntityMetadata({
     type: 'research',

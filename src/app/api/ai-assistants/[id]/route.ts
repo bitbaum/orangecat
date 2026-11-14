@@ -9,6 +9,7 @@
  * and flexible pricing models (per-message, per-token, subscription).
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { aiAssistantSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -24,7 +25,7 @@ const buildAIAssistantUpdatePayload = createUpdatePayloadBuilder([
   { from: 'description', transform: entityTransforms.emptyStringToNull },
   { from: 'category', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.arrayField('tags', []),
-  commonFieldMappings.urlField('avatar_url'),
+  ...coverFieldMapping('ai_assistant'),
   // AI Configuration
   { from: 'system_prompt' },
   { from: 'welcome_message', transform: entityTransforms.emptyStringToNull },

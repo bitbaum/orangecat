@@ -12,6 +12,7 @@ import { TIMELINE_SURFACE } from '@/config/timeline';
 import { CAT_USERNAME } from '@/config/cat-identity';
 import { normalizeUsername } from '@/config/usernames';
 import { useDisplayDate } from '@/hooks/useDisplayDate';
+import { postAuthor, postAuthorSource } from '@/utils/byline';
 
 interface PostHeaderProps {
   event: TimelineDisplayEvent;
@@ -60,23 +61,11 @@ export function PostHeader({
   }, [showMenu, onMenuToggle]);
 
   // For simple reposts, show the original author instead of the reposter
-  const rawAuthor = isSimpleRepost
-    ? {
-        id: event.metadata?.original_actor_id || event.actor?.id,
-        name: event.metadata?.original_actor_name || event.actor?.name,
-        username: event.metadata?.original_actor_username || event.actor?.username,
-        avatar: event.metadata?.original_actor_avatar || event.actor?.avatar,
-      }
-    : event.actor;
-  const displayAuthor = {
-    id: rawAuthor?.id ?? '',
-    name: rawAuthor?.name ?? 'Unknown',
-    username: rawAuthor?.username ?? rawAuthor?.id ?? '',
-    avatar: rawAuthor?.avatar,
-  };
+  const rawAuthor = postAuthorSource(event.actor, event.metadata, isSimpleRepost);
+  const author = postAuthor(rawAuthor);
 
   const isCatAuthored =
-    normalizeUsername(displayAuthor.username || '') === normalizeUsername(CAT_USERNAME) ||
+    normalizeUsername(rawAuthor.username || '') === normalizeUsername(CAT_USERNAME) ||
     event.metadata?.is_cat_reply === true;
 
   // TimelineDisplayEvent extends TimelineEvent which has eventTimestamp, createdAt, updatedAt
@@ -89,12 +78,12 @@ export function PostHeader({
     <div className="flex items-center gap-2">
       {/* User Info - X-style inline */}
       <Link
-        href={`/profiles/${displayAuthor.username}`}
+        href={author.profileHref ?? '#'}
         className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-x-1 text-sm text-fg-primary hover:underline"
         onClick={e => e.stopPropagation()}
       >
-        <span className="break-words font-semibold">{displayAuthor.name}</span>
-        <span className="break-all text-fg-secondary">@{displayAuthor.username}</span>
+        <span className="break-words font-semibold">{author.name}</span>
+        {author.handle && <span className="break-all text-fg-secondary">@{author.handle}</span>}
       </Link>
 
       {/* Written by the platform's agent, said out loud.

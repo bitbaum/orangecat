@@ -21,7 +21,8 @@
 import { ImageResponse } from 'next/og';
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { APP_NAME, APP_KICKER } from '@/config/brand';
+import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
+import { CAT_AVATAR_SRC, isCatUsername } from '@/config/cat-identity';
 import { OG_SIZE, OG_COLOR, Avatar, BrandFooter } from '@/lib/og/branding';
 import { brandOnlyCard } from '@/lib/og/project-card';
 import { shareLine } from '@/lib/og/share-line';
@@ -58,6 +59,9 @@ export async function GET(_req: Request, { params }: RouteContext) {
   }
 
   const displayName = profile.name || profile.username || username;
+  // The Cat's one face (config/cat-identity.ts), not the "C" a picture-less
+  // profile gets.
+  const catFace = isCatUsername(profile.username) ? `${SITE_URL}${CAT_AVATAR_SRC}` : null;
   const handle = profile.username ? `@${profile.username}` : '';
   const bio = shareLine(profile.bio);
 
@@ -75,7 +79,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 40, flex: 1 }}>
-        <Avatar src={profile.avatar_url} fallback={displayName} />
+        <Avatar src={catFace ?? profile.avatar_url} fallback={displayName} />
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 12 }}>
           <span
             style={{

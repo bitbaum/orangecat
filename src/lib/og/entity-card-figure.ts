@@ -17,6 +17,7 @@ import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import type { EntityType } from '@/config/entity-registry';
 import { eventPlaceText } from '@/domain/events/place';
 import { eventZone, formatEventDate } from '@/domain/events/time';
+import { entityCoverImages } from '@/lib/entities/cover';
 import { firstImage } from '@/lib/og/card-parts';
 import { formatCurrency } from '@/services/currency/formatting';
 import { formatBtcPlain } from '@/services/currency/format-for-user.server';
@@ -103,23 +104,10 @@ export async function entityCardFigure(type: EntityType, row: Row): Promise<stri
   }
 }
 
-/** The entity's own picture, in the order its page's hero shows them. */
+/**
+ * The entity's own picture: the cover its page's hero and its Discover card
+ * show (ENTITY_COVER), so a shared link carries the picture the page leads with.
+ */
 export function entityCardImage(type: EntityType, row: Row): string | null {
-  switch (type) {
-    case 'product':
-      return firstImage(row.images, row.thumbnail_url);
-    case 'service':
-      return firstImage(row.images);
-    case 'event':
-      return firstImage(row.banner_url, row.thumbnail_url, row.images);
-    case 'investment':
-      return firstImage(row.thumbnail_url);
-    case 'wishlist':
-    case 'circle':
-      return firstImage(row.cover_image_url);
-    case 'ai_assistant':
-      return firstImage(row.avatar_url);
-    default:
-      return null;
-  }
+  return firstImage(...entityCoverImages(type, row));
 }

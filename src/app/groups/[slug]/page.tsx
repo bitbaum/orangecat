@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import { resolveSellerReceiveInfo } from '@/domain/payments';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import { metaDescription } from '@/lib/og/share-line';
+import { notFoundTitle } from '@/config/not-found';
 
 const GroupDetailClient = dynamic(
   () => import('@/components/groups/GroupDetail').then(mod => ({ default: mod.GroupDetail })),
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } | null;
   if (!g) {
     return {
-      title: `${ENTITY_REGISTRY.group.name} Not Found`,
+      title: notFoundTitle('group'),
       description: 'The group you are looking for does not exist.',
     };
   }

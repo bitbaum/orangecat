@@ -52,8 +52,9 @@ export interface EntityDetailConfig {
   renderHeaderIcon?: (entity: EntityData) => ReactNode;
   /**
    * Ordered cover image URLs (cover first) for the full-width hero, rendered
-   * below the header. Return [] for entities with no imagery — the page then
-   * falls back to the header type icon. Drives PublicEntityHero.
+   * below the header. Leave it unset: the page reads the kind's cover and
+   * gallery from ENTITY_COVER (entityCoverImages). Set it only to opt out
+   * (return []) — the page then shows the header icon alone.
    */
   getCoverImages?: (entity: EntityData) => string[];
   /** Header badges/extra info (e.g., date for events, category for products) */

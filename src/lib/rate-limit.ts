@@ -122,6 +122,10 @@ const dictationLimiter = slidingWindow({ limit: 12, windowMs: 10 * 60_000 });
 // model call each. Six in ten minutes is a person trying a feeling in a few
 // forms and revising once or twice; it is flat for a script.
 const studioLimiter = slidingWindow({ limit: 6, windowMs: 10 * 60_000 });
+// The Cat's first answer to a visitor with no account (the home page), per IP.
+// The page gives each visitor one; three an hour lets a household or an office
+// behind one address each have theirs, and makes it useless as a free chat.
+const firstAnswerLimiter = slidingWindow({ limit: 3, windowMs: 60 * 60_000 });
 
 // ==================== RATE LIMIT FUNCTIONS ====================
 //
@@ -246,6 +250,14 @@ export async function rateLimitAskCat(request: RequestLike): Promise<RateLimitRe
 /** A Studio draft by a signed-out visitor, per IP: 6 per 10 minutes. */
 export async function rateLimitStudio(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(studioLimiter.check(`studio:${clientIpKey(request)}`));
+}
+
+/**
+ * The Cat's first answer to a signed-out visitor, per IP: 3 per hour.
+ * Apply IN ADDITION to the general per-IP `rateLimit` (visitorOrUserBudget does).
+ */
+export async function rateLimitFirstAnswer(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(firstAnswerLimiter.check(`first-answer:${clientIpKey(request)}`));
 }
 
 /**

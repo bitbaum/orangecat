@@ -142,6 +142,20 @@ const cachedShelfHits = unstable_cache(
   { revalidate: 120 }
 );
 
+/**
+ * Discover's "Just listed", for a page that is not Discover (the home page
+ * shows it as proof that people make things here). The same cached rows, so
+ * the two can never disagree, and the same fixture filters. A failed read is
+ * an empty list: that page leaves the row out rather than failing with it.
+ */
+export async function loadJustListed(): Promise<PublicHit[]> {
+  try {
+    return buildShelf(await cachedShelfHits(), {}).fresh;
+  } catch {
+    return [];
+  }
+}
+
 export async function loadDiscoverView({ q, type, page }: DiscoverParams): Promise<DiscoverView> {
   const shown = DISCOVER_PAGE_SIZE * page;
 

@@ -1,3 +1,4 @@
+import { coverColumn } from '@/lib/entities/cover';
 import { createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { looseClient } from '@/lib/supabase/untyped';
@@ -213,6 +214,7 @@ export async function createService(
       service_area: input.service_area ?? null,
       images: input.images ?? [],
       portfolio_links: input.portfolio_links ?? [],
+      ...coverColumn('service', input),
       // Respect the form's profile-visibility toggle at create time (the schema
       // already carries it, but this insert previously omitted it → DB default
       // true always won).
@@ -270,6 +272,7 @@ export async function createCause(userId: string, input: CreateCauseInput): Prom
       lightning_address: input.lightning_address ?? null,
       distribution_rules: input.distribution_rules,
       beneficiaries: input.beneficiaries ?? [],
+      ...coverColumn('cause', input),
       status: STATUS.CAUSES.DRAFT as typeof STATUS.CAUSES.DRAFT,
       total_raised: 0,
       // Respect the form's profile-visibility toggle; DB default (true) would

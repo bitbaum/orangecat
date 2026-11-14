@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { productDetailConfig } from '@/components/public/detail-configs/product';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const product = await fetchEntityForMetadata('product', id);
   if (!product) {
     return {
-      title: 'Product Not Found',
+      title: notFoundTitle('product'),
       description: 'The product you are looking for does not exist.',
     };
   }

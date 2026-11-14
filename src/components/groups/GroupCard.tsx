@@ -51,6 +51,7 @@ export function GroupCard({ group, onClick, className }: GroupCardProps) {
       title={group.name}
       description={group.description || undefined}
       thumbnailUrl={group.avatar_url || undefined}
+      entityType="group"
       href={ROUTES.GROUPS.VIEW(group.slug)}
       badge={labelConfig?.name || 'Group'}
       badgeVariant={group.is_public ? 'default' : 'info'}

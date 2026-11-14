@@ -14,6 +14,7 @@ import { cache } from 'react';
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
+import { postAuthor } from '@/utils/byline';
 import type { PostPreviewSource } from '@/lib/seo/post-metadata';
 
 export interface PostPageRead {
@@ -55,14 +56,17 @@ export const getPostForPage = cache(async (id: string): Promise<PostPageRead> =>
       .eq('id', row.actor_id)
       .maybeSingle();
 
+    const signed = postAuthor(author);
+
     return {
       viewerSignedIn,
       post: {
         id: row.id,
         visibility: row.visibility ?? '',
         text: row.description || row.title || '',
-        authorName: author?.name || author?.username || '',
-        authorUsername: author?.username ?? null,
+        // Signed like the feed card: never a minted `user_<hex>` handle.
+        authorName: signed.name,
+        authorUsername: signed.handle,
         publishedAt: row.event_timestamp,
       },
     };

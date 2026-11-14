@@ -10,6 +10,7 @@ import {
   WISHLIST_ITEM_COLUMNS,
   type WishlistDetailItem,
 } from '@/components/public/detail-configs/wishlist';
+import { notFoundTitle } from '@/config/not-found';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
   if (!wishlist) {
     return {
-      title: 'Wishlist Not Found',
+      title: notFoundTitle('wishlist'),
       description: 'The wishlist you are looking for does not exist.',
     };
   }

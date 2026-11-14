@@ -8,6 +8,7 @@
  * After refactoring: ~45 lines (76% reduction)
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { userProductSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -26,7 +27,7 @@ const buildProductUpdatePayload = createUpdatePayloadBuilder([
   { from: 'currency' },
   { from: 'product_type', default: 'physical' },
   commonFieldMappings.arrayField('images', []),
-  commonFieldMappings.urlField('thumbnail_url'),
+  ...coverFieldMapping('product'),
   { from: 'inventory_count', default: -1 },
   { from: 'fulfillment_type', default: 'manual' },
   { from: 'category', transform: entityTransforms.emptyStringToNull },

@@ -7,6 +7,7 @@
  * Created: 2026-02-24
  */
 
+import { optionalUrl } from '@/lib/validation/base';
 import { Microscope } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { z } from 'zod';
@@ -49,6 +50,7 @@ export type ResearchWizardFormData = {
   output_links?: string[];
   preregistration?: string | null;
   current_milestone?: string | null;
+  cover_image_url?: string | null;
 };
 
 // ==================== VALIDATION SCHEMA ====================
@@ -69,6 +71,7 @@ const researchWizardSchema = z.object({
   voting_enabled: z.boolean().optional().default(true),
   is_public: z.boolean().optional().default(true),
   current_milestone: z.string().trim().max(300).nullable().optional(),
+  cover_image_url: optionalUrl(),
   ...openScienceFields,
 });
 

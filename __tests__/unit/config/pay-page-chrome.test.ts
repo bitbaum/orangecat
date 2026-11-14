@@ -7,9 +7,12 @@ describe('the header sign-up on a pay page', () => {
     expect(isPayPagePath('/pay/mao')).toBe(true);
     expect(getRouteChrome('/pay/mao').quietHeaderSignup).toBe(true);
   });
+  // The home page's one orange action is "Claim your link".
+  it('is quiet on the home page, whose hero has the warm action', () => {
+    expect(getRouteChrome('/').quietHeaderSignup).toBe(true);
+  });
   it('stays the funnel action on the /pay landing and elsewhere', () => {
     expect(getRouteChrome('/pay').quietHeaderSignup).toBe(false);
-    expect(getRouteChrome('/').quietHeaderSignup).toBe(false);
     expect(getRouteChrome('/pay/mao/extra').quietHeaderSignup).toBe(false);
   });
 });

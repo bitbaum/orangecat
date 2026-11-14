@@ -1507,6 +1507,10 @@ describe('non-streaming', () => {
           {
             "entityType": "service",
             "fields": {},
+            "photo": {
+              "field": "cover_image_url",
+              "ref": "u/old.png",
+            },
           },
         ],
         "provider": "groq",

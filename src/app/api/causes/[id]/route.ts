@@ -7,6 +7,7 @@
  * Refactored: 2026-01-04 to use generic CRUD handlers for consistency
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { userCauseSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -28,6 +29,7 @@ const buildCauseUpdatePayload = createUpdatePayloadBuilder([
   { from: 'lightning_address', transform: entityTransforms.emptyStringToNull },
   { from: 'distribution_rules' },
   commonFieldMappings.arrayField('beneficiaries', []),
+  ...coverFieldMapping('cause'),
   // No default — see products/[id] note: a status default unpublishes on partial PUT.
   { from: 'status' },
   { from: 'show_on_profile' },

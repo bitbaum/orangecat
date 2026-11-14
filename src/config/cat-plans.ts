@@ -57,6 +57,29 @@ export const CAT_CREDITS_LIVE = FEATURES.catCreditsLive;
  */
 export const CAT_CREDITS_ON_SALE = CAT_CREDITS_LIVE && PAID_PLANS_OPEN;
 
+/**
+ * How to get more Cat than the free pool, as the sentences /faq prints, by
+ * whether Cat Credits can be bought. /faq said "you can add credits" and
+ * listed Cat Credits as one of four routes while /pricing badged the same
+ * plan "Not open yet" (2026-11-13 review): two hand-written copies of one
+ * fact. Both pages now read CAT_CREDITS_ON_SALE, here.
+ */
+export function catBeyondFreeCopy(creditsOnSale: boolean): string {
+  return creditsOnSale
+    ? 'beyond that you can add credits, bring your own API key, or run a model on your own machine'
+    : `beyond that you can bring your own API key or run a model on your own machine. Cat Credits, the prepaid option, are ${COMMERCE_CLOSED.badge.toLowerCase()}`;
+}
+
+export function catRoutesCopy(creditsOnSale: boolean, freeLimit: number, markup: string): string {
+  const free = `OrangeCat's free pool (${freeLimit} messages a day, no setup)`;
+  const key = 'your own API key (you pay the provider directly, OrangeCat takes nothing)';
+  const local = 'a model running on your own computer (nothing leaves your machine)';
+  const credits = `Cat Credits (${markup}, paid in Bitcoin)`;
+  return creditsOnSale
+    ? `Four routes, and you can mix them: ${free}, ${credits}, ${key}, or ${local}.`
+    : `Three routes today, and you can mix them: ${free}, ${key}, or ${local}. A fourth, ${credits}, is built but ${COMMERCE_CLOSED.badge.toLowerCase()}: ${COMMERCE_CLOSED.short}`;
+}
+
 /** Platform margin label — derived from CREDIT_USAGE_MARKUP so marketing never drifts. */
 export const CAT_CREDITS_MARKUP_LABEL = `provider cost + ${Math.round((CREDIT_USAGE_MARKUP - 1) * 100)}%`;
 
@@ -97,6 +120,14 @@ export const TOPUP_PRESETS_BTC = ([0.0001, 0.0005, 0.001] as const).filter(
 );
 
 export const CAT_FREE_DAILY_LIMIT = 10;
+
+/** The two FAQ sentences about getting more Cat, for the till as it is today. */
+export const CAT_BEYOND_FREE_COPY = catBeyondFreeCopy(CAT_CREDITS_ON_SALE);
+export const CAT_ROUTES_COPY = catRoutesCopy(
+  CAT_CREDITS_ON_SALE,
+  CAT_FREE_DAILY_LIMIT,
+  CAT_CREDITS_MARKUP_LABEL
+);
 
 /**
  * Supporter plan — OrangeCat's own flat, Bitcoin-native subscription, built on
@@ -183,7 +214,8 @@ export const CAT_PLANS: CatPlan[] = [
     priceCopy: 'CHF 0 / mo',
     bullets: [
       `${CAT_FREE_DAILY_LIMIT} Cat messages every day`,
-      'Best free open-source model, picked automatically (Llama, Gemini, DeepSeek)',
+      // Not "open-source": Gemini is not an open-source model.
+      'Best free model, picked automatically (Llama, Gemini, DeepSeek)',
       'Cat reads your entities — knows your projects, products, wallet',
       'Visible tool calls, cited results, chats clearable any time',
     ],

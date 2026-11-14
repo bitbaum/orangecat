@@ -14,6 +14,7 @@ import { usePostThread } from '@/hooks/usePostThread';
 import { useAwaitCatReply } from '@/hooks/useAwaitCatReply';
 import CatIsAnswering from '@/components/timeline/CatIsAnswering';
 import { JoinToReply } from './JoinToReply';
+import { postAuthor } from '@/utils/byline';
 
 /**
  * Thread view - X-style conversation thread
@@ -113,6 +114,8 @@ export default function PostThreadView({
     );
   }
 
+  const mainAuthor = postAuthor(mainPost?.actor);
+
   if (error || !mainPost) {
     return (
       <div className="min-h-screen bg-surface-page">
@@ -191,19 +194,19 @@ export default function PostThreadView({
           </div>
         </div>
 
-        {!signedIn && <JoinToReply postId={mainPost.id} authorName={mainPost.actor.name} />}
+        {!signedIn && <JoinToReply postId={mainPost.id} authorName={mainAuthor.name} />}
 
         {/* Reply composer */}
         {user && (
           <div className="border-b border-default">
             <TimelineComposer
-              placeholder={`Reply to @${mainPost.actor.username || mainPost.actor.name}`}
+              placeholder={`Reply to ${mainAuthor.handle ? `@${mainAuthor.handle}` : mainAuthor.name}`}
               buttonText="Reply"
               showBanner={false}
               onPostCreated={handleReplyPosted}
               parentEventId={mainPost.id}
               parentPostText={mainPost.description || mainPost.title}
-              parentAuthorName={mainPost.actor.username || mainPost.actor.name}
+              parentAuthorName={mainAuthor.handle ?? mainAuthor.name}
             />
           </div>
         )}
