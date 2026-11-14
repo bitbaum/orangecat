@@ -156,6 +156,12 @@ export const API_ROUTES = {
     BASE: '/api/calendar',
     BY_ID: (id: string) => `/api/calendar/${id}`,
   },
+  /** The person's own to-do list, as the planner pages use it (services/planner). */
+  PLANNER_TASKS: {
+    BASE: '/api/planner/tasks',
+    BY_ID: (id: string) => `/api/planner/tasks/${id}`,
+    DONE: (id: string) => `/api/planner/tasks/${id}/done`,
+  },
   TASKS: {
     BASE: '/api/tasks',
     BY_ID: (id: string) => `/api/tasks/${id}`,

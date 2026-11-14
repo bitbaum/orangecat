@@ -16,7 +16,8 @@ import {
 } from '@/services/planner/calendar';
 import { agendaForPage } from '@/services/planner/calendar-page';
 import { PLANNER_HANDS, isPlannerHand } from '@/services/planner/hands';
-import { openTasksText } from '@/services/planner/tasks';
+import { dueInstant, openTasksText, taskListPage } from '@/services/planner/tasks';
+import { sectionOf } from '@/app/(authenticated)/dashboard/tasks/components/MyListView';
 
 /**
  * A person's own planner: their to-do list and their calendar, read and
@@ -324,5 +325,84 @@ describe('the calendar table', () => {
     expect(sql).toMatch(/FOR ALL USING \(\(SELECT auth\.uid\(\)\) = user_id\)/);
     expect(sql).toMatch(/WITH CHECK \(\(SELECT auth\.uid\(\)\) = user_id\)/);
     expect(sql).not.toMatch(/TO anon/);
+  });
+});
+
+describe('the pages’ own shapes', () => {
+  it('gives a calendar entry an end from how long it lasts', async () => {
+    const db = fakeDb();
+    await addCalendarEntry(
+      db.client,
+      'u1',
+      { title: 'Dentist', start: '2026-11-16T09:00', minutes: 30 },
+      { zone: 'Europe/Zurich' }
+    );
+    expect(db.tables.calendar_entries[0]).toMatchObject({
+      starts_at: '2026-11-16T08:00:00.000Z',
+      ends_at: '2026-11-16T08:30:00.000Z',
+    });
+  });
+
+  it('stores a task due "that day" at the day’s last minute, in the person’s clock', () => {
+    expect(dueInstant('2026-11-16', 'Europe/Zurich')).toBe('2026-11-16T22:59:00.000Z');
+    expect(dueInstant('2026-11-16', null)).toBe('2026-11-16T23:59:00.000Z');
+    expect(dueInstant('next monday', 'Europe/Zurich')).toBeNull();
+  });
+
+  it('lists tasks by the day they are due in the person’s clock, not in UTC', () => {
+    const page = taskListPage(
+      [
+        // 22:59 UTC on the 16th is still the 16th in Zürich.
+        {
+          id: 't1',
+          title: 'A',
+          dueDate: '2026-11-16T22:59:00.000Z',
+          priority: 'normal',
+          isReminder: false,
+        },
+        // 23:30 UTC on the 16th is already the 17th in Zürich.
+        {
+          id: 't2',
+          title: 'B',
+          dueDate: '2026-11-16T23:30:00.000Z',
+          priority: 'normal',
+          isReminder: false,
+        },
+        { id: 't3', title: 'C', dueDate: null, priority: 'normal', isReminder: true },
+      ],
+      'Europe/Zurich',
+      new Date('2026-11-14T08:00:00Z')
+    );
+    expect(page.today).toBe('2026-11-14');
+    expect(page.tasks.map(t => t.dueDay)).toEqual(['2026-11-16', '2026-11-17', null]);
+  });
+
+  it('sorts a task into late, today, coming up or no date', () => {
+    expect(sectionOf({ dueDay: '2026-11-12' }, '2026-11-14')).toBe('late');
+    expect(sectionOf({ dueDay: '2026-11-14' }, '2026-11-14')).toBe('today');
+    expect(sectionOf({ dueDay: '2026-11-15' }, '2026-11-14')).toBe('soon');
+    expect(sectionOf({ dueDay: null }, '2026-11-14')).toBe('someday');
+  });
+
+  it('shows a task due that day as all day on the calendar, not at 23:59', () => {
+    const page = agendaForPage(
+      {
+        days: 7,
+        googleNote: null,
+        items: [
+          {
+            source: 'task',
+            id: 't1',
+            title: 'Tax form',
+            start: '2026-11-16T22:59:00.000Z',
+            allDay: false,
+          },
+        ],
+      },
+      'Europe/Zurich',
+      new Date('2026-11-14T08:00:00Z')
+    );
+    expect(page.today).toBe('2026-11-14');
+    expect(page.byDay[0]).toMatchObject({ day: '2026-11-16', rows: [{ time: 'All day' }] });
   });
 });

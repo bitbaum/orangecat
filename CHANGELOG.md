@@ -12,6 +12,7 @@ to the map, sub-bullets stay here for the human reader.
 ## 2026-11-14
 
 - **A calendar of your own, and your bots can use your to-do list.** OrangeCat now has your calendar at orangecat.ch/dashboard/calendar: add an entry yourself, or tell your Cat or one of your bots ("put dentist on Monday at 9 in my calendar"). It shows your entries, the tasks and reminders that fall due, and your Google calendar if you connected it, in one list. It needs no outside account. Your bots can now read your to-do list, add a task, change one and tick one off, and in a bot's details you choose whether it asks first or does it on its own. Asking "what is on my to-do list?" or "what do I have tomorrow?" is read for whichever model answers.
+- **Add to your calendar or your to-do list in one line.** Say or type "Dentist Monday 9am at Chur" and the day, the time and the length are filled in for you; change any of them with a tap, without a date field. The to-do list is now your own list: tick a task off with one tap, tap its day to move it, and what is late sits on top. The fuller task view with categories, filters and analytics is one link below it.
 
 ## 2026-11-13
 
