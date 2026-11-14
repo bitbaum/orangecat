@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Messenger, type MessengerAgent } from '@bitbaum/chatkit/messenger';
+import { Messenger, type MessengerAgent, type MessengerPerson } from '@bitbaum/chatkit/messenger';
 import '@bitbaum/chatkit/styles/messenger.css';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
 import { textareaSurface } from '@/components/mentions/caret';
@@ -68,6 +68,20 @@ export default function MessagesScreen({
   useEffect(() => {
     actorRef.current = selectedActorId;
   }, [selectedActorId]);
+  // The Cat, for "New": offered first, as an agent with its own name. Read by
+  // the transport when the sheet opens, so it needs no new transport.
+  const catRef = useRef<MessengerPerson | null>(null);
+  useEffect(() => {
+    catRef.current = agent
+      ? {
+          id: agent.id,
+          name: agent.name || CAT_DISPLAY_NAME,
+          handle: agent.username || undefined,
+          avatarUrl: agent.avatar_url,
+          kind: 'agent',
+        }
+      : null;
+  }, [agent]);
   const selectedActor = selectedActorId
     ? actors.find(a => a.actor_id === selectedActorId)
     : personalActor;
@@ -91,6 +105,7 @@ export default function MessagesScreen({
           );
         },
         senderActorId: () => actorRef.current,
+        cat: () => catRef.current,
         // The app shell's useUnreadMessagesSync owns the badge; this nudges it.
         onUnreadMayHaveChanged: announceMessagesRead,
       }),
