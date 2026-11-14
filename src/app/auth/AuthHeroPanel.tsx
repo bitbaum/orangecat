@@ -27,7 +27,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
-import { APP_NAME, APP_KICKER, APP_TAGLINE } from '@/config/brand';
+import { APP_NAME, APP_KICKER, APP_PROMISE, APP_PROMISE_HOW } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
 
 const HIGHLIGHTS = [
@@ -74,13 +74,13 @@ export function AuthHeroPanel({ client = null }: { client?: AuthHeroClient | nul
         {/* A paragraph, not a heading: the page's h1 is the form title beside
             it, the only one a phone renders. */}
         <p className="mb-5 font-heading text-4xl font-bold leading-tight tracking-display text-fg-primary lg:text-5xl">
-          {client ? `Continue to ${client.name}` : APP_TAGLINE}
+          {client ? `Continue to ${client.name}` : APP_PROMISE}
         </p>
 
         <p className="mb-10 text-lg leading-relaxed text-fg-secondary">
           {client
             ? `${client.name} uses your ${APP_NAME} account, so there is only one account and one password to remember.`
-            : 'Fund, lend, invest, trade, and govern — with any identity, any counterparty, settled in Bitcoin. No gatekeepers.'}
+            : APP_PROMISE_HOW}
         </p>
 
         <ul className="space-y-3">

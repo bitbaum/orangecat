@@ -236,9 +236,10 @@ export interface RouteChrome {
    */
   feedbackTab: boolean;
   /**
-   * The page already has its one orange action (a pay page's "Pay CHF 20"),
-   * so the header's sign-up steps down to outline: two orange buttons on one
-   * screen leave the payer guessing which one pays.
+   * The page already has its one orange action (a pay page's "Pay CHF 20",
+   * the home page's "Claim your link"), so the header's sign-up steps down to
+   * outline: two orange buttons on one screen leave the person guessing which
+   * one is the action.
    */
   quietHeaderSignup: boolean;
 }
@@ -294,7 +295,7 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // headings, the Open Accounting card, My things, /pay and a project's
     // "Hide the code" (QA 2026-11-10). The edge tab is the host's quiet shape.
     feedbackTab: true,
-    quietHeaderSignup: isPayPagePath(pathname),
+    quietHeaderSignup: isPayPagePath(pathname) || pathname === '/',
   };
 }
 

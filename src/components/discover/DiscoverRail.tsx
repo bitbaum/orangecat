@@ -32,14 +32,21 @@ export function DiscoverRail({
           </Link>
         )}
       </div>
-      <ul className="oc-discover-rail-track">
-        {hits.map(hit => (
-          <li key={`${hit.type}-${hit.id}`} className="oc-discover-rail-item">
-            <DiscoverCard hit={hit} />
-          </li>
-        ))}
-      </ul>
+      <DiscoverRailTrack hits={hits} />
     </section>
+  );
+}
+
+/** The row itself, for a page that titles it its own way (the home page). */
+export function DiscoverRailTrack({ hits }: { hits: PublicHit[] }) {
+  return (
+    <ul className="oc-discover-rail-track">
+      {hits.map(hit => (
+        <li key={`${hit.type}-${hit.id}`} className="oc-discover-rail-item">
+          <DiscoverCard hit={hit} />
+        </li>
+      ))}
+    </ul>
   );
 }
 

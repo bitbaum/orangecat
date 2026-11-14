@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 /**
- * Home page composition: the fold, "What it solves", then the studio behind it.
- * Long-form marketing sections (steps, comparison) live on /how-it-works.
+ * Home page composition: the fold (the promise and the claim), what people
+ * have listed, the Cat's first answer, then "What it solves". The studio's
+ * own products are on /ecosystem; long-form sections live on /how-it-works.
  */
 
 import React from 'react';
@@ -11,18 +12,22 @@ vi.mock('@/components/home/sections/HeroSection', () => ({
   default: function MockHeroSection() {
     return (
       <section data-testid="hero-section">
-        <h1>
-          Turn who you are <span>into income.</span>
-        </h1>
-        <a href="/auth">Meet your Cat</a>
+        <h1>Turn who you are into income.</h1>
+        <button type="submit">Claim your link</button>
       </section>
     );
   },
 }));
 
-vi.mock('@/components/home/sections/StudioSection', () => ({
-  default: function MockStudioSection() {
-    return <div data-testid="studio-section" />;
+vi.mock('@/components/home/sections/MakersSection', () => ({
+  default: function MockMakersSection() {
+    return <div data-testid="makers-section" />;
+  },
+}));
+
+vi.mock('@/components/home/sections/FirstAnswerSection', () => ({
+  default: function MockFirstAnswerSection() {
+    return <div data-testid="first-answer-section" />;
   },
 }));
 
@@ -35,20 +40,24 @@ vi.mock('@/components/home/sections/ProblemsSection', () => ({
 import HomePublic from '@/components/home/HomePublic';
 
 describe('HomePublic', () => {
-  it('renders the fold, what it solves and the studio, in that order', () => {
+  it('renders the fold, the makers, the first answer and what it solves, in that order', () => {
     const { container } = render(<HomePublic />);
     expect(screen.getByTestId('hero-section')).toBeInTheDocument();
-    expect(screen.getByTestId('studio-section')).toBeInTheDocument();
     expect(screen.getByTestId('problems-section')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: /turn who you are into income/i })
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /meet your cat/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /claim your link/i })).toBeInTheDocument();
 
     const order = Array.from(container.querySelectorAll('[data-testid]')).map(el =>
       el.getAttribute('data-testid')
     );
-    expect(order).toEqual(['hero-section', 'problems-section', 'studio-section']);
+    expect(order).toEqual([
+      'hero-section',
+      'makers-section',
+      'first-answer-section',
+      'problems-section',
+    ]);
   });
 
   it('has a minimum height container', () => {

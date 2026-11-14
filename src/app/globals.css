@@ -736,73 +736,26 @@
     @apply mb-6 text-fg-primary sm:mb-8;
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .oc-public-hero-badge {
-    @apply mb-5 inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-border-subtle bg-surface-raised/40 px-3.5 py-1.5 text-xs font-medium uppercase tracking-caps text-fg-secondary sm:mb-7 sm:gap-2.5 sm:px-4;
-    animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
-  }
-  /* The live dot leading the badge — the warm accent with a soft halo. */
-  .oc-public-hero-badge::before {
-    content: '';
-    @apply h-1.5 w-1.5 shrink-0 rounded-full;
-    background: var(--accent-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 22%, transparent);
-  }
   /* Viewport-relative display size: a headline on a phone, a billboard on a
-     desk. Two tones — the statement at full ink, its consequence a step down. */
+     desk. */
   .oc-public-hero-title {
     @apply max-w-4xl font-heading font-bold text-fg-primary;
-    font-size: clamp(2.5rem, 11vw, 6.25rem);
+    font-size: clamp(2.5rem, 10vw, 5.25rem);
     line-height: 0.96;
     letter-spacing: -0.04em;
     text-wrap: balance;
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-  }
-  /* Tertiary, not secondary: the second tone has to stand apart from the
-     first at display size, and the secondary step now sits closer to primary. */
-  .oc-public-hero-title-dim {
-    @apply text-fg-tertiary;
   }
   .oc-public-hero-lede {
     @apply mx-auto mt-5 max-w-2xl text-lg leading-snug tracking-tight text-fg-secondary sm:mt-7 sm:text-2xl sm:leading-tight;
     text-wrap: pretty;
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
   }
-  /* One thumb target per row on a phone, the inline pair from `sm` up. */
-  .oc-public-hero-actions {
-    @apply mt-8 flex w-full max-w-sm flex-col items-stretch gap-2.5 sm:mt-10 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-3;
+  /* The claim: the pay-link field and its one warm action, then the page
+     it makes. Arrives last, like the actions it replaced. */
+  .oc-public-hero-claim {
+    @apply mt-8 w-full max-w-xl sm:mt-10;
     animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.26s both;
-  }
-  .oc-public-hero-actions > * {
-    @apply w-full sm:w-auto;
-  }
-  /* "On OrangeCat right now" — real counts under the fold, in a panel with
-     the same status language the product uses. */
-  .oc-public-pulse {
-    @apply mt-12 w-full max-w-2xl rounded-lg border border-default bg-surface-base/80 p-4 text-left sm:mt-16 sm:p-6;
-    backdrop-filter: blur(8px);
-    animation: oc-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both;
-  }
-  /* Tighter tracking below sm: at 12px with tracking-caps the title is 6px
-     too wide for a 320px phone and drops its last word to a second line. */
-  .oc-public-pulse-head {
-    @apply mb-4 flex items-center justify-between gap-3 border-b border-border-subtle pb-3 font-mono text-xs uppercase tracking-label text-fg-tertiary sm:tracking-caps;
-  }
-  .oc-public-pulse-live {
-    @apply inline-flex items-center gap-1.5;
-  }
-  .oc-public-pulse-live::before {
-    content: '';
-    @apply h-1.5 w-1.5 rounded-full bg-status-positive;
-    animation: oc-pulse-dot 2.4s ease-in-out infinite;
-  }
-  .oc-public-pulse-grid {
-    @apply grid grid-cols-3 gap-3 sm:gap-6;
-  }
-  .oc-public-pulse-value {
-    @apply block font-heading text-2xl font-bold leading-none tracking-display text-fg-primary sm:text-4xl;
-  }
-  .oc-public-pulse-label {
-    @apply mt-1.5 block text-xs leading-snug text-fg-secondary sm:text-sm;
   }
   @keyframes oc-rise {
     from {
@@ -812,11 +765,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-  @keyframes oc-pulse-dot {
-    50% {
-      opacity: 0.35;
     }
   }
 
@@ -1050,12 +998,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     .oc-public-hero-mark,
-    .oc-public-hero-badge,
     .oc-public-hero-title,
     .oc-public-hero-lede,
-    .oc-public-hero-actions,
-    .oc-public-pulse,
-    .oc-public-pulse-live::before {
+    .oc-public-hero-claim {
       animation: none;
     }
   }

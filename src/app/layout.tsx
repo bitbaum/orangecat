@@ -102,8 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: APP_NAME,
                   url: SITE_URL,
                   logo: `${SITE_URL}/images/orange-cat-logo.svg`,
-                  description:
-                    'Fund, lend, invest, trade, and govern with any identity, settled in Bitcoin.',
+                  description: APP_DESCRIPTION,
                   sameAs: [],
                 },
                 {

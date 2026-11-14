@@ -16,6 +16,10 @@
 
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { LucideIcon, Globe, Lock, Wallet, TrendingUp } from 'lucide-react';
+import { APP_NAME, APP_PROMISE, APP_PROMISE_HOW } from '@/config/brand';
+import { CAT_FREE_DAILY_LIMIT } from '@/config/cat-plans';
+import { PAY_LINK_PLACEHOLDER, payLinkDisplay } from '@/config/pay';
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@/config/usernames';
 
 // The "what you can do" grid used to be a hand-written list here, a second
 // copy of the entity registry that drifted from it. The capability map
@@ -81,6 +85,20 @@ export const FEE_CLAIMS = {
   feeStatBottomLabel: 'To Creator',
   // Use for body copy where you previously said "100% reaches the recipient"
   passthroughClaim: '100% reaches the recipient — no middleman, no processing costs.',
+} as const;
+
+/**
+ * /pricing's first screen: what it costs to sell and get paid. A maker's
+ * question; the page used to open on the AI bill instead ("Your AI, your
+ * bill, your choice", then a list of model vendors). True because payments
+ * between people never pass through OrangeCat and nothing is deducted from
+ * them (config/commerce.ts; the pay page says the same, PAY_COPY.disclaimer).
+ */
+export const PRICING_COPY = {
+  title: `${FEE_CLAIMS.platformFee} to sell`,
+  lede: `Listing, selling and getting paid on OrangeCat is free. A payment goes from the buyer straight to your own wallet: OrangeCat takes no cut and never holds the money. The Cat is free too, ${CAT_FREE_DAILY_LIMIT} messages a day.`,
+  description: `Selling and getting paid on OrangeCat costs ${FEE_CLAIMS.platformFee}: payments go straight to your own wallet. The Cat is free, ${CAT_FREE_DAILY_LIMIT} messages a day.`,
+  moreCat: 'More Cat',
 } as const;
 
 /**
@@ -238,28 +256,81 @@ export const TRUST_SIGNALS = [
 // ==================== CTA COPY ====================
 
 /**
- * Consistent CTA labels across the site
+ * Consistent CTA labels across the site.
+ *
+ * The primary action names what the person gets, not the mascot: it was "Meet
+ * your Cat", on a site that had not yet said what a Cat is. Every account has
+ * a public pay page from the moment it exists (/pay/<username>), so "Get your
+ * page" is true of the register form it opens. /pay says the same words.
  */
 export const CTA_LABELS = {
-  primaryAction: 'Meet your Cat',
+  primaryAction: 'Get your page',
   secondaryAction: 'Discover',
   discoverAction: 'Discover',
-  startCreating: 'Meet your Cat',
+  startCreating: 'Get your page',
   viewProject: 'View Project',
   learnMore: 'How it works',
   browseAll: 'Browse All',
 } as const;
 
 /**
- * First-fold copy. One statement in two tones — the lead at full ink, the
- * consequence a step down — then the two actions.
+ * First-fold copy. The statement and its "how" are the brand promise
+ * (config/brand.ts), not a second wording of it. Under them the one action:
+ * claim your pay link.
  */
 export const HERO_COPY = {
-  badgeLead: 'Your AI economic agent',
-  badgeIdentity: 'Any identity',
-  headlineLead: 'Turn who you are',
-  headlineTail: 'into income.',
-  lede: 'Your Cat sets up ways to earn. Bitcoin settles. You stay in charge.',
+  headline: APP_PROMISE,
+  lede: APP_PROMISE_HOW,
+  claim: {
+    label: 'The name for your pay link',
+    /** Shown before the field: the address the name completes. */
+    prefix: payLinkDisplay(''),
+    placeholder: PAY_LINK_PLACEHOLDER,
+    submit: 'Claim your link',
+    checking: 'Checking the name…',
+    /**
+     * What happens next, said before the tap: the account comes first, and the
+     * Cat (the assistant in every account) renames the page to the name typed.
+     */
+    hint: 'Free. You create an account, and your Cat, the assistant that comes with it, puts your page at this address.',
+    invalid: `Use ${USERNAME_MIN_LENGTH} to ${USERNAME_MAX_LENGTH} letters, numbers, hyphens or underscores.`,
+    unavailable: 'That name is taken. Try another.',
+    /** The sentence the Cat is handed after sign-up; it renames the handle (update_profile). */
+    catSentence: (name: string) => `Make my pay link ${payLinkDisplay(name)}`,
+  },
+  preview: {
+    caption: 'What someone sees when they open your link',
+  },
+} as const;
+
+/**
+ * "Made on OrangeCat": the newest public listings, the same rows and the same
+ * cards as Discover's "Just listed". Nothing here is written by hand.
+ */
+export const HOME_MAKERS_COPY = {
+  title: `Made on ${APP_NAME}`,
+  subtitle:
+    'The newest things people have listed. Open one to see the page a buyer or backer sees.',
+  seeAll: 'See everything',
+} as const;
+
+/**
+ * The Cat's first answer, before an account: one real reply to the visitor's
+ * own sentence, then the invitation to keep going with what they typed.
+ */
+export const HOME_FIRST_ANSWER_COPY = {
+  subtitle:
+    'Say it in a sentence. The Cat, the assistant in every account, answers once here. No account needed.',
+  asking: 'The Cat is answering…',
+  yourSentence: 'You asked',
+  /** After the answer: the invitation, which carries the sentence along. */
+  inviteLead: 'Create a free account and your Cat picks up from this sentence and sets it up.',
+  invite: 'Continue with your Cat',
+  /** When no answer could be given (busy, or the limit is reached). */
+  noAnswer:
+    'The Cat cannot answer here right now. Your sentence is kept: create a free account and your Cat starts with it.',
+  limitReached:
+    'That was the answer you get without an account. Your sentence is kept: create a free account and your Cat starts with it.',
 } as const;
 
 // ==================== SECTION HEADERS ====================
