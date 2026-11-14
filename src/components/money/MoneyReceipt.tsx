@@ -40,6 +40,8 @@ interface MoneyReceiptProps {
   note?: string | null;
   /** Fallback line when there is no amount/counterparty detail to show. */
   fallbackBody?: string;
+  /** One quiet line under the facts: what happens next, or what to keep. */
+  footnote?: string | null;
   /** Actions — "Send another", "Done". */
   children?: React.ReactNode;
 }
@@ -52,6 +54,7 @@ export function MoneyReceipt({
   counterpartyLabel = 'To',
   note,
   fallbackBody,
+  footnote,
   children,
 }: MoneyReceiptProps) {
   const { formatAmountBtc } = useDisplayCurrency();
@@ -118,6 +121,8 @@ export function MoneyReceipt({
       ) : (
         fallbackBody && <p className="mb-0 max-w-xs text-sm text-fg-secondary">{fallbackBody}</p>
       )}
+
+      {footnote && <p className="mb-0 max-w-xs text-sm text-fg-secondary">{footnote}</p>}
 
       {children && <div className="flex flex-wrap justify-center gap-3 pt-1">{children}</div>}
     </div>

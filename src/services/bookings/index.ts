@@ -280,7 +280,8 @@ class BookingService {
       case STATUS.BOOKINGS.CONFIRMED:
         userId = booking.customer_user_id;
         title = 'Booking confirmed';
-        message = `Your ${booking.bookable_type} booking starting ${startLocal} was confirmed.`;
+        // Booked first, paid on acceptance: this is the moment the payment is asked for.
+        message = `Your ${booking.bookable_type} booking starting ${startLocal} was confirmed.${Number(booking.price_btc) > 0 ? ' You can pay for it now.' : ''}`;
         break;
       case STATUS.BOOKINGS.REJECTED:
         userId = booking.customer_user_id;
@@ -317,7 +318,7 @@ class BookingService {
       },
       sourceEntityType: booking.bookable_type,
       sourceEntityId: booking.bookable_id,
-      actionUrl: ROUTES.DASHBOARD.BOOKINGS,
+      actionUrl: ROUTES.DASHBOARD.BOOKINGS_VIEW(booking.id),
     });
   }
 

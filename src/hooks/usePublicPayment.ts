@@ -23,8 +23,8 @@ export type PublicIntent = InitiatePublicSupportResult;
 
 const POLL_MS = 5000;
 
-const FAILED_MESSAGE =
-  'This payment didn’t go through. If your wallet shows it as sent, check its history before trying again.';
+// Under the step's own title ("This payment did not go through").
+const FAILED_MESSAGE = 'If your wallet shows it as sent, check its history before trying again.';
 
 export async function readApiError(response: Response, fallback: string): Promise<string> {
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
@@ -61,7 +61,7 @@ function writeSaved(key: string | undefined, intent: PublicIntent | null) {
 interface UsePublicPaymentOptions {
   resumeKey?: string;
   /** Called once when the payment settles, with whatever the poll returned. */
-  onPaid?: (status: { guest_ticket_path?: string }) => void;
+  onPaid?: (status: { guest_ticket_path?: string; order_ref?: string }) => void;
 }
 
 export function usePublicPayment({ resumeKey, onPaid }: UsePublicPaymentOptions = {}) {
@@ -106,6 +106,7 @@ export function usePublicPayment({ resumeKey, onPaid }: UsePublicPaymentOptions 
           status: PaymentIntentStatus;
           requires_recipient_confirmation: boolean;
           guest_ticket_path?: string;
+          order_ref?: string;
         };
       };
       if (body.data.status === 'paid') {

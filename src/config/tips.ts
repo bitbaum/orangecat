@@ -13,6 +13,7 @@
  */
 
 import { CONTRIBUTION_QUICK_AMOUNTS_BTC, DEFAULT_CONTRIBUTION_BTC } from './payment-presets';
+import { PAY_STATE_WORDS } from './pay-words';
 
 /** Quick-pick amounts (BTC). Reuses the contribution presets for consistency. */
 export const TIP_QUICK_AMOUNTS_BTC = CONTRIBUTION_QUICK_AMOUNTS_BTC;
@@ -24,31 +25,18 @@ export const TIP_MIN_BTC = 0.000001;
 export const TIP_MAX_BTC = 1;
 
 export const TIP_COPY = {
-  button: 'Tip',
-  title: (name: string) => `Tip ${name}`,
-  subtitle: 'Send a Bitcoin gift, paid straight to their wallet.',
-  amountLabel: 'Amount',
-  custom: 'Custom',
-  generate: 'Tip with a Bitcoin wallet',
-  generateOther: 'Tip from another wallet',
-  generating: 'Preparing…',
-  scan: 'Waiting for the tip…',
-  noWallet: (name: string) => `${name} hasn't set up a wallet to receive Bitcoin tips yet.`,
-  /** The honesty line — non-custodial, zero fee. */
-  disclaimer: 'Paid directly to them. OrangeCat takes 0% and never touches your funds.',
-  again: 'Change amount',
+  // One pay machine, one set of state words: src/config/pay-words.ts.
+  ...PAY_STATE_WORDS,
+  // "Support", the word the profile and every page use for this act. "Tip"
+  // reads as optional small change (.claude/rules/domain-specific.md).
+  button: 'Support',
+  title: (name: string) => `Support ${name}`,
+  subtitle: 'Bitcoin, straight to their wallet.',
+  /** The one action: the verb and the figure, as on /pay. */
+  payAmount: (amount: string) => `Support ${amount}`,
+  noWallet: (name: string) =>
+    `${name} hasn't added a Bitcoin wallet yet, so there is nowhere to pay.`,
   done: 'Done',
-  /** Live confirmation once the tip settles on-rail. */
-  paidTitle: 'Tip received!',
-  paidBody: (name: string) => `Paid straight to ${name}'s wallet. Zero fee, zero middleman.`,
-  expiredTitle: 'This tip request expired',
-  expiredBody: 'No Bitcoin was sent. You can start a new tip anytime.',
-  payFromWallet: 'Tip from my wallet',
-  payFromWalletNote: "They'll see it was you.",
-  payingFromWallet: 'Sending from your wallet…',
-  confirming: 'Sent. Confirming…',
-  walletDeclined: (reason: string) =>
-    `Your wallet couldn't send this: ${reason} You can pay the code below from another wallet.`,
 } as const;
 
 /** How often the dialog polls for tip settlement, in milliseconds. */

@@ -64,7 +64,10 @@ type OrderStatus = (typeof STATUS.ORDERS)[keyof typeof STATUS.ORDERS];
 export interface Order {
   id: string;
   payment_intent_id: string;
-  buyer_id: string;
+  /** Null for a purchase made without an account. */
+  buyer_id: string | null;
+  /** The booking this order pays for, when it is one. */
+  booking_id?: string | null;
   seller_id: string;
   entity_type: EntityType;
   entity_id: string;
@@ -155,6 +158,8 @@ export interface PublicPaymentStatusResult extends PaymentStatusResult {
   requires_recipient_confirmation: boolean;
   /** A guest's paid event ticket, once settlement issued it: the page that is the ticket. */
   guest_ticket_path?: string;
+  /** A purchase made without an account: the reference of its order, once paid. */
+  order_ref?: string;
 }
 
 export interface InitiateTipInput {

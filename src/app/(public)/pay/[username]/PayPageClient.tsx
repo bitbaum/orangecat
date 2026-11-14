@@ -148,6 +148,7 @@ export function PayPageClient({
         onAmountChange={setAmountBtc}
         words={PAY_COPY}
         noteSlot={noteSlot}
+        receiptNote={prefill.note}
         beforeActionSlot={amountErrorSlot}
       />
       {otherWays}

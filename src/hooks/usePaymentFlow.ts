@@ -24,6 +24,8 @@ const POLL_INTERVALS: Record<PaymentMethod, number> = {
   onchain: 30_000, // 30 seconds — blocks take time
 };
 
+const FAILED_MESSAGE = 'If your wallet shows it as sent, check its history before trying again.';
+
 type PaymentFlowState =
   | { phase: 'idle' }
   | { phase: 'initiating' }
@@ -76,6 +78,10 @@ export function usePaymentFlow() {
           } else if (status === 'expired') {
             stopPolling();
             setState({ phase: 'expired' });
+          } else if (status === 'failed') {
+            // Not "expired": a failed payment is a different thing to be told.
+            stopPolling();
+            setState({ phase: 'error', message: FAILED_MESSAGE });
           } else if (status === 'buyer_confirmed') {
             // A claim, not a verification: "Payment successful" here told the
             // buyer something the server does not know (audit 2026-10-07).
@@ -90,23 +96,16 @@ export function usePaymentFlow() {
     [stopPolling]
   );
 
-  const initiate = useCallback(
-    async (params: {
-      entity_type: EntityType;
-      entity_id: string;
-      amount_btc?: number;
-      message?: string;
-      is_anonymous?: boolean;
-      shipping_address_id?: string;
-      buyer_note?: string;
-    }) => {
+  /** POST `body` to `url`; both entry points return the same InitiatePaymentResult. */
+  const begin = useCallback(
+    async (url: string, body: Record<string, unknown>) => {
       setState({ phase: 'initiating' });
 
       try {
-        const res = await fetch(API_ROUTES.PAYMENTS.BASE, {
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(params),
+          body: JSON.stringify(body),
         });
 
         // An HTML error page (a 502) must not surface as "Unexpected token '<'".
@@ -134,6 +133,25 @@ export function usePaymentFlow() {
       }
     },
     [startPolling]
+  );
+
+  const initiate = useCallback(
+    (params: {
+      entity_type: EntityType;
+      entity_id: string;
+      amount_btc?: number;
+      message?: string;
+      is_anonymous?: boolean;
+      shipping_address_id?: string;
+      buyer_note?: string;
+    }) => begin(API_ROUTES.PAYMENTS.BASE, params),
+    [begin]
+  );
+
+  /** Pay a booking the provider accepted: the amount is the booking's, read on the server. */
+  const initiateBookingPayment = useCallback(
+    (bookingId: string) => begin(API_ROUTES.BOOKINGS.PAY(bookingId), {}),
+    [begin]
   );
 
   const confirmPaid = useCallback(async () => {
@@ -176,6 +194,7 @@ export function usePaymentFlow() {
   return {
     state,
     initiate,
+    initiateBookingPayment,
     confirmPaid,
     reset,
     isLoading: state.phase === 'initiating',

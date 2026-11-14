@@ -29,6 +29,8 @@ interface PaymentButtonProps {
   priceCurrency?: string;
   /** Seller's profile ID */
   sellerProfileId?: string;
+  /** Who is paid (the owner's name), for the dialog's words and the receipt. */
+  recipientName?: string | null;
   /** Whether the seller has a wallet connected */
   sellerHasWallet?: boolean;
   /** An investment's stated minimum/maximum, in BTC — bounds the dialog's amount. */
@@ -44,6 +46,7 @@ export function PaymentButton({
   priceBtc,
   priceCurrency,
   sellerProfileId,
+  recipientName = null,
   sellerHasWallet = true,
   contributionBounds = null,
   className,
@@ -59,9 +62,7 @@ export function PaymentButton({
 
   const isContribution = meta.paymentPattern === 'contribution';
   // An investment is invested in, not supported (src/config/contribution-terms.ts).
-  const buttonText = isContribution
-    ? (CONTRIBUTION_TERMS[entityType]?.verb ?? 'Support')
-    : 'Buy Now';
+  const buttonText = isContribution ? (CONTRIBUTION_TERMS[entityType]?.verb ?? 'Support') : 'Buy';
   // A minimum above what one payment can be cannot be met here (contributionRange).
   const unpayable = isContribution && contributionRange(contributionBounds).unpayable;
   const disabled = !sellerHasWallet || unpayable;
@@ -80,9 +81,9 @@ export function PaymentButton({
           : disabled
             ? 'No wallet connected'
             : buttonText}
-        {!isContribution && priceBtc && !disabled && (
-          <span className="ml-1 opacity-75">({formatPrice(priceBtc, priceCurrency)})</span>
-        )}
+        {!isContribution && priceBtc && !disabled
+          ? ` for ${formatPrice(priceBtc, priceCurrency)}`
+          : null}
       </Button>
 
       <PaymentDialog
@@ -94,6 +95,7 @@ export function PaymentButton({
         priceBtc={priceBtc}
         priceCurrency={priceCurrency}
         sellerProfileId={sellerProfileId}
+        recipientName={recipientName}
         contributionBounds={contributionBounds}
       />
     </>
