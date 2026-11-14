@@ -99,6 +99,7 @@ const READS = new Set([
   'github_read',
   'gmail_read',
   'calendar_read',
+  'tasks_read',
 ]);
 
 /** Does this step do something a rule could forbid? Pure. */

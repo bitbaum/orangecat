@@ -204,7 +204,7 @@ export async function sendAiMessage(
   const offered = new Set(hands?.allowed.map(h => h.action.id) ?? []);
   const readNow =
     isOwner && offered.size > 0
-      ? (await preReadForTurn(userId, content, { allowed: id => offered.has(id) }))?.block
+      ? (await preReadForTurn(supabase, userId, content, { allowed: id => offered.has(id) }))?.block
       : undefined;
   timer.mark('context');
   const systemPrompt = buildCompanionSystemPrompt({
@@ -327,7 +327,7 @@ export async function sendAiMessage(
       }
       // It has run: whatever happens next, it is never queued again.
       step = null;
-      const ran = await runAutoStep(supabase, userId, actorId, convId, ranStep);
+      const ran = await runAutoStep(supabase, userId, actorId, convId, ranStep, assistantId);
       const resultMessage = stepResultMessage(ranStep.action, ran.text);
       const next = await generateReply({
         hasByok,
