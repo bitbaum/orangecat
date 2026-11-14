@@ -88,7 +88,7 @@ export function WeekView({
       </div>
       {hasAllDay && (
         <div className="grid border-b border-subtle" style={cols}>
-          <div className="px-1 py-2 text-right text-[11px] leading-tight text-fg-tertiary">
+          <div className="px-1 py-2 text-right text-xs leading-tight text-fg-tertiary">
             {CALENDAR_COPY.allDay}
           </div>
           {days.map((day, i) => (
@@ -120,7 +120,7 @@ export function WeekView({
             {HOURS.slice(1).map(h => (
               <span
                 key={h}
-                className="absolute right-1.5 -translate-y-1/2 whitespace-nowrap text-[11px] tabular-nums text-fg-tertiary"
+                className="absolute right-1.5 -translate-y-1/2 whitespace-nowrap text-xs tabular-nums text-fg-tertiary"
                 style={{ top: h * HOUR }}
               >
                 {hourLabel(h)}
