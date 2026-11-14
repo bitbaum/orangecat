@@ -158,6 +158,7 @@ describe('Service Creation', () => {
         service_area: null,
         images: ['https://example.com/image1.jpg'],
         portfolio_links: ['https://example.com/portfolio'],
+        cover_image_url: null,
         show_on_profile: true,
         status: 'draft',
       });
@@ -198,6 +199,7 @@ describe('Service Creation', () => {
         service_area: null,
         images: [],
         portfolio_links: [],
+        cover_image_url: null,
         show_on_profile: true,
         status: 'draft',
       });
@@ -242,6 +244,7 @@ describe('Service Creation', () => {
         service_area: null,
         images: [],
         portfolio_links: [],
+        cover_image_url: null,
         show_on_profile: true,
         status: 'draft',
       });

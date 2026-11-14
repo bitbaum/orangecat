@@ -15,6 +15,7 @@ import { TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
 import {
   lightningAddressSchema,
   optionalText,
+  optionalUrl,
   webUrl,
   publicBitcoinAddress,
   positiveNumber,
@@ -71,6 +72,7 @@ export const assetSchema = z.object({
   estimated_value: positiveNumber().optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),
   documents: z.array(webUrl()).optional().nullable().default([]),
+  cover_image_url: optionalUrl(),
 
   // Sale options
   is_for_sale: z.boolean().optional().default(false),
@@ -122,6 +124,7 @@ export const loanSchema = z.object({
   // this is what retired the description-padding workaround in the API client.
   description: z.string().max(1000, 'Description must be at most 1000 characters').optional(),
   loan_category_id: optionalText(),
+  cover_image_url: optionalUrl(),
   original_amount: z
     .number({ error: 'Enter the loan amount' })
     .positive('Amount must be greater than 0'),
@@ -196,6 +199,7 @@ export const investmentSchema = z
       .optional()
       .nullable(),
     terms: optionalText(5000),
+    thumbnail_url: optionalUrl(),
     is_public: z.boolean().optional().default(false),
     bitcoin_address: publicBitcoinAddress(),
     lightning_address: lightningAddressSchema,

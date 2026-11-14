@@ -4,6 +4,7 @@
  * Business logic for creating research entities, extracted from the API route.
  */
 
+import { coverColumn } from '@/lib/entities/cover';
 import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
@@ -87,6 +88,7 @@ export async function createResearch(
     current_milestone: (validatedData.current_milestone as string | null | undefined) ?? null,
     license: validatedData.license ?? null,
     output_links: validatedData.output_links ?? [],
+    ...coverColumn('research', validatedData),
     ...(prereg.kind === 'commit' ? await commitPreregistration(prereg.text) : {}),
     // Denormalized counter columns (citation_count, follower_count, …) were
     // dropped in migration 20260404000005 — inserting them breaks live.

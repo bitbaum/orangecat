@@ -1,3 +1,4 @@
+import { coverColumn } from '@/lib/entities/cover';
 import { createServerClient } from '@/lib/supabase/server';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { STATUS } from '@/config/database-constants';
@@ -53,6 +54,7 @@ export async function createLoan(
       title: loanInput.title,
       description: loanInput.description || '',
       loan_type: loanInput.loan_type || 'new_request',
+      ...coverColumn('loan', loanInput),
       // New schema fields
       original_amount: loanInput.original_amount,
       remaining_balance: loanInput.remaining_balance ?? loanInput.original_amount,

@@ -1,3 +1,4 @@
+import { coverColumn } from '@/lib/entities/cover';
 import { createEntity, withResolvedActor } from '@/domain/base/entityService';
 import type { AssetFormData } from './schema';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
@@ -19,6 +20,7 @@ export async function createAsset(userId: string, input: AssetFormData) {
       estimated_value: input.estimated_value ?? null,
       currency: input.currency ?? PLATFORM_DEFAULT_CURRENCY,
       documents: input.documents ?? null,
+      ...coverColumn('asset', input),
       // Sale / rental / deposit config — previously omitted here, so an asset
       // listed "for sale/rent" in the form saved none of it. Persist it.
       is_for_sale: input.is_for_sale ?? false,

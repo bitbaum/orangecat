@@ -9,6 +9,7 @@
  * Last Modified Summary: Removed currency default to prevent overwriting existing values
  */
 
+import { coverFieldMapping } from '@/lib/entities/cover';
 import { eventSchema } from '@/lib/validation';
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import {
@@ -57,7 +58,7 @@ const buildEventUpdatePayload = createUpdatePayloadBuilder([
   { from: 'lightning_address', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.arrayField('images', []),
   commonFieldMappings.urlField('thumbnail_url'),
-  commonFieldMappings.urlField('banner_url'),
+  ...coverFieldMapping('event'),
   commonFieldMappings.urlField('video_url'),
   // status omitted intentionally — UPDATE that drops the field should keep
   // the existing row's status. Previous default:'draft' silently

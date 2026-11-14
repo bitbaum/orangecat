@@ -58,6 +58,7 @@ export const projectSchema = z.object({
     .nullable()
     .or(z.literal('')),
   logo_url: optionalUrl(),
+  cover_image_url: optionalUrl(),
   category: optionalText(),
   tags: z
     .array(

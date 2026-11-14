@@ -1,3 +1,4 @@
+import { coverColumn } from '@/lib/entities/cover';
 import { listEntityPage, createEntity, withResolvedActor } from '@/domain/base/entityService';
 import { PROJECT_STATUS } from '@/config/project-statuses';
 import { STATUS } from '@/config/database-constants';
@@ -68,6 +69,7 @@ export async function createProject(
       lightning_address: payload.lightning_address ?? null,
       website_url: payload.website_url ?? null,
       logo_url: payload.logo_url || null,
+      ...coverColumn('project', payload),
       category: payload.category ?? null,
       tags: payload.tags ?? [],
       // The create wizard asks for both; only the edit route used to save them.

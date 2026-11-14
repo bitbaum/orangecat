@@ -1,5 +1,6 @@
 'use client';
 
+import { entityCover } from '@/lib/entities/cover';
 import { useState, useEffect } from 'react';
 import { Package } from 'lucide-react';
 import type { ScalableProfile } from '@/services/profile/types';
@@ -106,10 +107,9 @@ export function useProfileEntityTab(profile: ScalableProfile, entityType: Entity
 
   const getTitle = (entity: EntityData) => entity.title || entity.name || 'Untitled';
 
+  /** The kind's cover (ENTITY_COVER): the picture its page and Discover card show. */
   const getThumbnail = (entity: EntityData) =>
-    entity.thumbnail_url ||
-    entity.avatar_url ||
-    (entity.images && entity.images.length > 0 ? entity.images[0] : null);
+    entityCover(entityType, entity as unknown as Record<string, unknown>);
 
   const getPriceDisplay = (entity: EntityData): React.ReactNode => {
     if (entity.is_free) {

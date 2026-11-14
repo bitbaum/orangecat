@@ -244,6 +244,7 @@ export default function EntityDashboardPage<T extends BaseEntity>({
               items={filteredItems}
               isLoading={loading}
               makeHref={config.makeHref}
+              entityType={config.entityType}
               makeCardProps={item => config.makeCardProps(item, userCurrency)}
               emptyState={emptyState}
               gridCols={config.gridCols}

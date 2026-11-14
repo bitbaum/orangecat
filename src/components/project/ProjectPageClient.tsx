@@ -16,6 +16,7 @@ import { ProjectMobileFundBar, useMobileFundBar } from './ProjectMobileFundBar';
 
 const MissingWalletBanner = dynamic(() => import('@/components/project/MissingWalletBanner'));
 const ProjectShare = dynamic(() => import('@/components/sharing/ProjectShare'));
+const PublicEntityHero = dynamic(() => import('@/components/public/PublicEntityHero'));
 const ProjectMediaGallery = dynamic(() => import('@/components/project/ProjectMediaGallery'));
 const ProjectSummaryRail = dynamic(() => import('@/components/project/ProjectSummaryRail'));
 const ProjectHeader = dynamic(() => import('@/components/project/ProjectHeader'));
@@ -57,6 +58,8 @@ interface Project {
    * never told exists.
    */
   target_completion?: string | null;
+  /** The cover its maker chose (ENTITY_COVER): the page's hero, its Discover and share card. */
+  cover_image_url?: string | null;
   profiles?: {
     username: string | null;
     name: string | null;
@@ -143,6 +146,12 @@ export default function ProjectPageClient({
             {/* Missing Wallet Banner */}
             {!sellerReceive && (
               <MissingWalletBanner projectId={projectId} isOwner={isOwner} className="mb-6" />
+            )}
+
+            {project.cover_image_url && (
+              <div className="mb-6">
+                <PublicEntityHero images={[project.cover_image_url]} title={project.title} />
+              </div>
             )}
 
             {/* Gallery */}
