@@ -29,6 +29,7 @@ import { CAT_MENTION, CAT_USERNAME } from '@/config/cat-identity';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import supabase from '@/lib/supabase/browser';
+import { fetchFollowList } from '@/services/social/followList';
 import { logger } from '@/utils/logger';
 import { namedBots } from './lib/named-bots';
 import { newMessageSuggestions, recentPeople } from './lib/new-suggestions';
@@ -167,21 +168,9 @@ async function publicBots(query: string, signal?: AbortSignal): Promise<Messenge
 }
 
 /** The people the viewer follows, newest follow first. */
-async function followedPeople(userId: string, signal?: AbortSignal): Promise<PickerPerson[]> {
-  const response = await fetch(`${API_ROUTES.SOCIAL.FOLLOWING(userId)}?limit=20`, {
-    credentials: 'same-origin',
-    signal,
-  });
-  if (!response.ok) {
-    return [];
-  }
-  const payload = (await response.json()) as {
-    data?: { data?: Array<{ profile?: PickerPerson | PickerPerson[] | null }> };
-  };
-  return (payload.data?.data ?? []).flatMap(row => {
-    const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
-    return profile?.id ? [profile] : [];
-  });
+async function followedPeople(userId: string): Promise<PickerPerson[]> {
+  const rows = await fetchFollowList('following', userId);
+  return rows.flatMap(row => (row.profile?.id ? [row.profile] : []));
 }
 
 export function createMessengerTransport(options: MessengerTransportOptions): MessengerTransport {
@@ -505,7 +494,7 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
         api<{ conversations: Conversation[] }>(`${API_ROUTES.MESSAGES.BASE}?limit=100`, { signal })
           .then(data => recentPeople(data.conversations ?? [], userId))
           .catch(() => []),
-        followedPeople(userId, signal).catch(() => []),
+        followedPeople(userId),
       ]);
       return newMessageSuggestions({
         viewerId: userId,

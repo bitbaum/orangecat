@@ -30,6 +30,9 @@ const db = vi.hoisted(() => {
 });
 vi.mock('@/lib/supabase/browser', () => ({ default: db.client }));
 
+const follows = vi.hoisted(() => ({ list: vi.fn(async () => [] as unknown[]) }));
+vi.mock('@/services/social/followList', () => ({ fetchFollowList: follows.list }));
+
 import { MessengerError } from '@bitbaum/chatkit/messenger';
 import { createMessengerTransport } from '@/features/messaging/messenger-transport';
 
@@ -402,16 +405,12 @@ describe('other people’s public bots, and who New offers first (ADR-0015)', ()
           ],
         });
       }
-      if (url === '/api/social/following/me?limit=20') {
-        return json({
-          data: [
-            { profile: { id: 'ben', username: 'ben', name: 'Ben Ito' } },
-            { profile: { id: 'ada', username: 'ada', name: 'Ada Okafor' } },
-          ],
-        });
-      }
       return new Response('{}', { status: 404 });
     });
+    follows.list.mockResolvedValueOnce([
+      { profile: { id: 'ben', username: 'ben', name: 'Ben Ito' } },
+      { profile: { id: 'ada', username: 'ada', name: 'Ada Okafor' } },
+    ]);
     const cat = { id: 'cat-id', name: 'Cat', handle: 'cat', kind: 'agent' as const };
     const offered = await createMessengerTransport({ userId: 'me', cat: () => cat }).suggestions!(
       {}
