@@ -10,6 +10,8 @@ import { Users } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { ScalableProfile } from '@/services/profile/types';
 import DefaultAvatar from '@/components/ui/DefaultAvatar';
+import { CatAvatar } from '@/components/cat/CatAvatar';
+import { isCatUsername } from '@/config/cat-identity';
 import supabase from '@/lib/supabase/browser';
 import { useAuth } from '@/hooks/useAuth';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -212,7 +214,9 @@ export default function ProfilePeopleTab({ profile, isOwnProfile }: ProfilePeopl
                 href={`/profiles/${person.username}`}
                 className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-default hover:border-strong oc-card-link"
               >
-                {person.avatar_url ? (
+                {isCatUsername(person.username) ? (
+                  <CatAvatar size={40} className="rounded-lg sm:!h-12 sm:!w-12" />
+                ) : person.avatar_url ? (
                   <Image
                     src={person.avatar_url}
                     alt={person.name || person.username}

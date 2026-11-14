@@ -16,6 +16,7 @@
 import React from 'react';
 import Image from 'next/image';
 import DefaultAvatar from '@/components/ui/DefaultAvatar';
+import { CatAvatar } from '@/components/cat/CatAvatar';
 import { cn } from '@/lib/utils';
 import type { MentionSuggestion } from '@/domain/mentions/rank';
 
@@ -70,7 +71,9 @@ export default function MentionSuggestions({
             index === activeIndex ? 'bg-surface-base' : 'bg-transparent'
           )}
         >
-          {item.avatarUrl ? (
+          {item.isCat ? (
+            <CatAvatar size={28} />
+          ) : item.avatarUrl ? (
             <Image
               src={item.avatarUrl}
               alt=""

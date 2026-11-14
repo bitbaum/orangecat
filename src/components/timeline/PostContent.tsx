@@ -10,6 +10,7 @@ import { getExternalAttribution } from '@/config/external-publish';
 import { ROUTES } from '@/config/routes';
 import { scrollBehavior } from '@/lib/scroll-behavior';
 import { postAuthor, postAuthorSource } from '@/utils/byline';
+import { avatarUrlFor } from '@/config/cat-identity';
 
 interface PostContentProps {
   event: TimelineDisplayEvent;
@@ -24,7 +25,7 @@ export function PostContent({ event }: PostContentProps) {
   const originalSource = postAuthorSource(event.actor, event.metadata, true);
   const originalAuthor = {
     ...postAuthor(originalSource),
-    avatar: originalSource.avatar || '/default-avatar.svg',
+    avatar: avatarUrlFor(originalSource.username, originalSource.avatar) || '/default-avatar.svg',
   };
   const originalDescription = event.metadata?.original_description || '';
   const originalEventId = event.metadata?.original_event_id;

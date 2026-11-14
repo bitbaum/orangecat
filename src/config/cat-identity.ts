@@ -41,3 +41,23 @@ export const CAT_CONTEXT_MESSAGE_WINDOW = 20;
 export function isCatUsername(username: string | null | undefined): boolean {
   return (username ?? '').trim().toLowerCase() === CAT_USERNAME;
 }
+
+/**
+ * The Cat's face as a picture URL: the brand icon tile, safe to crop round
+ * (the generated maskable asset, kept in step with the mark by
+ * `pnpm run generate:brand` and its sync test). React surfaces draw
+ * <CatAvatar> (components/cat/CatAvatar.tsx), which is the same drawing; this
+ * is for the places that only take a URL.
+ */
+export const CAT_AVATAR_PATH = '/icons/icon-512-maskable.png';
+
+/**
+ * The picture a profile is shown with. The Cat always wears its own face,
+ * whatever its row holds, so it cannot drift between surfaces.
+ */
+export function avatarUrlFor(
+  username: string | null | undefined,
+  avatarUrl: string | null | undefined
+): string | null {
+  return isCatUsername(username) ? CAT_AVATAR_PATH : avatarUrl || null;
+}

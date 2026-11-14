@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import DefaultAvatar from '@/components/ui/DefaultAvatar';
+import { CatAvatar } from '@/components/cat/CatAvatar';
+import { isCatUsername } from '@/config/cat-identity';
 import type { ScalableProfile } from '@/services/profile/types';
 
 interface ProfileBannerSectionProps {
@@ -39,7 +41,9 @@ export function ProfileBannerSection({ profile }: ProfileBannerSectionProps) {
           inset matches the identity card's padding (p-4 sm:p-6) so the avatar
           and the name share one left edge. */}
       <div className="absolute z-10 -bottom-8 sm:-bottom-10 md:-bottom-12 lg:-bottom-16 left-4 sm:left-6">
-        {profile.avatar_url ? (
+        {isCatUsername(profile.username) ? (
+          <CatAvatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-lg border-2 sm:border-4 border-surface-page shadow-sm" />
+        ) : profile.avatar_url ? (
           <Image
             src={profile.avatar_url}
             alt={profile.name || profile.username || 'Profile photo'}

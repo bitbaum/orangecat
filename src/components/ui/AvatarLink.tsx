@@ -15,6 +15,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { User } from 'lucide-react';
+import { CatAvatar } from '@/components/cat/CatAvatar';
+import { isCatUsername } from '@/config/cat-identity';
 import { getInitial } from '@/utils/string';
 import { bylineName, needsBylineName } from '@/utils/byline';
 
@@ -107,7 +109,9 @@ export default function AvatarLink({
       )}
       title={`View ${displayName}'s profile`}
     >
-      {avatarUrl ? (
+      {isCatUsername(username) ? (
+        <CatAvatar size={size} />
+      ) : avatarUrl ? (
         <Image
           src={avatarUrl}
           alt={`${displayName}'s avatar`}
