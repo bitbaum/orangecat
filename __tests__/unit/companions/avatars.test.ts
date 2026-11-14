@@ -5,7 +5,9 @@ import {
   avatarPath,
   faceForName,
   faceSvg,
+  findHue,
   parseFaceUrl,
+  RETIRED_HUES,
 } from '@/config/companion-avatars';
 
 describe('companion faces', () => {
@@ -39,6 +41,33 @@ describe('companion faces', () => {
   it('has unique ids, so a picker can key on them', () => {
     expect(new Set(AVATAR_SHAPES.map(s => s.id)).size).toBe(AVATAR_SHAPES.length);
     expect(new Set(AVATAR_HUES.map(h => h.id)).size).toBe(AVATAR_HUES.length);
+  });
+});
+
+describe('no bot wears orange (one-orange rule, agents#14)', () => {
+  it('has no orange or amber pigment to pick', () => {
+    expect(AVATAR_HUES.map(h => h.id)).not.toContain('orange');
+    expect(AVATAR_HUES.map(h => h.id)).not.toContain('amber');
+    expect(AVATAR_HUES.map(h => h.fill.toLowerCase())).not.toContain('#ff7a1a');
+    expect(AVATAR_HUES.map(h => h.fill.toLowerCase())).not.toContain('#ffa726');
+  });
+
+  it('keeps the list the same length, so every other name keeps its face', () => {
+    expect(AVATAR_HUES).toHaveLength(11);
+    expect(AVATAR_HUES[3].id).toBe('indigo');
+    expect(AVATAR_HUES[4].id).toBe('steel');
+  });
+
+  it('draws a stored orange face in its replacement, and reads it back as that', async () => {
+    for (const [retired, replacement] of Object.entries(RETIRED_HUES)) {
+      expect(findHue(retired)?.id).toBe(replacement);
+      expect(parseFaceUrl(avatarPath('hex', retired))).toEqual({ shape: 'hex', hue: replacement });
+    }
+    const route = await import('@/app/api/ai-assistants/avatar/route');
+    const svg = await route
+      .GET(new Request('https://orangecat.ch/api/ai-assistants/avatar?shape=star&hue=orange'))
+      .text();
+    expect(svg).toContain('fill="#46327E"');
   });
 });
 

@@ -2,7 +2,13 @@
  * media#9: a minted `user_<hex>` handle was printed as an article byline, on
  * the page and in its share card. It is never a name.
  */
-import { ANONYMOUS_BYLINE, bylineName, needsBylineName } from '@/utils/byline';
+import {
+  ANONYMOUS_BYLINE,
+  bylineName,
+  needsBylineName,
+  postAuthor,
+  postAuthorSource,
+} from '@/utils/byline';
 
 describe('bylineName', () => {
   it('uses the name the person set', () => {
@@ -35,8 +41,6 @@ describe('needsBylineName', () => {
 });
 
 describe('postAuthor (every feed card)', () => {
-  const { postAuthor, postAuthorSource } = jest.requireActual('@/utils/byline');
-
   it('signs a nameless account neutrally and prints no @line', () => {
     const author = postAuthor({
       id: 'abc',
