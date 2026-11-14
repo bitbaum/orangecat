@@ -8,6 +8,7 @@
  * Google or a linked calendar, which already live where they came from.
  */
 
+import { todayIn } from '@bitbaum/whenkit';
 import { randomBytes } from 'crypto';
 import { API_ROUTES } from '@/config/api-routes';
 import { SITE_URL } from '@/config/brand';
@@ -135,10 +136,5 @@ function dayIn(iso: string, zone: string | null): string {
   if (!zone) {
     return iso.slice(0, 10);
   }
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: zone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(iso));
+  return todayIn(zone, new Date(iso));
 }
