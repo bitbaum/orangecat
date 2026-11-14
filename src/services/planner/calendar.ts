@@ -237,16 +237,62 @@ export async function readAgenda(
   deps: { google?: typeof readGoogleEvents } = {}
 ): Promise<Agenda> {
   const days = agendaDays(daysAsked);
-  const from = now.toISOString();
-  const until = new Date(now.getTime() + days * DAY_MS).toISOString();
+  const until = new Date(now.getTime() + days * DAY_MS);
+  return { ...(await readAgendaBetween(supabase, userId, now, until, deps)), days };
+}
+
+/**
+ * Two days as the instants they begin and end at in the person's clock:
+ * from the first's midnight to the end of the second. Null when either is
+ * not a day or they are the wrong way round. Pure.
+ */
+export function daySpan(
+  fromDay: string,
+  toDay: string,
+  zone: string | null
+): { from: Date; until: Date } | null {
+  const day = /^\d{4}-\d{2}-\d{2}$/;
+  if (!day.test(fromDay) || !day.test(toDay) || toDay < fromDay) {
+    return null;
+  }
+  const from = parseWhen(fromDay, zone);
+  const lastMidnight = parseWhen(toDay, zone);
+  return from && lastMidnight
+    ? { from: new Date(from), until: new Date(Date.parse(lastMidnight) + DAY_MS) }
+    : null;
+}
+
+/** How wide a span the calendar's month and week views may ask for at once. */
+export const RANGE_DAYS_MAX = 45;
+
+/**
+ * Everything between two instants, past included: what a month or a week
+ * view shows. An entry still running at `from` is in; a task already
+ * ticked off is not. Never throws.
+ */
+export async function readAgendaBetween(
+  supabase: AnySupabaseClient,
+  userId: string,
+  fromDate: Date,
+  untilDate: Date,
+  deps: { google?: typeof readGoogleEvents } = {}
+): Promise<Agenda> {
+  const span = Math.min(
+    RANGE_DAYS_MAX,
+    Math.max(1, Math.ceil((untilDate.getTime() - fromDate.getTime()) / DAY_MS))
+  );
+  const until = new Date(fromDate.getTime() + span * DAY_MS);
   const [entries, tasks, google] = await Promise.all([
-    ownEntries(supabase, userId, now, until),
-    dueTasks(supabase, userId, from, until),
-    (deps.google ?? readGoogleEvents)(userId, days, now).catch(() => ({ items: [], note: null })),
+    ownEntries(supabase, userId, fromDate, until.toISOString()),
+    dueTasks(supabase, userId, fromDate.toISOString(), until.toISOString()),
+    (deps.google ?? readGoogleEvents)(userId, span, fromDate).catch(() => ({
+      items: [],
+      note: null,
+    })),
   ]);
   const items: AgendaItem[] = [
     ...entries
-      .filter(e => Date.parse(e.ends_at ?? e.starts_at) >= now.getTime() || e.all_day)
+      .filter(e => Date.parse(e.ends_at ?? e.starts_at) >= fromDate.getTime() || e.all_day)
       .map(e => ({
         source: 'calendar' as const,
         id: e.id,
@@ -266,7 +312,7 @@ export async function readAgenda(
     })),
     ...google.items,
   ].sort((a, b) => at(a) - at(b));
-  return { days, items, googleNote: google.note };
+  return { days: span, items, googleNote: google.note };
 }
 
 /** The connected Google calendar as agenda items; nothing, silently, when none is connected. */

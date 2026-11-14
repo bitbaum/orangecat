@@ -18,6 +18,10 @@ export interface CalendarPageRow {
   location: string | null;
   /** Who wrote an own entry: 'me', 'cat', or a bot's id. */
   madeBy?: string;
+  /** Minutes after midnight in the person's clock, for placing it on a time grid; null = all day. */
+  startMinute: number | null;
+  /** Where it ends on that grid; never past midnight, at least a quarter hour after it starts. */
+  endMinute: number | null;
 }
 
 export interface CalendarPageDay {
@@ -45,6 +49,16 @@ function rowOf(item: AgendaItem, zone: string | null): { day: string; row: Calen
     item.allDay || item.start.length === 10 || dueThatDay ? 'All day' : start.slice(11, 16);
   const end =
     item.end && clock !== 'All day' ? whenText(item.end, false, zone).slice(11, 16) : null;
+  const minuteOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+  const startMinute = clock === 'All day' ? null : minuteOf(clock);
+  const endDay = item.end ? whenText(item.end, false, zone).slice(0, 10) : day;
+  const endMinute =
+    startMinute === null
+      ? null
+      : Math.max(
+          startMinute + 15,
+          end && endDay === day ? minuteOf(end) : end ? 24 * 60 : startMinute + 30
+        );
   return {
     day,
     row: {
@@ -54,6 +68,8 @@ function rowOf(item: AgendaItem, zone: string | null): { day: string; row: Calen
       time: end && end !== clock ? `${clock} to ${end}` : clock,
       location: item.location ?? null,
       ...(item.madeBy ? { madeBy: item.madeBy } : {}),
+      startMinute,
+      endMinute: endMinute === null ? null : Math.min(endMinute, 24 * 60),
     },
   };
 }

@@ -1,85 +1,69 @@
 'use client';
 
 /**
- * Your calendar: one line to add something (said or typed, the rest is
- * taps), and your coming days underneath, from every place you keep them.
- * Your Cat and your bots read this same list, and write to it when you ask.
+ * Your calendar: a month, a week or a list, and a microphone. Say "dentist
+ * Monday at nine at Chur" and it is in, with Undo; tap a day or an hour to
+ * type instead. Your own entries, the tasks and reminders that fall due, and
+ * a connected Google calendar, all in your own clock. Your Cat and your bots
+ * read and write this same calendar.
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { formatTime, isWallTime } from '@bitbaum/whenkit';
-import { CalendarDays, CheckCircle2, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { formatTime, type ISODate } from '@bitbaum/whenkit';
 import { API_ROUTES } from '@/config/api-routes';
-import { ROUTES } from '@/config/routes';
-import EntityListShell from '@/components/entity/EntityListShell';
-import { QuickAdd } from './QuickAdd';
-import { browserToday, dayHeading } from './days';
-import type { CalendarPage, CalendarPageRow } from '@/services/planner/calendar-page';
-import type { QuickAdd as Parsed } from '@/services/planner/quick-add';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import type { CalendarPageRow } from '@/services/planner/calendar-page';
+import { parseQuickAdd, type QuickAdd as Parsed } from '@/services/planner/quick-add';
 import { APP_LOCALE } from '@/utils/locale';
 import { browserTimeZone } from '@/utils/timezone';
-import { logger } from '@/utils/logger';
+import { AddSheet } from './calendar/AddSheet';
+import { CALENDAR_COPY } from './calendar/copy';
+import { DayList } from './calendar/DayList';
+import { EventSheet } from './calendar/EventSheet';
+import {
+  daysFrom,
+  monthTitle,
+  rangeFor,
+  spanTitle,
+  step,
+  type CalendarMode,
+} from './calendar/grid';
+import { MonthView } from './calendar/MonthView';
+import { PeriodNav } from './calendar/PeriodNav';
+import { useCalendarData } from './calendar/useCalendarData';
+import { VoiceButton } from './calendar/VoiceButton';
+import { WeekView } from './calendar/WeekView';
+import { browserToday, dayHeading } from './days';
 
-const COPY = {
-  title: 'Calendar',
-  description: 'Your coming days. Your Cat and your bots read this, and add to it when you ask.',
-  quick: {
-    label: 'Add to your calendar',
-    placeholder: 'Dentist Monday 9am at Chur',
-    when: 'Day',
-    time: 'Time',
-    allDay: 'All day',
-    length: 'How long',
-    add: 'Add to calendar',
-    adding: 'Adding…',
-    otherDate: 'Another date…',
-  },
-  remove: (title: string) => `Remove ${title}`,
-  emptyTitle: 'Nothing planned yet',
-  empty: 'Say or type what is coming up, in one line. Your Cat can add things for you too.',
-  failed: 'Your calendar could not be loaded. Try again in a moment.',
-  notAdded: 'That could not be added. Try again.',
-  notRemoved: 'That could not be removed. Try again.',
-  tasks: 'To-do list',
-} as const;
-
-/** What a row is, when it is not one of your own entries. */
-const SOURCE_WORD: Record<CalendarPageRow['source'], string | null> = {
-  calendar: null,
-  task: 'Task due',
-  reminder: 'Reminder',
-  google: 'Google calendar',
-};
+const MODES = (['month', 'week', 'list'] as const).map(value => ({
+  value,
+  label: CALENDAR_COPY.modes[value],
+}));
 
 export function CalendarView() {
-  const [page, setPage] = useState<CalendarPage | null>(null);
-  const [failed, setFailed] = useState(false);
+  const isPhone = useMediaQuery('(max-width: 767px)');
+  const weekWidth = isPhone ? 3 : 7;
+  const [mode, setMode] = useState<CalendarMode>('month');
+  const [anchor, setAnchor] = useState<ISODate>(browserToday);
+  const [adding, setAdding] = useState<{ day: ISODate; time: string | null } | null>(null);
+  const [opened, setOpened] = useState<{ row: CalendarPageRow; day: ISODate } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `${API_ROUTES.CALENDAR.BASE}?days=30&zone=${encodeURIComponent(browserTimeZone())}`
-      );
-      const json = (await res.json()) as { data?: CalendarPage };
-      if (!res.ok || !json.data) {
-        throw new Error('calendar not loaded');
-      }
-      setPage(json.data);
-      setFailed(false);
-    } catch (error) {
-      logger.error('calendar load failed', error, 'CalendarPage');
-      setFailed(true);
-    }
-  }, []);
+  const range = rangeFor(mode, anchor, weekWidth);
+  const data = useCalendarData(range.from, range.to);
+  const today = data.page?.today ?? browserToday();
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const title =
+    mode === 'month'
+      ? monthTitle(anchor)
+      : spanTitle(range.from, mode === 'list' ? range.to : range.to);
 
+  /** Write one entry; on success show it, with Undo. */
   async function add(entry: Parsed): Promise<boolean> {
+    const day = entry.day ?? anchor;
     setBusy(true);
     try {
       const res = await fetch(API_ROUTES.CALENDAR.BASE, {
@@ -87,118 +71,181 @@ export function CalendarView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: entry.title,
-          // A day alone is all day; a day and a wall time is that moment in your own clock.
-          start: entry.time ? `${entry.day}T${entry.time}` : entry.day,
+          start: entry.time ? `${day}T${entry.time}` : day,
           minutes: entry.time ? (entry.minutes ?? 60) : null,
           location: entry.place,
           zone: browserTimeZone(),
         }),
       });
-      if (!res.ok) {
+      const json = (await res.json().catch(() => ({}))) as { data?: { id?: string } };
+      if (!res.ok || !json.data?.id) {
         throw new Error('not added');
       }
-      await load();
+      const id = json.data.id;
+      setAnchor(day);
+      await data.reload();
+      const when = `${dayHeading(day, today)}${entry.time ? ` · ${formatTime(entry.time, APP_LOCALE)}` : ''}`;
+      toast.success(CALENDAR_COPY.added(`${entry.title} · ${when}`), {
+        action: {
+          label: CALENDAR_COPY.undo,
+          onClick: () => void remove(id, true),
+        },
+      });
       return true;
     } catch {
-      toast.error(COPY.notAdded);
+      toast.error(CALENDAR_COPY.notAdded);
       return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function remove(entryId: string) {
+  async function remove(entryId: string, quiet = false) {
+    setBusy(true);
     const res = await fetch(API_ROUTES.CALENDAR.BY_ID(entryId), { method: 'DELETE' }).catch(
       () => null
     );
+    setBusy(false);
     if (!res?.ok) {
-      toast.error(COPY.notRemoved);
+      toast.error(CALENDAR_COPY.notRemoved);
       return;
     }
-    await load();
+    setOpened(null);
+    await data.reload();
+    if (!quiet) {
+      toast.success(CALENDAR_COPY.remove);
+    }
   }
 
-  const today = page?.today ?? browserToday();
-  return (
-    <EntityListShell
-      title={COPY.title}
-      description={COPY.description}
-      headerActions={
-        <Link
-          href={ROUTES.DASHBOARD.TASKS}
-          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-default px-4 text-sm text-fg-primary hover:bg-surface-raised"
-        >
-          <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-          {COPY.tasks}
-        </Link>
-      }
-    >
-      <div className="oc-planner mx-auto flex max-w-2xl flex-col gap-8">
-        <QuickAdd kind="calendar" today={today} copy={COPY.quick} busy={busy} onAdd={add} />
+  /** What was said: read it, and add it at once when it says what. */
+  function spoken(words: string) {
+    const entry = parseQuickAdd(words, today);
+    if (!entry.title) {
+      toast.error(CALENDAR_COPY.notHeard, {
+        action: { label: CALENDAR_COPY.add, onClick: () => setAdding({ day: anchor, time: null }) },
+      });
+      return;
+    }
+    void add({ ...entry, day: entry.day ?? anchor });
+  }
 
-        {failed && (
-          <p role="alert" className="mb-0 text-sm text-status-negative">
-            {COPY.failed}
-          </p>
-        )}
-        {!failed && !page && (
-          <div className="space-y-2" aria-hidden="true">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="h-16 animate-pulse rounded-2xl bg-surface-raised" />
-            ))}
-          </div>
-        )}
-        {page && page.byDay.length === 0 && (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <CalendarDays className="h-10 w-10 text-fg-tertiary" aria-hidden="true" />
-            <p className="mb-0 text-lg font-semibold text-fg-primary">{COPY.emptyTitle}</p>
-            <p className="mb-0 max-w-sm text-base text-fg-secondary">{COPY.empty}</p>
-          </div>
-        )}
-        {page?.byDay.map(day => (
-          <section key={day.day} aria-label={dayHeading(day.day, today)}>
-            <h2 className="mb-2 px-1 text-sm font-semibold text-fg-secondary">
-              {dayHeading(day.day, today)}
-            </h2>
-            <ul className="overflow-hidden rounded-2xl border border-default bg-surface-base">
-              {day.rows.map((row, i) => (
-                <li
-                  key={`${row.entryId ?? row.title}-${i}`}
-                  className="flex items-center gap-3 border-b border-subtle px-4 py-3 last:border-b-0"
-                >
-                  <span className="w-20 shrink-0 text-sm tabular-nums text-fg-secondary">
-                    {row.time.split(' to ').map((part, n) => (
-                      <span key={n} className={n === 0 ? 'block text-fg-primary' : 'block'}>
-                        {isWallTime(part) ? formatTime(part, APP_LOCALE) : part}
-                      </span>
-                    ))}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-base text-fg-primary">{row.title}</span>
-                    {(row.location || SOURCE_WORD[row.source]) && (
-                      <span className="block truncate text-sm text-fg-secondary">
-                        {[SOURCE_WORD[row.source], row.location].filter(Boolean).join(' · ')}
-                      </span>
-                    )}
-                  </span>
-                  {row.entryId && (
-                    <button
-                      type="button"
-                      aria-label={COPY.remove(row.title)}
-                      onClick={() => void remove(row.entryId as string)}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
-                    >
-                      <X className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-        {page?.googleNote && <p className="mb-0 text-sm text-fg-secondary">{page.googleNote}</p>}
-        {page?.zone && <p className="mb-0 text-xs text-fg-tertiary">Times in {page.zone}.</p>}
+  const open = (row: CalendarPageRow, day: ISODate) => setOpened({ row, day });
+
+  return (
+    <div className="oc-planner mx-auto flex w-full max-w-6xl flex-col gap-4 pb-28">
+      <div className="flex items-center gap-2">
+        <h1 className="mb-0 mr-auto min-w-0 truncate text-xl font-semibold tracking-display text-fg-primary sm:text-2xl">
+          {title}
+        </h1>
+        <PeriodNav
+          onPrevious={() => setAnchor(a => step(mode, a, -1, weekWidth))}
+          onToday={() => setAnchor(today)}
+          onNext={() => setAnchor(a => step(mode, a, 1, weekWidth))}
+        />
       </div>
-    </EntityListShell>
+      <div className="flex items-center gap-2">
+        <SegmentedControl
+          items={MODES}
+          value={mode}
+          onChange={setMode}
+          label={CALENDAR_COPY.modesLabel}
+          className="flex-1 sm:max-w-sm"
+        />
+        <button
+          type="button"
+          onClick={() => setAdding({ day: anchor, time: null })}
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-fg-primary px-4 text-sm font-medium text-fg-inverted"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {CALENDAR_COPY.add}
+        </button>
+      </div>
+
+      {data.failed && (
+        <p role="alert" className="mb-0 text-sm text-status-negative">
+          {CALENDAR_COPY.failed}
+        </p>
+      )}
+
+      {mode === 'month' && (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="lg:flex-1">
+            <MonthView
+              anchor={anchor}
+              today={today}
+              selected={anchor}
+              byDay={data.byDay}
+              onSelect={setAnchor}
+              onOpen={open}
+            />
+          </div>
+          <div className="lg:w-80">
+            <DayList
+              days={[anchor]}
+              today={today}
+              byDay={data.byDay}
+              onOpen={open}
+              onAdd={day => setAdding({ day, time: null })}
+              showEmpty
+            />
+          </div>
+        </div>
+      )}
+      {mode === 'week' && (
+        <WeekView
+          days={daysFrom(range.from, weekWidth)}
+          today={today}
+          zone={data.page?.zone ?? null}
+          byDay={data.byDay}
+          onOpen={open}
+          onAddAt={(day, time) => setAdding({ day, time })}
+          onSelectDay={day => {
+            setAnchor(day);
+            setMode('month');
+          }}
+        />
+      )}
+      {mode === 'list' &&
+        (data.page && data.page.byDay.length === 0 ? (
+          <p className="mb-0 py-10 text-center text-base text-fg-secondary">
+            {CALENDAR_COPY.emptyList}
+          </p>
+        ) : (
+          <DayList
+            days={daysFrom(range.from, 31)}
+            today={today}
+            byDay={data.byDay}
+            onOpen={open}
+            showEmpty={false}
+          />
+        ))}
+
+      {data.page?.googleNote && (
+        <p className="mb-0 text-sm text-fg-secondary">{data.page.googleNote}</p>
+      )}
+      {data.page?.zone && (
+        <p className="mb-0 text-xs text-fg-tertiary">Times in {data.page.zone}.</p>
+      )}
+
+      <VoiceButton onSpoken={spoken} />
+      <AddSheet
+        open={adding !== null}
+        today={today}
+        day={adding?.day ?? anchor}
+        time={adding?.time ?? null}
+        busy={busy}
+        onClose={() => setAdding(null)}
+        onAdd={add}
+      />
+      <EventSheet
+        open={opened !== null}
+        row={opened?.row ?? null}
+        day={opened?.day ?? null}
+        today={today}
+        busy={busy}
+        onClose={() => setOpened(null)}
+        onRemove={id => void remove(id)}
+      />
+    </div>
   );
 }

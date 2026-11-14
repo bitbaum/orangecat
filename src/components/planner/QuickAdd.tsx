@@ -48,6 +48,9 @@ export function QuickAdd({
   copy,
   busy,
   onAdd,
+  initialDay = null,
+  initialTime = null,
+  autoFocus = false,
 }: {
   /** A calendar entry has a time and a length; a task has at most a day. */
   kind: 'calendar' | 'task';
@@ -56,6 +59,10 @@ export function QuickAdd({
   busy: boolean;
   /** Resolves true when it was added, and the line clears. */
   onAdd: (entry: Parsed) => Promise<boolean>;
+  /** The day and hour tapped to get here, used until the line says otherwise. */
+  initialDay?: ISODate | null;
+  initialTime?: WallTime | null;
+  autoFocus?: boolean;
 }) {
   const [line, setLine] = useState('');
   // What a tap chose. `undefined` follows the line; a tap wins until the line is sent.
@@ -66,8 +73,8 @@ export function QuickAdd({
   const read = useMemo(() => parseQuickAdd(line, today), [line, today]);
   const entry: Parsed = {
     ...read,
-    day: day === undefined ? read.day : day,
-    time: time === undefined ? read.time : time,
+    day: day === undefined ? (read.day ?? initialDay) : day,
+    time: time === undefined ? (read.time ?? initialTime) : time,
     minutes: minutes ?? read.minutes,
   };
   const ready = entry.title.length > 0 && !busy;
@@ -113,6 +120,7 @@ export function QuickAdd({
         maxLength={240}
         voice={CHAT_VOICE}
         onSubmit={() => void add()}
+        autoFocus={autoFocus}
         inputProps={{ enterKeyHint: 'done', autoComplete: 'off' }}
       />
       <DayStrip

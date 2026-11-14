@@ -21,6 +21,7 @@
  * (TurnFailure).
  */
 
+import { browserTimeZone } from '@/utils/timezone';
 import { useCallback, useRef } from 'react';
 import type { Attachment } from '@bitbaum/chatkit';
 import {
@@ -254,6 +255,8 @@ export function useCatTransport({
       const conversationId = await threadFor(turn);
       const context = {
         preferredCurrency: now.preferredCurrency,
+        // "Monday at 9" means nine where the person is.
+        timeZone: browserTimeZone(),
         locale: readLocale(),
         lastVisitedPath: readLastVisitedPath(),
         currentPath: now.pageContext?.path,

@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Your calendar (components/planner/CalendarView): one line to add
- * something, and your coming days underneath.
+ * Your calendar (components/planner/CalendarView): a month, a week or a
+ * list, and a microphone to add to it.
  */
 
 import Loading from '@/components/Loading';
@@ -14,5 +14,9 @@ export default function CalendarPage() {
   if (isLoading || !user) {
     return <Loading fullScreen message="Loading your calendar..." />;
   }
-  return <CalendarView />;
+  return (
+    <div className="px-4 py-6 sm:px-6 lg:px-8">
+      <CalendarView />
+    </div>
+  );
 }
