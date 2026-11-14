@@ -56,6 +56,6 @@ export async function POST(request: NextRequest) {
     return apiSuccess({ invoice: result.invoice });
   } catch (error) {
     logger.error('tips/invoice failed', error, 'TipsAPI');
-    return apiInternalError('Could not create a tip request.');
+    return apiInternalError('Could not create a payment request.');
   }
 }

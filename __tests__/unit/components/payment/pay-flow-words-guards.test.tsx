@@ -73,7 +73,8 @@ describe('the generate button names the action, not the code', () => {
 
   it('says "another wallet" only beside "pay from my wallet"', () => {
     renderFlow(0.0001, TIP_COPY);
-    expect(screen.getByRole('button', { name: TIP_COPY.generate })).toBeEnabled();
+    // The one action is the verb and the figure, as on /pay.
+    expect(screen.getByRole('button', { name: TIP_COPY.payAmount('CHF 10.00') })).toBeEnabled();
     expect(screen.queryByRole('button', { name: TIP_COPY.generateOther })).toBeNull();
   });
 
@@ -99,10 +100,10 @@ describe('an amount the field calls out of range cannot be sent', () => {
 
   it('the single action too, and it comes back once the amount is fixed', () => {
     renderFlow(TIP_MAX_BTC * 2, TIP_COPY);
-    expect(screen.getByRole('button', { name: TIP_COPY.generate })).toBeDisabled();
+    expect(screen.getByRole('button', { name: TIP_COPY.enterAmount })).toBeDisabled();
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '20' } });
-    expect(screen.getByRole('button', { name: TIP_COPY.generate })).toBeEnabled();
+    expect(screen.getByRole('button', { name: TIP_COPY.payAmount('CHF 20.00') })).toBeEnabled();
   });
 });
 

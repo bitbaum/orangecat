@@ -1,9 +1,11 @@
 'use client';
 
-import { Bitcoin, CheckCircle2 } from 'lucide-react';
+import { Bitcoin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { AmountField } from '@/components/money/AmountField';
+import { MoneyReceipt } from '@/components/money/MoneyReceipt';
+import { PAYMENT_FLOW_COPY, receiptNote, type PaymentAct } from '@/config/payment-flow';
 import { PUBLIC_API_BASE } from '@/config/public-api';
 import {
   CONTRIBUTION_TERMS,
@@ -63,7 +65,8 @@ export function supportCardWords(
     return {
       ...lines,
       title: 'Support with Bitcoin',
-      confirmed: 'Support confirmed',
+      act: 'support' as PaymentAct,
+      receiptFootnote: null as string | null,
       noun: 'contribution',
     };
   }
@@ -72,7 +75,10 @@ export function supportCardWords(
     title: `${terms.verb} with Bitcoin`,
     intro: `You ${terms.verb.toLowerCase()} on the terms on this page and pay ${payee} directly; no account is required.`,
     custody: `${lines.custody} Without an account OrangeCat does not record who paid, so keep your payment confirmation.`,
-    confirmed: 'Payment confirmed',
+    act: 'invest' as PaymentAct,
+    // The receipt repeats what the card said before the money moved.
+    receiptFootnote:
+      'Keep your payment confirmation. Without an account OrangeCat does not record who paid.',
     noun: terms.noun,
   };
 }
@@ -99,6 +105,9 @@ export function PublicSupportPanel({
   ]
     .filter(Boolean)
     .join(' · ');
+
+  const amountReady =
+    Number.isFinite(amountBtc) && amountBtc >= range.minBtc && amountBtc <= range.maxBtc;
 
   const createIntent = () =>
     payment.start(() =>
@@ -144,16 +153,10 @@ export function PublicSupportPanel({
                   maxBtc={range.maxBtc}
                   label="How much"
                 />
-                <Button
-                  onClick={createIntent}
-                  disabled={
-                    !Number.isFinite(amountBtc) ||
-                    amountBtc < range.minBtc ||
-                    amountBtc > range.maxBtc
-                  }
-                  className="w-full min-h-11"
-                >
-                  Create Bitcoin request
+                <Button onClick={createIntent} disabled={!amountReady} className="w-full">
+                  {amountReady
+                    ? PAYMENT_FLOW_COPY.action(words.act, formatAmountBtc(amountBtc))
+                    : PAYMENT_FLOW_COPY.enterAmount}
                 </Button>
               </>
             )}
@@ -163,17 +166,17 @@ export function PublicSupportPanel({
 
         <PublicPaymentProgress
           payment={payment}
-          confirmationNote="The recipient must confirm this Lightning Address payment before it appears in the public funding total."
+          confirmationNote="They confirm this Lightning Address payment by hand before it counts in the public funding total. You do not need to pay again."
         />
 
-        {payment.phase === 'paid' && (
-          <div className="flex flex-col items-center gap-3 py-8 text-center">
-            <CheckCircle2 className="h-10 w-10 text-status-positive" />
-            <p className="font-semibold text-fg-primary">{words.confirmed}</p>
-            <p className="text-sm text-fg-secondary">
-              This {words.noun} can now be included in the public Bitcoin funding record.
-            </p>
-          </div>
+        {payment.phase === 'paid' && payment.intent && (
+          <MoneyReceipt
+            title={PAYMENT_FLOW_COPY.paidTitle}
+            amountBtc={payment.intent.payment_intent.amount_btc}
+            counterparty={recipientName?.trim() || null}
+            note={receiptNote(entityTitle, recipientName)}
+            footnote={words.receiptFootnote}
+          />
         )}
       </CardContent>
     </Card>

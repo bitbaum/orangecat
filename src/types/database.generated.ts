@@ -3369,7 +3369,8 @@ export type Database = {
       orders: {
         Row: {
           amount_btc: number;
-          buyer_id: string;
+          booking_id: string | null;
+          buyer_id: string | null;
           buyer_note: string | null;
           created_at: string | null;
           entity_id: string;
@@ -3387,7 +3388,8 @@ export type Database = {
         };
         Insert: {
           amount_btc: number;
-          buyer_id: string;
+          booking_id?: string | null;
+          buyer_id?: string | null;
           buyer_note?: string | null;
           created_at?: string | null;
           entity_id: string;
@@ -3405,7 +3407,8 @@ export type Database = {
         };
         Update: {
           amount_btc?: number;
-          buyer_id?: string;
+          booking_id?: string | null;
+          buyer_id?: string | null;
           buyer_note?: string | null;
           created_at?: string | null;
           entity_id?: string;

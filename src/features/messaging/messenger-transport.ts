@@ -31,6 +31,7 @@ import { apiErrorMessage } from '@/lib/api/errorMessage';
 import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { namedBots } from './lib/named-bots';
+import { newMessageSuggestions, recentPeople } from './lib/new-suggestions';
 import {
   toMessengerAttachment,
   toMessengerConversation,
@@ -51,6 +52,8 @@ export interface MessengerTransportOptions {
   /** A conversation as the server just described it: who is in it, and what
    *  a bot there charges the viewer. The screen says the price from this. */
   onConversation?: (conversation: Conversation) => void;
+  /** The Cat's account, once known: offered first in "New", as an agent. */
+  cat?: () => MessengerPerson | null;
 }
 
 const PAGE = 50;
@@ -163,6 +166,24 @@ async function publicBots(query: string, signal?: AbortSignal): Promise<Messenge
   return bots.map(asPerson);
 }
 
+/** The people the viewer follows, newest follow first. */
+async function followedPeople(userId: string, signal?: AbortSignal): Promise<PickerPerson[]> {
+  const response = await fetch(`${API_ROUTES.SOCIAL.FOLLOWING(userId)}?limit=20`, {
+    credentials: 'same-origin',
+    signal,
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const payload = (await response.json()) as {
+    data?: { data?: Array<{ profile?: PickerPerson | PickerPerson[] | null }> };
+  };
+  return (payload.data?.data ?? []).flatMap(row => {
+    const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
+    return profile?.id ? [profile] : [];
+  });
+}
+
 export function createMessengerTransport(options: MessengerTransportOptions): MessengerTransport {
   const { userId } = options;
   const listeners = new Set<(event: MessengerEvent) => void>();
@@ -172,20 +193,24 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
   // The bots of each conversation (ADR-0015), so the thread can say a bot is
   // writing from the moment it is owed an answer: always when it is the only
   // other member, and when it is named where there are more voices. The Cat
-  // is left out: it has its own "is thinking".
+  // is one of them only when it is the only other member: tagged in company
+  // it has its own "is thinking".
   const botsOf = new Map<string, { direct: boolean; bots: Array<{ id: string; name: string }> }>();
   const learn = (conversation: Conversation) => {
     options.onConversation?.(conversation);
     const others = (conversation.participants ?? []).filter(
       p => p.user_id !== userId && p.is_active !== false
     );
+    const direct = others.length === 1;
     const bots = others
-      .filter(p => p.is_agent && p.username !== CAT_USERNAME)
+      // Alone with the Cat every message is for it, as with a bot. In company
+      // it answers when it is tagged, and the package shows it thinking.
+      .filter(p => p.is_agent && (direct || p.username !== CAT_USERNAME))
       .map(p => ({ id: p.user_id, name: p.name || p.username }));
     if (bots.length === 0) {
       botsOf.delete(conversation.id);
     } else {
-      botsOf.set(conversation.id, { direct: others.length === 1, bots });
+      botsOf.set(conversation.id, { direct, bots });
     }
   };
   /** The bots a message is owed an answer from: the server's own rule. */
@@ -442,12 +467,19 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
         data?: PickerPerson[] | { data?: PickerPerson[] };
       };
       const found = Array.isArray(payload.data) ? payload.data : (payload.data?.data ?? []);
-      const people = rankPeopleForPicker(found, { searching: true, selfId: userId }).map(p => ({
-        id: p.id,
-        name: p.name?.trim() || p.username || 'Someone',
-        handle: p.username ?? undefined,
-        avatarUrl: p.avatar_url ?? null,
-      }));
+      const cat = options.cat?.() ?? null;
+      const people = rankPeopleForPicker(found, { searching: true, selfId: userId }).map(p =>
+        // The Cat is found like anyone, and shown as what it is: an agent,
+        // with its own face.
+        p.id === cat?.id
+          ? cat
+          : {
+              id: p.id,
+              name: p.name?.trim() || p.username || 'Someone',
+              handle: p.username ?? undefined,
+              avatarUrl: p.avatar_url ?? null,
+            }
+      );
       // The viewer's own bots, beside the people: a bot is written to the
       // way a person is (ADR-0015). A list of bots that cannot be read is not
       // a reason to find nobody.
@@ -461,9 +493,26 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
       return [...own, ...people, ...shared.filter(bot => !mine.has(bot.id))];
     },
 
-    /** Before anything is typed: the viewer's own bots. */
+    /**
+     * Before anything is typed: the Cat, the viewer's own bots, the people
+     * they wrote with last, then the people they follow. A list that cannot
+     * be read is left out; it is never a reason to offer nobody.
+     */
     async suggestions({ signal }) {
-      return ownBots(userId, '', signal);
+      const cat = options.cat?.() ?? null;
+      const [bots, recent, followed] = await Promise.all([
+        ownBots(userId, '', signal).catch(() => []),
+        api<{ conversations: Conversation[] }>(`${API_ROUTES.MESSAGES.BASE}?limit=100`, { signal })
+          .then(data => recentPeople(data.conversations ?? [], userId))
+          .catch(() => []),
+        followedPeople(userId, signal).catch(() => []),
+      ]);
+      return newMessageSuggestions({
+        viewerId: userId,
+        agents: cat ? [cat, ...bots] : bots,
+        recent,
+        followed,
+      });
     },
 
     async open(personIds) {

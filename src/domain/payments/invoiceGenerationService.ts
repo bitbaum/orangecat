@@ -257,6 +257,19 @@ async function generateLightningAddressInvoice(
 }
 
 /**
+ * BIP21 format: bitcoin:<address>?amount=<btc>&label=<description>. Exported so
+ * an open on-chain request can be shown again exactly as it was minted.
+ */
+export function onchainPaymentUri(address: string, amountBtc: number, description: string): string {
+  const params = new URLSearchParams();
+  params.set('amount', amountBtc.toFixed(8));
+  if (description) {
+    params.set('label', description);
+  }
+  return `bitcoin:${address}?${params.toString()}`;
+}
+
+/**
  * On-chain: Generate BIP21 URI for QR code
  */
 async function generateOnchainInvoice(
@@ -264,14 +277,7 @@ async function generateOnchainInvoice(
   amountBtc: number,
   description: string
 ): Promise<RailInvoice> {
-  // BIP21 format: bitcoin:<address>?amount=<btc>&label=<description>
-  const params = new URLSearchParams();
-  params.set('amount', amountBtc.toFixed(8));
-  if (description) {
-    params.set('label', description);
-  }
-
-  const bip21Uri = `bitcoin:${address}?${params.toString()}`;
+  const bip21Uri = onchainPaymentUri(address, amountBtc, description);
 
   return {
     bolt11: null,

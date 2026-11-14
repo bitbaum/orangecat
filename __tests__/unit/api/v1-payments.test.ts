@@ -122,6 +122,29 @@ describe('POST /api/v1/payments', () => {
     });
   });
 
+  it('a person’s session cannot buy a service outright: it is booked first', async () => {
+    mockResolveRequestAuth.mockResolvedValue({
+      ...keyAuth(['payments.write']),
+      source: 'session',
+      integrationKeyId: undefined,
+    });
+
+    const res = await POST(makeRequest({ entity_type: 'service', entity_id: ENTITY_ID }));
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.message).toMatch(/booked first/);
+    expect(mockInitiatePayment).not.toHaveBeenCalled();
+  });
+
+  it('a key still can: Loki pays a builder booked on its own side that way', async () => {
+    mockResolveRequestAuth.mockResolvedValue(keyAuth(['payments.write']));
+
+    const res = await POST(makeRequest({ entity_type: 'service', entity_id: ENTITY_ID }));
+
+    expect(res.status).toBe(201);
+    expect(mockInitiatePayment).toHaveBeenCalled();
+  });
+
   it('returns 401 without auth', async () => {
     mockResolveRequestAuth.mockResolvedValue(null);
 
