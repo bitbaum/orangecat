@@ -9,9 +9,10 @@
  * that cannot happen leaves the turn to the model.
  */
 
-import { todayIn } from '@bitbaum/whenkit';
+import { dayLabel, formatTime, todayIn } from '@bitbaum/whenkit';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { CatPermissionService } from '@/services/cat/permission-service';
+import { APP_LOCALE } from '@/utils/locale';
 import { logger } from '@/utils/logger';
 import { addCalendarEntry, whenText } from './calendar';
 import { calendarWriteIntent, entryParams } from './calendar-intent';
@@ -22,6 +23,8 @@ export interface ChatWrite {
   block: string;
   /** What was written, for the check that the answer says only what happened. */
   evidence: string[];
+  /** The sentence for the person when no model answers: what was done, in plain words. */
+  reply: string;
 }
 
 export async function writeCalendarFromChat(
@@ -33,7 +36,8 @@ export async function writeCalendarFromChat(
 ): Promise<ChatWrite | null> {
   try {
     const zone = await plannerZone(supabase, userId, offeredZone);
-    const entry = calendarWriteIntent(message, todayIn(zone ?? 'UTC', now));
+    const today = todayIn(zone ?? 'UTC', now);
+    const entry = calendarWriteIntent(message, today);
     if (!entry) {
       return null;
     }
@@ -46,6 +50,14 @@ export async function writeCalendarFromChat(
       zone,
     });
     const row = added.data as { starts_at?: string; id?: string } | undefined;
+    // The day and time as the person said them, in their own words' zone.
+    const day = dayLabel(entry.day ?? today, { locale: APP_LOCALE, today });
+    const when = `${day.relative ? `${day.relative.toLowerCase()}, ` : ''}${day.long}${
+      entry.time ? ` at ${formatTime(entry.time, APP_LOCALE)}` : ''
+    }${entry.place ? `, ${entry.place}` : ''}`;
+    const reply = added.success
+      ? `Added to your calendar: ${entry.title}, ${when}.`
+      : `I could not add that to your calendar: ${added.error ?? 'no reason given'}.`;
     const said = added.success
       ? `Added to their calendar just now: "${entry.title}" on ${whenText(
           row?.starts_at ?? '',
@@ -63,7 +75,8 @@ export async function writeCalendarFromChat(
           ? 'Confirm it in one short sentence with the day and time as written above. Do not call calendar_add for it again. If the day or time looks wrong to you, say so and offer to change it.'
           : 'Say so in one plain sentence; nothing was added.',
       ].join('\n\n'),
-      evidence: [said],
+      evidence: [said, reply],
+      reply,
     };
   } catch (error) {
     logger.warn('calendar write from chat failed', { error }, 'PlannerChatWrite');
