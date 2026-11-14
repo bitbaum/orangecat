@@ -15,7 +15,8 @@
  * different dimension, a new migration must recreate the column + index.
  */
 
-import { reservePlatformCall } from '@/services/ai/vendor-spend-cap';
+import { recordModelCall, vendorOfEndpoint } from '@/services/ai/usage-events';
+import { reservePlatformCall, VendorCapReached } from '@/services/ai/vendor-spend-cap';
 import { logger } from '@/utils/logger';
 
 const EMBEDDINGS_DIM = 1536;
@@ -63,17 +64,40 @@ export async function embedTexts(inputs: string[]): Promise<(number[] | null)[]>
   // OpenAI rejects empty strings; send a single space placeholder, map back to null.
   const payloadInput = cleaned.map(t => (t.length > 0 ? t : ' '));
 
+  // A server on this machine is not a vendor and is not in the usage log.
+  const remote = !isLoopback(baseUrl());
+  const call = { provider: vendorOfEndpoint(baseUrl()), model: model(), byok: false };
+  const started = Date.now();
   try {
     // A paid host is counted against its daily cap first; a self-hosted
     // server on this machine costs nothing and is not (vendor-spend-cap).
-    if (!isLoopback(baseUrl())) {
-      await reservePlatformCall(key);
+    if (remote) {
+      try {
+        await reservePlatformCall(key);
+      } catch (error) {
+        if (error instanceof VendorCapReached) {
+          recordModelCall({ ...call, outcome: 'refused', reason: 'vendor-cap' });
+        }
+        throw error;
+      }
     }
     const res = await fetch(`${baseUrl()}/embeddings`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: model(), input: payloadInput }),
+    }).catch((error: unknown) => {
+      if (remote) {
+        recordModelCall({ ...call, outcome: 'failed' });
+      }
+      throw error;
     });
+    if (remote) {
+      recordModelCall(
+        res.ok
+          ? { ...call, outcome: 'served', ms: Date.now() - started }
+          : { ...call, outcome: 'failed', status: res.status }
+      );
+    }
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       logger.warn(
