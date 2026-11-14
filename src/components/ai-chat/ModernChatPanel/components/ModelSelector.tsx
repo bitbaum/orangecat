@@ -93,6 +93,9 @@ export function ModelSelector({
       source: 'free' as const,
     }));
   const locked = access?.locked ?? [];
+  // Someone already answering on their own key is not shown a wall of other
+  // vendors' models under "Connect your own key to unlock": they did.
+  const showLocked = locked.length > 0 && !access?.autoOn;
   const allowsCustom = access?.allowsCustomModel ?? false;
 
   const grouped = SOURCE_ORDER.map(source => ({
@@ -309,7 +312,7 @@ export function ModelSelector({
             </>
           )}
 
-          {locked.length > 0 && (
+          {showLocked && (
             <>
               <div className="h-px bg-border-subtle my-1" />
               <div className="px-3 py-1.5 text-xs font-medium text-fg-secondary uppercase">
@@ -386,7 +389,7 @@ export function ModelSelector({
                 last row of a `max-h-80` scroller under five locked models, so
                 on a phone the one action that changes anything was below the
                 fold of a menu most of whose rows did nothing. */}
-        {locked.length > 0 && (
+        {showLocked && (
           <Link
             href={ROUTES.SETTINGS_AI}
             role="menuitem"

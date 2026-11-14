@@ -10,7 +10,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { noteCatMention } from '@/services/mentions/note-mention';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { CAT_DISPLAY_NAME, CAT_USERNAME } from '@/config/cat-identity';
+import { CAT_DISPLAY_NAME, CAT_USERNAME, isCatUsername } from '@/config/cat-identity';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/types/database';
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/features/messaging/service.server';
 import type { Message, Pagination } from './types';
 import { attachmentSummary } from '@bitbaum/chatkit';
+import { seatPricesFor, seatsOfAccounts } from './server/bot-seats';
 import {
   PAYMENT_REQUEST_KEY,
   REPLY_KEY,
@@ -70,6 +71,10 @@ export interface ConversationContext {
     joined_at: string;
     last_read_at: string | null;
     is_active: boolean;
+    /** The Cat or a bot's seat: drawn as an agent, never as a person. */
+    is_agent: boolean;
+    /** What a bot that is not the viewer's charges them per message, in BTC. */
+    agent_price_btc?: number;
   }>;
   unreadCount: number;
 }
@@ -97,7 +102,16 @@ export async function fetchConversationContext(
     return null;
   }
 
-  const formattedParticipants = ((participantsResult.data || []) as ParticipantRow[]).map(p => ({
+  const rows = (participantsResult.data || []) as ParticipantRow[];
+  // The page of a thread carries its conversation, and the screen redraws
+  // from it: without the agent flag here, a bot was drawn as an agent in the
+  // list and as a person once its messages had loaded.
+  const seats = await seatsOfAccounts(
+    admin,
+    rows.map(p => p.user_id)
+  );
+  const prices = await seatPricesFor(admin, userId, seats);
+  const formattedParticipants = rows.map(p => ({
     user_id: p.user_id,
     username: p.profiles?.username || '',
     name: p.profiles?.name || '',
@@ -106,6 +120,8 @@ export async function fetchConversationContext(
     joined_at: p.joined_at,
     last_read_at: p.last_read_at,
     is_active: p.is_active,
+    is_agent: isCatUsername(p.profiles?.username) || seats.has(p.user_id),
+    ...(prices.has(p.user_id) ? { agent_price_btc: prices.get(p.user_id) } : {}),
   }));
 
   const userParticipant = formattedParticipants.find(p => p.user_id === userId);

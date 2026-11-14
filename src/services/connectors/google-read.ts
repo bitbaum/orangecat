@@ -191,12 +191,12 @@ export function calendarText(events: readonly CalendarEvent[], days: number): st
   ].join('\n');
 }
 
-/** The primary calendar from now, a number of days ahead. Never throws. */
-export async function readCalendar(
+/** The primary calendar's events from now, a number of days ahead. Never throws. */
+export async function listCalendarEvents(
   token: string,
   params: Record<string, unknown>,
   now: Date = new Date()
-): Promise<Read> {
+): Promise<{ ok: true; days: number; events: CalendarEvent[] } | { ok: false; error: string }> {
   const days = calendarDays(params.days);
   const query = typeof params.query === 'string' ? params.query.trim().slice(0, 200) : '';
   const url = new URL(CALENDAR);
@@ -210,6 +210,18 @@ export async function readCalendar(
   }
   const answer = await googleGet<{ items?: CalendarEvent[] }>(token, url.toString());
   return answer.ok
-    ? { ok: true, text: calendarText(answer.data.items ?? [], days) }
+    ? { ok: true, days, events: (answer.data.items ?? []).filter(e => e.status !== 'cancelled') }
     : { ok: false, error: refusal(answer, 'calendar') };
+}
+
+/** The same read, as words. Never throws. */
+export async function readCalendar(
+  token: string,
+  params: Record<string, unknown>,
+  now: Date = new Date()
+): Promise<Read> {
+  const listed = await listCalendarEvents(token, params, now);
+  return listed.ok
+    ? { ok: true, text: calendarText(listed.events, listed.days) }
+    : { ok: false, error: listed.error };
 }

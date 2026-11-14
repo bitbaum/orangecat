@@ -48,6 +48,9 @@ export interface MessengerTransportOptions {
   senderActorId?: () => string | null;
   /** Something about what is unread may have changed (the nav's badge). */
   onUnreadMayHaveChanged?: () => void;
+  /** A conversation as the server just described it: who is in it, and what
+   *  a bot there charges the viewer. The screen says the price from this. */
+  onConversation?: (conversation: Conversation) => void;
 }
 
 const PAGE = 50;
@@ -122,31 +125,42 @@ export function paymentRequestIdOfCard(card: MessengerCard | undefined): string 
   return typeof id === 'string' && id ? id : undefined;
 }
 
-/** The viewer's own companions whose name matches what was typed. */
+type BotRow = { id: string; title?: string | null; avatar_url?: string | null };
+
+async function listBots(query: string, signal?: AbortSignal): Promise<BotRow[]> {
+  const response = await fetch(`${API_ROUTES.AI_ASSISTANTS.BASE}?${query}`, {
+    credentials: 'same-origin',
+    signal,
+  });
+  if (!response.ok) {
+    return [];
+  }
+  const payload = (await response.json()) as { data?: BotRow[] };
+  return Array.isArray(payload.data) ? payload.data : [];
+}
+
+const asPerson = (bot: BotRow): MessengerPerson => ({
+  id: `${BOT_PERSON_PREFIX}${bot.id}`,
+  name: bot.title?.trim() || 'Bot',
+  avatarUrl: bot.avatar_url ?? null,
+  kind: 'agent' as const,
+});
+
+/** The viewer's own bots: all of them, or those whose name matches. */
 async function ownBots(
   userId: string,
   query: string,
   signal?: AbortSignal
 ): Promise<MessengerPerson[]> {
-  const response = await fetch(
-    `${API_ROUTES.AI_ASSISTANTS.BASE}?limit=50&user_id=${encodeURIComponent(userId)}`,
-    { credentials: 'same-origin', signal }
-  );
-  if (!response.ok) {
-    return [];
-  }
-  const payload = (await response.json()) as {
-    data?: Array<{ id: string; title?: string | null; avatar_url?: string | null }>;
-  };
   const asked = query.trim().toLowerCase();
-  return (Array.isArray(payload.data) ? payload.data : [])
-    .filter(bot => (bot.title ?? '').toLowerCase().includes(asked))
-    .map(bot => ({
-      id: `${BOT_PERSON_PREFIX}${bot.id}`,
-      name: bot.title?.trim() || 'Bot',
-      avatarUrl: bot.avatar_url ?? null,
-      kind: 'agent' as const,
-    }));
+  const bots = await listBots(`limit=50&user_id=${encodeURIComponent(userId)}`, signal);
+  return bots.filter(bot => (bot.title ?? '').toLowerCase().includes(asked)).map(asPerson);
+}
+
+/** Other people's public bots that match what was typed (ADR-0015, 5). */
+async function publicBots(query: string, signal?: AbortSignal): Promise<MessengerPerson[]> {
+  const bots = await listBots(`limit=10&q=${encodeURIComponent(query.trim())}`, signal);
+  return bots.map(asPerson);
 }
 
 export function createMessengerTransport(options: MessengerTransportOptions): MessengerTransport {
@@ -161,6 +175,7 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
   // is left out: it has its own "is thinking".
   const botsOf = new Map<string, { direct: boolean; bots: Array<{ id: string; name: string }> }>();
   const learn = (conversation: Conversation) => {
+    options.onConversation?.(conversation);
     const others = (conversation.participants ?? []).filter(
       p => p.user_id !== userId && p.is_active !== false
     );
@@ -428,8 +443,19 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
       // The viewer's own bots, beside the people: a bot is written to the
       // way a person is (ADR-0015). A list of bots that cannot be read is not
       // a reason to find nobody.
-      const bots = await ownBots(userId, query, signal).catch(() => []);
-      return [...bots, ...people];
+      const [own, shared] = await Promise.all([
+        ownBots(userId, query, signal).catch(() => []),
+        publicBots(query, signal).catch(() => []),
+      ]);
+      // The viewer's own bots first, then the people, then other people's
+      // public bots; a bot that is in both lists is the viewer's own.
+      const mine = new Set(own.map(bot => bot.id));
+      return [...own, ...people, ...shared.filter(bot => !mine.has(bot.id))];
+    },
+
+    /** Before anything is typed: the viewer's own bots. */
+    async suggestions({ signal }) {
+      return ownBots(userId, '', signal);
     },
 
     async open(personIds) {

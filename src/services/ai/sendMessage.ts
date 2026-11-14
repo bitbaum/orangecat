@@ -27,6 +27,7 @@ import {
 import type { SendMessageResult, SendMessageError } from './sendMessage-types';
 import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
 import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
+import { preReadForTurn } from '@/services/connectors/pre-read';
 import { adoptJob, isJobAnswer } from '@/services/companions/born';
 import {
   proposalFromMetadata,
@@ -197,12 +198,21 @@ export async function sendAiMessage(
     // The owner's own rules and time zone, for the owner's own bot only.
     isOwner ? getBotSettings(supabase, userId) : Promise.resolve(null),
   ]);
+  // A plain ask about the owner's calendar or mail is read in code before the
+  // bot answers, where that hand is one this bot is offered (the account is
+  // connected and the owner did not switch it off).
+  const offered = new Set(hands?.allowed.map(h => h.action.id) ?? []);
+  const readNow =
+    isOwner && offered.size > 0
+      ? (await preReadForTurn(supabase, userId, content, { allowed: id => offered.has(id) }))?.block
+      : undefined;
   timer.mark('context');
   const systemPrompt = buildCompanionSystemPrompt({
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
     hands: hands?.section,
     rules: botSettings ? rulesSection(botSettings) : undefined,
+    readNow,
   });
   // The same prompt for a model that is given the hands as functions; which
   // one a turn uses is the model's profile (sendMessage-internals.ts).
@@ -215,6 +225,7 @@ export async function sendAiMessage(
             memories: recalled.map(m => m.content),
             hands: hands.nativeSection,
             rules: botSettings ? rulesSection(botSettings) : undefined,
+            readNow,
           }) ?? null,
       }
     : undefined;
@@ -316,7 +327,7 @@ export async function sendAiMessage(
       }
       // It has run: whatever happens next, it is never queued again.
       step = null;
-      const ran = await runAutoStep(supabase, userId, actorId, convId, ranStep);
+      const ran = await runAutoStep(supabase, userId, actorId, convId, ranStep, assistantId);
       const resultMessage = stepResultMessage(ranStep.action, ran.text);
       const next = await generateReply({
         hasByok,

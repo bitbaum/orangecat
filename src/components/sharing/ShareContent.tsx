@@ -1,14 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Share2, Copy, Check, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { GRADIENTS } from '@/config/gradients';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { SHARE_PLATFORMS, type SharePlatform } from './sharePlatforms';
-
-export { SHARE_PLATFORMS, type SharePlatform } from './sharePlatforms';
+import { ShareRow } from './ShareRow';
 
 export interface ShareContentProps {
   title: string;
@@ -21,14 +16,13 @@ export interface ShareContentProps {
 }
 
 /**
- * Reusable ShareContent Component
+ * The share panel for a profile, a project or any entity: a heading, a close
+ * button and the same `ShareRow` a wall post and an article use — one shared
+ * experience everywhere, from `@bitbaum/bip-kit`.
  *
- * DRY, modular sharing UI that works for profiles, projects, and any shareable content.
- * Best practices:
- * - Single source of truth for share platforms
- * - Consistent UX across all sharing contexts
- * - Mobile-first with native share API support
- * - Accessible and responsive
+ * On a phone with a close handler it is a dialog; DialogContent is then the
+ * one frame and owns the one close button. Elsewhere it is a framed panel
+ * (a dropdown under its button) with its own close button.
  */
 export default function ShareContent({
   title,
@@ -39,176 +33,45 @@ export default function ShareContent({
   showTitle = true,
   titleText = 'Share',
 }: ShareContentProps) {
-  const [copySuccess, setCopySuccess] = useState(false);
   const isMobile = useMediaQuery('(max-width: 639px)');
-
-  // Handle native share (mobile)
-  const handleNativeShare = async () => {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text: description,
-          url,
-        });
-        if (onClose) {
-          onClose();
-        }
-      } catch (error) {
-        // User cancelled or error occurred
-        if ((error as Error).name !== 'AbortError') {
-          toast.error('Failed to share');
-        }
-      }
-    }
-  };
-
-  // Handle platform-specific sharing
-  const handlePlatformShare = (platform: SharePlatform) => {
-    platform.action(url, title, description);
-    if (onClose) {
-      onClose();
-    }
-  };
-
-  // Handle copy to clipboard
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopySuccess(true);
-      toast.success('URL copied to clipboard!');
-      setTimeout(() => {
-        setCopySuccess(false);
-        if (onClose) {
-          onClose();
-        }
-      }, 2000);
-    } catch {
-      toast.error('Failed to copy URL');
-    }
-  };
-
-  // Check if native share is available
-  const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
-
-  // Modern share UI - Modal on mobile, dropdown on desktop
-  // In the phone dialog, DialogContent is the one frame and owns the one close
-  // button; the card drawing its own border, shadow and X inside it made two.
   const inDialog = isMobile && !!onClose;
-  const shareContent = (
-    <div
-      className={
-        inDialog
-          ? `w-full ${className}`
-          : `bg-surface-base rounded-lg shadow-sm border border-default dark:border-default/50 backdrop-blur-xl p-5 sm:p-6 w-full max-w-md mx-auto ${className}`
-      }
-      style={
-        inDialog
-          ? undefined
-          : {
-              boxShadow:
-                '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            }
-      }
-      onClick={e => e.stopPropagation()}
-    >
-      {showTitle && (
-        <div
-          className={`flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b border-subtle ${inDialog ? 'pr-12' : ''}`}
-        >
-          <h3 className="font-semibold text-fg-primary flex items-center gap-2 text-lg">
-            <div
-              className={`w-8 h-8 rounded-full ${GRADIENTS.brandOrange} flex items-center justify-center`}
-            >
-              <Share2 className="w-4 h-4" />
-            </div>
-            {titleText}
-          </h3>
-          {onClose && !inDialog && (
-            <button
-              onClick={onClose}
-              className="text-fg-tertiary hover:text-fg-primary transition-colors p-2 hover:bg-surface-raised rounded-full touch-manipulation min-h-11 min-w-11 flex items-center justify-center"
-              aria-label="Close share menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-      )}
 
-      {/* Native Share (Mobile) - Show as primary option if available */}
-      {hasNativeShare && (
-        <button
-          onClick={handleNativeShare}
-          className={`w-full mb-5 flex items-center justify-center gap-3 p-4 rounded-lg ${GRADIENTS.btnOrange} font-semibold transition-all touch-manipulation active:scale-95 shadow-sm`}
-        >
-          <Share2 className="w-5 h-5" />
-          <span>Share via...</span>
-        </button>
-      )}
-
-      {/* Social Platforms - Modern grid with icons */}
-      <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-5">
-        {SHARE_PLATFORMS.map(platform => {
-          const Icon = platform.icon;
-          return (
-            <button
-              key={platform.name}
-              onClick={() => handlePlatformShare(platform)}
-              className={`group flex flex-col items-center gap-2 p-3 sm:p-4 rounded-lg transition-all touch-manipulation active:scale-95 ${platform.bgColor} hover:shadow-sm`}
-              aria-label={`Share on ${platform.name}`}
-            >
-              <div
-                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${platform.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform`}
-              >
-                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${platform.color}`} />
-              </div>
-              <span className="text-xs sm:text-sm font-medium text-fg-primary group-hover:text-fg-primary dark:group-hover:text-fg-primary">
-                {platform.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Copy URL - Prominent action */}
-      <button
-        onClick={handleCopy}
-        className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg transition-all touch-manipulation active:scale-95 font-semibold ${
-          copySuccess
-            ? 'bg-status-positive-subtle hover:bg-status-positive-subtle/80 text-status-positive border-2 border-status-positive/20'
-            : 'bg-surface-raised hover:bg-surface-raised/80 text-fg-primary border-2 border-default'
-        }`}
-        aria-label="Copy URL to clipboard"
-      >
-        {copySuccess ? (
-          <>
-            <Check className="w-5 h-5" />
-            <span>Copied to clipboard!</span>
-          </>
-        ) : (
-          <>
-            <Copy className="w-5 h-5" />
-            <span>Copy link</span>
-          </>
-        )}
-      </button>
-    </div>
+  const row = (
+    <ShareRow url={url} title={title} summary={description} labels={{ landmark: titleText }} />
   );
 
-  // On mobile, show as modal overlay; on desktop, show as dropdown
   if (inDialog) {
-    // Mobile: Dialog modal
     return (
       <Dialog open onOpenChange={open => !open && onClose()}>
         <DialogContent className="max-w-md">
-          <DialogTitle className="sr-only">Share</DialogTitle>
-          {shareContent}
+          <DialogTitle className={showTitle ? 'pr-12' : 'sr-only'}>{titleText}</DialogTitle>
+          {row}
         </DialogContent>
       </Dialog>
     );
   }
 
-  // Desktop: Dropdown
-  return shareContent;
+  return (
+    <div
+      className={`w-[min(28rem,calc(100vw-1.5rem))] max-w-full rounded-lg border border-default bg-surface-base p-4 shadow-sm ${className}`}
+      onClick={e => e.stopPropagation()}
+    >
+      {showTitle && (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="mb-0 text-base font-semibold text-fg-primary">{titleText}</h3>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+              aria-label="Close share menu"
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
+          )}
+        </div>
+      )}
+      {row}
+    </div>
+  );
 }

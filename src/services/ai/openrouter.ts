@@ -11,6 +11,7 @@
  * Last Modified: 2026-01-08
  */
 
+import { countCalls } from './usage-events';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 
 import {
@@ -146,6 +147,7 @@ export class OpenRouterService {
     this.siteUrl = options.siteUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://orangecat.ch';
     this.siteName = options.siteName || 'OrangeCat';
     this.isByok = options.isByok || false;
+    countCalls(this, { provider: 'openrouter', byok: this.isByok });
   }
 
   /**

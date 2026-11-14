@@ -9,8 +9,10 @@ export interface Participant {
   joined_at: string;
   last_read_at: string;
   is_active: boolean;
-  /** The Cat: an agent, shown as one. */
+  /** The Cat or a bot's seat: an agent, shown as one. */
   is_agent?: boolean;
+  /** What a bot that is not the viewer's charges them per message, in BTC. */
+  agent_price_btc?: number;
 }
 
 export interface Conversation {

@@ -21,6 +21,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { sanitizeApiKey } from '@/lib/api-key';
 import { logger } from '@/utils/logger';
 
+import { recordModelCall } from './usage-events';
 import type { AiService } from './types';
 
 export interface CappedVendor {
@@ -182,15 +183,33 @@ export function cappedService(
   if (!platformVendorForKey(key, env)) {
     return service;
   }
+  // A call the cap stopped never reaches a client, so it is reported here:
+  // "not called, the allowance is used up" belongs in the picture too.
+  const reserveOrRecord = async (model: string) => {
+    try {
+      await reservePlatformCall(key, env, reserve);
+    } catch (error) {
+      if (error instanceof VendorCapReached) {
+        recordModelCall({
+          provider: error.vendor,
+          model,
+          byok: false,
+          outcome: 'refused',
+          reason: 'vendor-cap',
+        });
+      }
+      throw error;
+    }
+  };
   return {
     ...service,
     chatCompletion: async opts => {
-      await reservePlatformCall(key, env, reserve);
+      await reserveOrRecord(opts.model);
       return service.chatCompletion(opts);
     },
     streamChatCompletion: opts =>
       (async function* () {
-        await reservePlatformCall(key, env, reserve);
+        await reserveOrRecord(opts.model);
         yield* service.streamChatCompletion(opts);
       })(),
   };

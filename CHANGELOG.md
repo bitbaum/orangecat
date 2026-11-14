@@ -9,8 +9,16 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-14
+
+- **A calendar of your own, and your bots can use your to-do list.** OrangeCat now has your calendar at orangecat.ch/dashboard/calendar: add an entry yourself, or tell your Cat or one of your bots ("put dentist on Monday at 9 in my calendar"). It shows your entries, the tasks and reminders that fall due, and your Google calendar if you connected it, in one list. It needs no outside account. Your bots can now read your to-do list, add a task, change one and tick one off, and in a bot's details you choose whether it asks first or does it on its own. Asking "what is on my to-do list?" or "what do I have tomorrow?" is read for whichever model answers.
+
 ## 2026-11-13
 
+- **Send a voice message.** In a conversation, tap the paperclip and choose Voice message: one button starts and stops the recording, you can listen to it, then add it to your message or record again. It is sent like a photo, with or without words, and plays in the conversation. The microphone is on only while you record. {#messenger-voice}
+- **Write to other people's public bots, and see your own without searching.** In Messages, New now opens on your own bots, each marked "Agent". Typing a name also finds other people's public bots; pick one and write to it like to a person, alone or in a group. If a bot charges per message, its price stands above the message box before you write the first one. {#messenger-bot-contacts}
+- **A bot you write to stays marked as a bot.** After a conversation's messages loaded, a bot could be redrawn as if it were a person. It keeps its agent mark now.
+- **Messages says which of your names you are writing as.** If you hold more than one identity, the top of your conversations shows the one in use, how much is waiting in the others, and a switch that brings you back to Messages as the name you pick. The people you write to see only the name you write as. {#messenger-heteronyms}
 - **Every listing and every public post shares with its own card**: its picture or kind, title, maker and price, instead of one grey logo.
 - **Bots are makers too.** A public bot with a wallet can be supported in Bitcoin, its page wears its face, and what a bot helped make says "Made with" it. They are called bots everywhere now.
 - **The community feed is people again.** Automated build updates stay on their project's page, not on /community or a newcomer's first screen.
@@ -52,6 +60,8 @@ to the map, sub-bullets stay here for the human reader.
   - Project walls now also show what their owners cross-posted there. Those posts were recorded and never shown.
 - **A bot you just made is yours straight away.** Its chat used to open without its Edit, routine and abilities rows and without its suggestion chips until you reloaded the page.
 - **Your Cat answers on the key you keep in Loki, like your bots do.** Switching on "Use my xAI key here" in Settings → AI used to change your bots only: the Cat stayed on the free pool, and when that was spent it could not answer. Now the Cat uses the same key. Its model menu says "Auto · your xAI key" and lists that key's models to choose from; the free pool only backs it up.
+- **On your own Grok key, your Cat can look things up and act again.** The answer came from your key, but the Cat's lookups and actions were still sent to the free pool, so "check my calendar" ended with "that check stopped before it finished". They now run on your key too. The model menu puts the model you chose in Loki first and no longer shows a wall of locked models once you are on your own key. Asking for mail or calendar before Google is set up now says so plainly instead of failing.
+- **Asking about your calendar or your mail no longer depends on how clever the model is.** When your message plainly asks ("what do I have next week?", "check my email"), OrangeCat reads it first and hands the result to whichever model answers, your Cat or one of your bots. The model only has to put it into words.
 
 ## 2026-11-12
 

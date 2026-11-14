@@ -45,7 +45,9 @@ const b64url = (s: string) => Buffer.from(s, 'utf8').toString('base64url');
 describe('connector hands', () => {
   it('are registered actions, held by bots, named by a connection, with a provider each', () => {
     const ids = Object.keys(CONNECTOR_HANDS);
-    expect(ids.sort()).toEqual(['calendar_read', 'github_read', 'gmail_read']);
+    expect(ids.sort()).toEqual(['github_read', 'gmail_read']);
+    // The calendar is the person's own (services/planner); Google is one place it reads.
+    expect(isConnectorHand('calendar_read')).toBe(false);
     const named = CAT_CONNECTIONS.flatMap(c => c.actions);
     for (const id of ids) {
       expect(CAT_ACTIONS[id]?.enabled, id).toBe(true);
@@ -72,7 +74,10 @@ describe('connector hands', () => {
     // No keys in the test environment: nothing is configured, so nothing is connected.
     const out = await CONNECTOR_HANDS.gmail_read('u1', {});
     expect(out.success).toBe(false);
-    expect(out.error).toMatch(/not connected/);
+    // The server has no Google keys here: said as ours to set up, with no
+    // button to go looking for.
+    expect(out.error).toMatch(/not switched on for OrangeCat yet/);
+    expect(out.error).not.toMatch(/Connect it here/);
     const bad = await CONNECTOR_HANDS.github_read('u1', { what: 'everything' });
     expect(bad.success).toBe(false);
     expect(bad.error).toMatch(/repos, issues, pulls, file/);

@@ -121,13 +121,13 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
   {
     id: 'google',
     name: 'Google',
-    purpose: 'Let your Cat and your bots read your mail and your calendar when you ask.',
+    purpose: 'Let your Cat and your bots read your mail, and show your Google calendar in yours.',
     reads: [
       'Your Gmail: a search, or one message',
-      'Your Google Calendar: the coming days',
+      'Your Google Calendar: its coming days appear in your OrangeCat calendar',
       'Read-only: nothing is sent, changed or deleted',
     ],
-    actions: ['gmail_read', 'calendar_read'],
+    actions: ['gmail_read'],
     pushes: [],
     connectHint:
       'Google asks you to allow reading your mail and your calendar. Leave both ticked; OrangeCat asks for nothing else and cannot send or change anything.',

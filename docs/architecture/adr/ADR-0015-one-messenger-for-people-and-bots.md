@@ -1,8 +1,8 @@
 # ADR-0015: One Messenger for People and Bots
 
 Date: 2026-11-13
-Status: Accepted. Build order 1–3 shipped (D1–D4 and D6 for a person's own bots,
-alone or in a group); 4–6 on the roadmap
+Status: Accepted. Build order 1–5 shipped (D1–D6, for a person's own bots and
+other people's public ones, alone or in a group); 6 on the roadmap
 
 ## Context
 
@@ -114,8 +114,22 @@ company is not a confidence between one person and one bot.
   added without changing anything else.
 - A bot that is not public answers its owner only, and tells anyone else who
   names it so, without a model call.
-- Not built: other people's bots as contacts (build order 5), and the bot's
-  own memory of what is said in Messages.
+- "Writing as" (D5) is `src/components/identities/WritingAs.tsx`, above the
+  list: the name in use, the count waiting in the others (ADR-0014 D8's own
+  number, unread notifications) and a switch that lands on Messages. Drawn
+  only for somebody who holds more than one name and may switch.
+- Other people's bots (build order 5): a seat follows its companion's own
+  door (`decideConversationAccess`: the owner always, anybody else while it is
+  public and active), for opening a conversation (`seatCompanionsFor`,
+  `closedSeatAmong`) and for answering. What a bot charges the viewer rides on
+  its participant row (`agent_price_btc`, never for the viewer's own bot) and
+  is shown above the message box before the first message.
+- "New" opens on the viewer's own bots (`transport.suggestions`, chatkit 0.33).
+- **Fixed with this:** the page of a thread carries its conversation, and its
+  participants had no agent flag, so a seat could be redrawn as a person once
+  its messages loaded. `fetchConversationContext` now sets it.
+- Not built: the bot's own memory of what is said in Messages; the bot rooms'
+  move onto conversations (build order 6).
 
 ## What this replaces
 

@@ -25,6 +25,7 @@ import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
+import { preReadForTurn } from '@/services/connectors/pre-read';
 import { actionsViaForModel, observedToolVerdict } from '@/services/cat/tool-capability';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -393,7 +394,20 @@ async function prepareTurn(
     );
   }
 
-  const baseMessages: ToolAugmentedMessage[] = prepared.messages;
+  // A plain ask about the calendar or the mail is read in code, now, and put
+  // in front of whichever model answers (connectors/pre-read.ts): the read
+  // must not depend on how well that model chooses tools.
+  const preRead = await preReadForTurn(supabase, user.id, message);
+  if (preRead) {
+    prepared.grounding.evidence.push(...preRead.evidence);
+  }
+  const baseMessages: ToolAugmentedMessage[] = preRead
+    ? [
+        ...prepared.messages.slice(0, -1),
+        { role: 'system', content: preRead.block },
+        ...prepared.messages.slice(-1),
+      ]
+    : prepared.messages;
 
   // The photo a draft listing should carry: this turn's, else the latest one
   // in the recent thread ("sell this" → "make it a digital download" is two

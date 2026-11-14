@@ -9,6 +9,7 @@
  */
 
 import { complete, linkId, usableChain, ChainExhaustedError, type Link } from '@bitbaum/ai-kit';
+import { AI_APP } from '@/services/ai/usage-events';
 import { logger } from '@/utils/logger';
 import { servingChain } from '@/services/cat/provider-catalog';
 
@@ -131,7 +132,11 @@ export interface PlatformJsonOpts {
  */
 function resolveChain(prompt = ''): { chain: Link[]; env: Record<string, string> } {
   const chain = usableChain(servingChain(prompt || undefined));
-  const env: Record<string, string> = {};
+  // The usage log names the app from this env, and finds its directory in it.
+  const env: Record<string, string> = {
+    AI_APP_ID: process.env.AI_APP_ID?.trim() || AI_APP,
+    ...(process.env.AI_USAGE_DIR ? { AI_USAGE_DIR: process.env.AI_USAGE_DIR } : {}),
+  };
   for (const link of chain) {
     const key = process.env[link.provider.keyEnv]?.trim();
     if (key) {

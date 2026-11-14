@@ -18,6 +18,7 @@
  * Created: 2026-06-10
  */
 
+import { countCalls } from './usage-events';
 import { sanitizeApiKey } from '@/lib/api-key';
 
 export interface OpenAICompatMessage {
@@ -138,6 +139,7 @@ export class OpenAICompatibleService {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, '');
     this.providerId = opts.providerId;
     this.isByok = opts.isByok ?? true;
+    countCalls(this, { provider: this.providerId, byok: this.isByok });
   }
 
   isUsingByok(): boolean {

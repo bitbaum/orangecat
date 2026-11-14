@@ -36,13 +36,16 @@ import { useMessagingActors } from '@/features/messaging/hooks/useMessagingActor
 import { takeMessageDraft } from '@/features/messaging/lib/draft';
 import { createMessengerTransport } from '@/features/messaging/messenger-transport';
 import { moneyActions } from '@/features/messaging/money-actions';
+import { pricedBots, sameBots, type PricedBot } from '@/features/messaging/lib/priced-bots';
 import { CHAT_VOICE } from '@/hooks/useDictation';
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
 import { cn } from '@/lib/utils';
 import { announceMessagesRead } from '@/hooks/useUnreadMessagesSync';
 import { MessageActorSelector } from './MessageActorSelector';
+import { WritingAs } from '@/components/identities/WritingAs';
 
 interface MessagesScreenProps {
   userId: string;
@@ -69,10 +72,24 @@ export default function MessagesScreen({
     ? actors.find(a => a.actor_id === selectedActorId)
     : personalActor;
 
+  // What a bot in each conversation charges the viewer, so the price is on
+  // the screen before the first message is written (ADR-0015, build order 5).
+  const [prices, setPrices] = useState<Record<string, PricedBot[]>>({});
+  const { formatAmountBtc } = useDisplayCurrency();
+  const openPrices = conversationId ? (prices[conversationId] ?? []) : [];
+
   const transport = useMemo(
     () =>
       createMessengerTransport({
         userId,
+        onConversation: conversation => {
+          const priced = pricedBots(conversation);
+          setPrices(current =>
+            sameBots(current[conversation.id], priced)
+              ? current
+              : { ...current, [conversation.id]: priced }
+          );
+        },
         senderActorId: () => actorRef.current,
         // The app shell's useUnreadMessagesSync owns the badge; this nudges it.
         onUnreadMayHaveChanged: announceMessagesRead,
@@ -183,6 +200,7 @@ export default function MessagesScreen({
           transport={transport}
           agents={agents}
           actions={actions}
+          listHeader={<WritingAs />}
           agentMark={<BrandMarkIcon size={16} />}
           conversationId={conversationId}
           onConversationChange={onConversationChange}
@@ -199,14 +217,24 @@ export default function MessagesScreen({
             // A message typed FOR the person by a link ("Ask about this").
             initialDraft: id => takeMessageDraft(id) ?? undefined,
             header:
-              actors.length > 1 && selectedActor ? (
-                <MessageActorSelector
-                  selectedActor={selectedActor}
-                  selectedActorId={selectedActorId}
-                  personalActor={personalActor}
-                  groupActors={groupActors}
-                  onSelectActor={setSelectedActorId}
-                />
+              openPrices.length > 0 || (actors.length > 1 && selectedActor) ? (
+                <>
+                  {openPrices.map(bot => (
+                    <p key={bot.id} className="mb-0 px-3 pt-1 text-sm text-fg-secondary">
+                      {bot.name} charges {formatAmountBtc(bot.priceBtc)} per message, from your Cat
+                      Credits.
+                    </p>
+                  ))}
+                  {actors.length > 1 && selectedActor && (
+                    <MessageActorSelector
+                      selectedActor={selectedActor}
+                      selectedActorId={selectedActorId}
+                      personalActor={personalActor}
+                      groupActors={groupActors}
+                      onSelectActor={setSelectedActorId}
+                    />
+                  )}
+                </>
               ) : undefined,
             labels: { voice: 'Speak your message' },
           }}

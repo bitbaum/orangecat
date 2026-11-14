@@ -35,6 +35,7 @@ const READS: ReadonlySet<string> = new Set([
   'github_read',
   'gmail_read',
   'calendar_read',
+  'tasks_read',
 ]);
 
 export function handRows(grants: HandGrants, held?: ReadonlySet<string>): HandRow[] {
