@@ -43,3 +43,33 @@ jobs:
           ssh -i ~/.ssh/id_deploy -o BatchMode=yes -o ConnectTimeout=10 "$OC_BOX" \
             "sudo -n journalctl -u '$unit' --since '1 hour ago' -n 1000 --output=cat --no-pager" \
             | node scripts/diagnose-cat-logs.mjs
+
+      - name: App lifecycle and pressure, as fixed labels only
+        # Starts, exits, restarts, V8 heap-limit aborts and kernel OOM kills
+        # of the app unit over the last 12 hours, each as a timestamp and a
+        # fixed label (plus heap sizes from V8's own GC trace), and the
+        # running process's CPU, memory, age and restart count. No journal
+        # text is printed: an unmatched line prints nothing.
+        shell: bash
+        run: |
+          set -euo pipefail
+          unit=$(sed -n 's/^OC_SERVICE=.*:-\([^}]*\)}.*$/\1/p' scripts/deploy-selfhost.sh)
+          test -n "$unit"
+          case "$unit" in *[!a-zA-Z0-9_.@-]*) exit 1 ;; esac
+          box() { ssh -i ~/.ssh/id_deploy -o BatchMode=yes -o ConnectTimeout=10 "$OC_BOX" "$1"; }
+          echo "== process now"
+          box "sudo -n systemctl show '$unit' -p ActiveState -p SubState -p NRestarts -p ActiveEnterTimestamp -p MemoryCurrent; pid=\$(systemctl show -p MainPID --value '$unit'); [ \"\$pid\" != 0 ] && ps -o pcpu=,rss=,etimes=,nlwp= -p \"\$pid\" | awk '{printf \"cpu=%s%% rss=%dMiB age=%ds threads=%s\n\", \$1, \$2/1024, \$3, \$4}'" \
+            | grep -E '^(ActiveState|SubState|NRestarts|ActiveEnterTimestamp|MemoryCurrent)=[A-Za-z0-9 :+._-]*$|^cpu=[0-9.]+% rss=[0-9]+MiB age=[0-9]+s threads=[0-9]+$' || true
+          echo "== lifecycle, last 12 hours (UTC)"
+          box "sudo -n journalctl -u '$unit' --since '12 hours ago' -o short-iso-precise --no-pager; sudo -n journalctl -k --since '12 hours ago' -o short-iso-precise --no-pager | grep -i 'oom' || true" \
+            | awk '
+              { ts = substr($1, 1, 19) }
+              /Reached heap limit|JavaScript heap out of memory/ { print ts, "v8-heap-limit-abort"; next }
+              /Mark-Compact/ && match($0, /[0-9.]+ \([0-9.]+\) -> [0-9.]+ \([0-9.]+\) MB/) { print ts, "gc-full", substr($0, RSTART, RLENGTH); next }
+              /Main process exited, code=[a-z]+, status=[0-9A-Za-z\/]+/ && match($0, /code=[a-z]+, status=[0-9A-Za-z\/]+/) { print ts, "exited", substr($0, RSTART, RLENGTH); next }
+              /Scheduled restart job, restart counter is at [0-9]+/ && match($0, /counter is at [0-9]+/) { print ts, "auto-restart", substr($0, RSTART, RLENGTH); next }
+              /Stopping .*\.\.\.$/ { print ts, "stop-requested"; next }
+              /Started / { print ts, "started"; next }
+              /oom-kill|Out of memory: Killed process/ && /next-server|node|orangecat/ { print ts, "kernel-oom-kill"; next }
+            ' | uniq -c -f1 | tail -80
+
