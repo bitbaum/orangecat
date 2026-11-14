@@ -11,6 +11,10 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-14
 
+- **One way to pay.** Buying, supporting and investing now use the same steps, the same words and the same receipt as a pay link. "Tip" is called "Support" everywhere.
+- **Buy without an account, and it is a real order.** A buyer gives a name and, if they like, how the seller can reach them; they get a receipt with an order reference, and the seller sees the order under Orders, with the buyer's name and note.
+- **A service is booked first and paid when the provider accepts.** The booking page then shows a pay card; money still goes straight to the provider's wallet. A booking can only be marked paid by a payment that arrived.
+- **The Cat answers every message when you write to it alone**, without @cat. New message opens on the Cat, your bots, people you wrote to recently and people you follow.
 - **The home page shows what you get.** It opens with "Turn who you are into income" and a field to claim your own pay link, orangecat.ch/pay/your-name, shows the newest things people have listed, and the Cat answers a visitor's first sentence once before any sign-up. The same promise now reads the same on every page.
 - **Pricing starts with what selling costs: 0%.** The Cat's plans follow below it, and the FAQ and the pricing page say the same about Cat Credits.
 - **A picture for every kind.** Every create form now takes a cover picture; it is the large image on the page, the image on Discover and on the share card. Without a picture, a card shows its kind's icon instead of a letter. Removing a picture now really removes it.
